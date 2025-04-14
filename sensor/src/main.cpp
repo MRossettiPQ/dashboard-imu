@@ -1,6 +1,3 @@
-//
-// Created by mathe on 12/04/2025.
-//
 #include <Arduino.h>
 #include "main.h"
 

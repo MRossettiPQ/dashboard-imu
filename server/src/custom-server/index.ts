@@ -1,14 +1,14 @@
 import Database from "./core/database";
 import settings from "./settings";
-import { CustomExpress } from "./core/utils/ExpressUtil";
+import {CustomExpress} from "./core/utils/ExpressUtil";
 import routes from "./routes";
 import express from "express";
 import * as bodyParser from "body-parser";
 import cors from "cors";
-import Log, { TextColor } from "./core/utils/LogUtil";
+import Log, {TextColor} from "./core/utils/LogUtil";
 import http from "http";
-import { Server } from "socket.io";
-import { DefaultEventsMap } from "socket.io/dist/typed-events";
+import {Server} from "socket.io";
+import {DefaultEventsMap} from "socket.io/dist/typed-events";
 
 interface ICustomNodeServer {
   app?: CustomExpress;
