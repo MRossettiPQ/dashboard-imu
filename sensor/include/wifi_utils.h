@@ -1,4 +1,8 @@
-#include <Logger.h>
+#ifndef WIFI_UTILS_H
+#define WIFI_UTILS_H
+
+#include <logger.h>
+#include <Arduino.h>
 #include <NTPClient.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -37,7 +41,7 @@ class WiFiUtils {
         External external;
         Internal internal;
 
-        void configure() const {
+        void configure() {
             Logger::info("WiFi", "Configuring WiFi");
 
             WiFiClass::mode(WIFI_AP_STA);
@@ -45,13 +49,12 @@ class WiFiUtils {
             WiFi.onEvent(events);
             const String name = "MPU-MANAGER-";
             mac = WiFi.macAddress();
-            Internal::ssid = name + mac;
+            internal.ssid = name + mac;
             WiFi.softAP(Internal::ssid);
 
-            const IPAddress ip = WiFi.softAPIP();
-
-            Logger::info("WiFi", "AP IP address: %s, SSID: %s", ip.toString(), Internal::ssid);
-            if (!WiFi.config(External::ip, external.gateway, external.subnet)) {
+            const String ip = WiFi.softAPIP().toString();
+            Logger::info("WiFi", "AP IP address: %s, SSID: %s", ip.c_str(), internal.ssid.c_str());
+            if (!WiFi.config(external.ip, external.gateway, external.subnet)) {
                 Logger::info("WiFi", "STA Failed to configure");
                 ESP.restart();
             }
@@ -59,35 +62,35 @@ class WiFiUtils {
             check();
         }
 
-        static void check() {
+        void check() {
             Logger::info("WiFi", "Connecting to WiFi...");
 
             if (WiFiClass::status() != WL_CONNECTED) {
                 Logger::info("WiFi", "WiFi not connected Wifi");
-                WiFi.begin(External::ssid.c_str(), External::password.c_str());
+                WiFi.begin(external.ssid.c_str(), external.password.c_str());
                 vTaskDelay(100 / portTICK_PERIOD_MS);
             }
 
             if (WiFiClass::status() == WL_CONNECTED) {
                 address = WiFi.localIP().toString();
-                Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", address);
+                Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", address.c_str());
             }
         }
 
         static void events(const WiFiEvent_t event) {
-            Logger::info("WiFi", "event: %d", event);
+            Logger::info("WiFi", "Event: %d", event);
             switch (event) {
                 case ARDUINO_EVENT_WIFI_READY:
-                    Logger::info("WiFi", "WiFi interface ready");
+                    Logger::info("WiFi", "Interface ready");
                     break;
                 case ARDUINO_EVENT_WIFI_SCAN_DONE:
                     Logger::info("WiFi", "Completed scan for access points");
                     break;
                 case ARDUINO_EVENT_WIFI_STA_START:
-                    Logger::info("WiFi", "WiFi client started");
+                    Logger::info("WiFi", "Client started");
                     break;
                 case ARDUINO_EVENT_WIFI_STA_STOP:
-                    Logger::info("WiFi", "WiFi clients stopped");
+                    Logger::info("WiFi", "Clients stopped");
                     break;
                 case ARDUINO_EVENT_WIFI_STA_CONNECTED:
                     Logger::info("WiFi", "Connected to access point");
@@ -105,26 +108,22 @@ class WiFiUtils {
                     Logger::info("WiFi", "Lost IP address and IP address is reset to 0");
                     break;
                 case ARDUINO_EVENT_WPS_ER_SUCCESS:
-                    Logger::info(
-                        "WiFi", "WiFi Protected Setup (WPS): succeeded in enrollee mode");
+                    Logger::info("WiFi", "Protected Setup (WPS): succeeded in enrollee mode");
                     break;
                 case ARDUINO_EVENT_WPS_ER_FAILED:
-                    Logger::info(
-                        "WiFi", "WiFi Protected Setup (WPS): failed in enrollee mode");
+                    Logger::info("WiFi", "Protected Setup (WPS): failed in enrollee mode");
                     break;
                 case ARDUINO_EVENT_WPS_ER_TIMEOUT:
-                    Logger::info(
-                        "WiFi", "WiFi Protected Setup (WPS): timeout in enrollee mode");
+                    Logger::info("WiFi", "Protected Setup (WPS): timeout in enrollee mode");
                     break;
                 case ARDUINO_EVENT_WPS_ER_PIN:
-                    Logger::info(
-                        "WiFi", "WiFi Protected Setup (WPS): pin code in enrollee mode");
+                    Logger::info("WiFi", "Protected Setup (WPS): pin code in enrollee mode");
                     break;
                 case ARDUINO_EVENT_WIFI_AP_START:
-                    Logger::info("WiFi", "WiFi access point started");
+                    Logger::info("WiFi", "Access point started");
                     break;
                 case ARDUINO_EVENT_WIFI_AP_STOP:
-                    Logger::info("WiFi", "WiFi access point  stopped");
+                    Logger::info("WiFi", "Access point  stopped");
                     break;
                 case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
                     Logger::info("WiFi", "Client connected Wifi");
@@ -168,12 +167,15 @@ class WiFiUtils {
         }
 
         void onConnect() {
-            External::connected = true;
+            external.connected = true;
             address = WiFi.localIP().toString();
-            Logger::info("WiFi", "Obtained IP address: %s", address);
+            Logger::info("WiFi", "Obtained IP address: %s", address.c_str());
 
             // Configure time zone
             timeClient.begin();
             timeClient.forceUpdate();
         }
 };
+
+
+#endif //WIFI_UTILS_H

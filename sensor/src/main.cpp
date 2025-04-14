@@ -5,20 +5,20 @@ TaskHandle_t Task1;
 TaskHandle_t Task2;
 
 [[noreturn]] void Task1code(void* parameter) {
-    Logger::info("Task1code", "Running on core %d\n", xPortGetCoreID());
+    Logger::info("Task1code", "Running on core %d", xPortGetCoreID());
     for (;;) {
         unsigned long current_millis = millis();
-        Logger::info("Task1code", "Running on core %d\n", current_millis);
+        Logger::info("Task1code", "Running on core %d", current_millis);
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
 
 [[noreturn]] void Task2code(void* parameter) {
-    Logger::info("Task2code", "Running on core %d\n", xPortGetCoreID());
+    Logger::info("Task2code", "Running on core %d", xPortGetCoreID());
     for (;;) {
         unsigned long current_millis = millis();
-        Logger::info("Task2code", "Running on core %d\n", current_millis);
+        Logger::info("Task2code", "Running on core %d", current_millis);
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
