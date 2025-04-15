@@ -4,23 +4,29 @@
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
+
 [[noreturn]] void Task1code(void* parameter) {
     Logger::info("Task1code", "Running on core %d", xPortGetCoreID());
     for (;;) {
-        unsigned long current_millis = millis();
+        const unsigned long current_millis = millis();
         Logger::info("Task1code", "Running on core %d", current_millis);
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
 [[noreturn]] void Task2code(void* parameter) {
     Logger::info("Task2code", "Running on core %d", xPortGetCoreID());
     for (;;) {
-        unsigned long current_millis = millis();
+        const unsigned long current_millis = millis();
         Logger::info("Task2code", "Running on core %d", current_millis);
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        sensor_instance.scanner();
+        sensor_instance.configure();
+
+        wifi_instance.check();
+
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
@@ -28,6 +34,8 @@ void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     Logger::info("SETUP", "Initialize sensor");
+
+    wifi_instance.configure();
 
     xTaskCreatePinnedToCore(
         Task1code,

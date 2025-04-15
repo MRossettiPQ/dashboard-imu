@@ -1,8 +1,8 @@
 #ifndef WIFI_UTILS_H
 #define WIFI_UTILS_H
 
-#include <logger.h>
 #include <Arduino.h>
+#include <logger.h>
 #include <NTPClient.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -16,26 +16,30 @@ auto input_password = "password";
 
 WiFiUDP ntpUDP;
 
+class WiFiUtils;
+
+extern WiFiUtils wifi_instance;
+
 class WiFiUtils {
     public:
         class Internal {
             public:
-                static String ssid;
-                static String password;
+                String ssid;
+                String password;
         };
 
         class External {
             public:
-                static IPAddress ip;
+                IPAddress ip;
                 IPAddress gateway = IPAddress(192, 168, 1, 1);
                 IPAddress subnet = IPAddress(255, 255, 0, 0);
 
-                static bool connected;
-                static String ssid;
-                static String password;
+                bool connected = false;
+                String ssid;
+                String password;
         };
 
-        static String address;
+        String address;
         static String mac;
         NTPClient timeClient = NTPClient(ntpUDP, NTP_TIME_API, -3 * 3600, 60000);
         External external;
@@ -50,7 +54,7 @@ class WiFiUtils {
             const String name = "MPU-MANAGER-";
             mac = WiFi.macAddress();
             internal.ssid = name + mac;
-            WiFi.softAP(Internal::ssid);
+            WiFi.softAP(internal.ssid);
 
             const String ip = WiFi.softAPIP().toString();
             Logger::info("WiFi", "AP IP address: %s, SSID: %s", ip.c_str(), internal.ssid.c_str());
@@ -67,7 +71,7 @@ class WiFiUtils {
 
             if (WiFiClass::status() != WL_CONNECTED) {
                 Logger::info("WiFi", "WiFi not connected Wifi");
-                WiFi.begin(external.ssid.c_str(), external.password.c_str());
+                WiFi.begin(external.ssid, external.password);
                 vTaskDelay(100 / portTICK_PERIOD_MS);
             }
 
@@ -102,7 +106,7 @@ class WiFiUtils {
                     Logger::info("WiFi", "Authentication mode of access point has changed");
                     break;
                 case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-                    // onConnect();
+                    wifi_instance.onConnect();
                     break;
                 case ARDUINO_EVENT_WIFI_STA_LOST_IP:
                     Logger::info("WiFi", "Lost IP address and IP address is reset to 0");
@@ -169,7 +173,7 @@ class WiFiUtils {
         void onConnect() {
             external.connected = true;
             address = WiFi.localIP().toString();
-            Logger::info("WiFi", "Obtained IP address: %s", address.c_str());
+            Logger::info("WiFi", "Obtained IP address: %s", address);
 
             // Configure time zone
             timeClient.begin();
