@@ -1,6 +1,7 @@
 package com.rot.core.jaxrs
 
 
+import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 
 class ResultContent<T> {
@@ -8,6 +9,7 @@ class ResultContent<T> {
     private var statusCode: Int = 200
     private var data: ContentDto<T> = ContentDto()
     private var fields: String? = null
+    private var type: String = MediaType.APPLICATION_JSON
 
     fun withStatusCode(code: Response.Status): ResultContent<T> {
         statusCode = code.statusCode
@@ -17,6 +19,16 @@ class ResultContent<T> {
 
     fun filterFields(fields: String): ResultContent<T> {
         this.fields = fields
+        return this
+    }
+
+    fun withType(type: MediaType): ResultContent<T> {
+        this.type = type.type
+        return this
+    }
+
+    fun withType(type: String): ResultContent<T> {
+        this.type = type
         return this
     }
 
@@ -38,6 +50,7 @@ class ResultContent<T> {
 
     fun build(): Response {
         return Response.status(statusCode)
+            .type(type)
             .entity(if (fields != null) null else data)
             .build()
     }

@@ -58,6 +58,7 @@ dependencies {
     implementation("io.quarkus:quarkus-mutiny")
     implementation("io.quarkus:quarkus-quartz")
     implementation("io.quarkus:quarkus-scheduler")
+    implementation("io.quarkus:quarkus-vertx-http")
     implementation("io.quarkus:quarkus-config-yaml")
 
     // === DATABASE ===

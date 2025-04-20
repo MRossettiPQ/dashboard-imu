@@ -5,7 +5,6 @@ import com.rot.core.utils.ResourceUtils
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
-import jakarta.ws.rs.Produces
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import java.io.File
@@ -34,7 +33,13 @@ class StaticPageResource {
     fun index(@PathParam("path") path: String? = null): Response {
         val normalizedPath = if (path.isNullOrBlank()) "index.html" else path
         val resourcePath = "/META-INF/resources/spa/$normalizedPath"
-        val file = ResourceUtils.getJarResource(resourcePath)
+
+        val file = try {
+            val resource = object {}.javaClass.getResource(resourcePath)
+            File(resource!!.toURI())
+        } catch (e: Exception) {
+            throw ApplicationException("File does not exist", 404)
+        }
 
         // Determine MIME type from file extension
         val fileExtension = Paths.get(resourcePath).fileName.toString()

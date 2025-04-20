@@ -24,7 +24,7 @@ class DevelopmentController(
 
     @GET
     @Path("/ping")
-    fun ping(): Response? {
+    fun ping(): Response {
         val metadata = mutableMapOf<String, Any>()
         metadata["name"] = applicationConfig.name()
         metadata["environment"] = applicationConfig.environment()
