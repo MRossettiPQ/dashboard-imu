@@ -5,7 +5,7 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import java.util.Base64
 
-val pemDir = File("$projectDir/src/main/resources/META-INF")
+val pemDir = File("$projectDir/src/main/resources/META-INF/resources")
 
 tasks.register("generateJwtKeys") {
     group = "build setup"
