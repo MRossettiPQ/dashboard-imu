@@ -1,7 +1,11 @@
-package com.rot.websocket
+package com.rot.websocket.services
 
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.websocket.*
+import jakarta.websocket.OnClose
+import jakarta.websocket.OnError
+import jakarta.websocket.OnMessage
+import jakarta.websocket.OnOpen
+import jakarta.websocket.Session
 import jakarta.websocket.server.PathParam
 import jakarta.websocket.server.ServerEndpoint
 

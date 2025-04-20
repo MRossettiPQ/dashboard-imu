@@ -5,16 +5,13 @@ val queryDslVersion: String by project
 val blazePersistenceVersion: String by project
 val quarkusHibernateTypes: String by project
 val reflectionsVersion: String by project
-val kotlinVersion: String by project
-val authJavaJwt: String by project
-val authJavaRsa: String by project
 val socketIoVersion: String by project
 val moquetteVersion: String by project
 val jacksonVersion: String by project
 val jmdnsVersion: String by project
 val mdnsVersion: String by project
-val hibernateVersion: String by project
 val sqliteVersion: String by project
+val jSerialCommVersion: String by project
 
 apply(from = "pem.gradle.kts")
 apply(from = "vue.gradle.kts")
@@ -49,8 +46,11 @@ dependencies {
     implementation("io.quarkus:quarkus-rest-jaxb")
     implementation("io.quarkus:quarkus-rest-jsonb")
     implementation("io.quarkus:quarkus-rest-jackson")
-    implementation("io.quarkus:quarkus-reactive-routes")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+
+    // === SPA ===
+    implementation("io.quarkus:quarkus-vertx-http")
+    implementation("io.quarkus:quarkus-reactive-routes")
 
     // === QUARKUS CORE ===
     implementation("io.quarkus:quarkus-arc")
@@ -58,7 +58,6 @@ dependencies {
     implementation("io.quarkus:quarkus-mutiny")
     implementation("io.quarkus:quarkus-quartz")
     implementation("io.quarkus:quarkus-scheduler")
-    implementation("io.quarkus:quarkus-vertx-http")
     implementation("io.quarkus:quarkus-config-yaml")
 
     // === DATABASE ===
@@ -97,6 +96,9 @@ dependencies {
     // === TEST ===
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+
+    // === SERIAL ===
+    implementation("com.fazecast:jSerialComm:$jSerialCommVersion")
 
     // === QUERYDSL ===
     kapt("com.querydsl:querydsl-apt:${queryDslVersion}:jakarta")

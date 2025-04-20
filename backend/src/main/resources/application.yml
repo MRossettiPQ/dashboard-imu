@@ -25,17 +25,20 @@ application:
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
     name: ${MDNS_NAME:dashboard}
+  serial:
+    name: ${SERIAL_NAME:imu-dashboard-broker}
+    baud-rate: ${SERIAL_BAUD_RATE:11520}
 
 smallrye:
   jwt:
     sign:
       key:
-        location: classpath:META-INF/resources/private.pem
+        location: classpath:META-INF/resources/security/private.pem
 mp:
   jwt:
     verify:
       publickey:
-        location: classpath:META-INF/resources/public.pem
+        location: classpath:META-INF/resources/security/public.pem
       issuer: ${application.security.issuer}
 
 quarkus:

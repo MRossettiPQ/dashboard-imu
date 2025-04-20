@@ -3,8 +3,8 @@
 
 #define USB_VID 0x2341
 #define USB_PID 0x8036
-#define USB_PRODUCT "MeuESP32USB"
-#define USB_MANUFACTURER "MeuFabricante"
+#define USB_PRODUCT "imu-dashboard-broker"
+#define USB_MANUFACTURER "mrossetti.dev"
 #define USB_SERIAL "ESP001"
 
 TaskHandle_t Task1;

@@ -48,6 +48,17 @@ interface ApplicationConfig {
     @WithName("mdns")
     fun mdns(): MdnsConfig
 
+    @WithName("serial")
+    fun serial(): SerialConfig
+
+    interface SerialConfig {
+        @WithName("name")
+        fun name(): String
+
+        @WithName("baud-rate")
+        fun baudRate(): Int
+    }
+
     interface MdnsConfig {
         @WithName("name")
         fun name(): String

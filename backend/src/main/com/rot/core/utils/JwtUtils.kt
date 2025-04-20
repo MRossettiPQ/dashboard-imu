@@ -15,7 +15,7 @@ import java.time.Instant
 object JwtUtils {
 
     private val privateKey: PrivateKey by lazy {
-        KeyUtils.readPrivateKey("/META-INF/resources/private.pem")
+        KeyUtils.readPrivateKey("/META-INF/resources/security/private.pem")
     }
 
     fun generate(
