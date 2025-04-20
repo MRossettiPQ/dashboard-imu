@@ -12,13 +12,13 @@ tasks.register("generateJwtKeys") {
     description = "Gera chaves RSA para JWT (private.pem e public.pem)"
 
     doLast {
-        println("Gera chaves RSA para JWT (private.pem e public.pem)")
         if (!pemDir.exists()) {
             pemDir.mkdirs()
         }
 
         val privateFile = File(pemDir, "private.pem")
         if (!privateFile.exists()) {
+            println("Gera chaves RSA para JWT (private.pem e public.pem)")
             val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
             keyPairGenerator.initialize(2048)
             val keyPair = keyPairGenerator.generateKeyPair()

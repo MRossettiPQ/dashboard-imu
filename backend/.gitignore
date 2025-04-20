@@ -42,3 +42,5 @@ nb-configuration.xml
 .certs/
 **/private.pem
 **/public.pem
+**.db
+/src/main/resources/META-INF/resources/spa

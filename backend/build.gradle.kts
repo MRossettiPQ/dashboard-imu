@@ -12,6 +12,9 @@ val socketIoVersion: String by project
 val moquetteVersion: String by project
 val jacksonVersion: String by project
 val jmdnsVersion: String by project
+val mdnsVersion: String by project
+val hibernateVersion: String by project
+val sqliteVersion: String by project
 
 apply(from = "pem.gradle.kts")
 apply(from = "vue.gradle.kts")
@@ -65,6 +68,7 @@ dependencies {
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-hibernate-validator")
     implementation("io.quarkiverse.hibernatetypes:quarkus-hibernate-types:$quarkusHibernateTypes")
+    implementation("io.quarkiverse.jdbc:quarkus-jdbc-sqlite:$sqliteVersion")
 
     // === FLYWAY ===
     implementation("io.quarkus:quarkus-flyway")
@@ -80,9 +84,14 @@ dependencies {
 
     // === WEBSOCKET ===
     implementation("io.quarkus:quarkus-websockets")
-    implementation("io.moquette:moquette-broker:$moquetteVersion")
     implementation("com.corundumstudio.socketio:netty-socketio:$socketIoVersion")
+
+    // === MQTT ===
+    implementation("io.moquette:moquette-broker:$moquetteVersion")
+
+    // === MDNS ===
     implementation("org.jmdns:jmdns:$jmdnsVersion")
+    implementation("io.quarkiverse.mdns:quarkus-mdns:$mdnsVersion")
 
     // === TEST ===
     testImplementation("io.quarkus:quarkus-junit5")
