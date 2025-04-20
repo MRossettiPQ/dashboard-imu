@@ -1,9 +1,12 @@
 package com.rot.core.hibernate.structures
 
-import com.querydsl.core.types.dsl.EntityPathBase
+import com.querydsl.core.types.EntityPath
+import com.querydsl.jpa.JPQLQuery
 import com.querydsl.jpa.impl.JPAQuery
 import com.rot.core.context.ApplicationContext
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase.getEntityManager
+import com.rot.core.exceptions.ApplicationException
+import com.rot.core.jaxrs.Pagination
+import io.quarkus.hibernate.orm.panache.Panache
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanionBase
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntityBase
 import jakarta.persistence.*
@@ -13,38 +16,47 @@ import java.io.Serializable
 import java.time.LocalDateTime
 import java.util.*
 
-fun <T : Any> getEntityPathBase(entityClass: Class<T>): EntityPathBase<T>? {
-    return try {
-        // Tenta descobrir a classe do tipo Q gerada pelo QueryDSL, ex: "com.example.QUser"
-        val qClassName = entityClass.name.replaceAfterLast('.', "Q${entityClass.simpleName}")
-        val qClass = Class.forName(qClassName)
-
-        // Pega o campo estático, ex: `public static final QUser user`
-        val fieldName = entityClass.simpleName.replaceFirstChar(Char::lowercase)
-        val field = qClass.getField(fieldName)
-
-        @Suppress("UNCHECKED_CAST")
-        field[null] as? EntityPathBase<T>
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-interface BaseCompanion<T : PanacheEntityBase, Id : Any>: PanacheCompanionBase<T, Id> {
+interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : PanacheCompanionBase<T, Id> {
     val entityClass: Class<T>
+    val q: Q
 
-    val q: EntityPathBase<T>?
-        get() = getEntityPathBase(entityClass)
-
-    fun createQuery(em: EntityManager = getEntityManager()): JPAQuery<T> {
+    fun createQuery(em: EntityManager = Panache.getEntityManager()): JPAQuery<T> {
         return JPAQuery<T>(em).from(q).select(q)
     }
+
+    fun findOrThrowById(uuid: Id, lockModeType: LockModeType? = LockModeType.NONE, message: String? = "${entityClass.simpleName} not found"): T {
+        return findById(uuid, lockModeType!!)
+            ?: throw ApplicationException(message, 404)
+    }
+
+    fun <T> fetch(query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): Pagination<T> {
+        Objects.requireNonNull(query)
+        var count: Long = -1
+
+        if (fetchCount) {
+            count = query.fetchCount()
+        }
+
+        query.offset(((page!! - 1) * rpp!!).toLong()).limit((rpp + 1).toLong())
+        val list = query.fetch()
+        var hasMore = false
+        if (list.size > rpp) {
+            list.removeAt(list.size - 1)
+            hasMore = true
+        }
+
+        return Pagination<T>().apply {
+            this.page = page
+            this.rpp = rpp
+            this.hasMore = hasMore
+            this.list = list
+            this.count = count
+        }
+    }
 }
 
-
 @MappedSuperclass
-abstract class BaseEntity<T : PanacheEntityBase> : PanacheEntityBase, Serializable {
+abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
 
     private val simpleName: String
         get() = javaClass.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
@@ -65,11 +77,6 @@ abstract class BaseEntity<T : PanacheEntityBase> : PanacheEntityBase, Serializab
     var deletedAt: LocalDateTime? = null
 
     abstract val id: Any?
-
-    @PrePersist
-    fun preCreate() {
-        audit()
-    }
 
     @PreUpdate
     fun preUpdate() {
@@ -121,12 +128,13 @@ abstract class BaseEntity<T : PanacheEntityBase> : PanacheEntityBase, Serializab
         }
     }
 
-    fun save(): BaseEntity<T>? {
-        if (!isNewBean) return getEntityManager().merge(this)
-        getEntityManager().persist(this)
-        return this
+    @Suppress("UNCHECKED_CAST")
+    open fun save(): T {
+        if (!isNewBean) return Panache.getEntityManager().merge(this) as T
+        audit()
+        this.persist()
+        return this as T
     }
-
 
 }
 

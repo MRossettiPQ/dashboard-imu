@@ -1,6 +1,8 @@
 package com.rot.core.providers
 
 import com.rot.core.exceptions.ApplicationException
+import jakarta.persistence.PersistenceException
+import jakarta.validation.ConstraintViolationException
 import jakarta.ws.rs.ClientErrorException
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.ext.ExceptionMapper
@@ -23,8 +25,7 @@ class ExceptionProvider : ExceptionMapper<Exception> {
 @Provider
 class RuntimeExceptionProvider : ExceptionMapper<ClientErrorException> {
     override fun toResponse(e: ClientErrorException): Response {
-        val message = e.response.entity?.toString() ?: "An error occurred"
-        return ApplicationException(message, e.response.status)
+        return ApplicationException("An error occurred - ${e.message} - ${e.cause?.message}", e.response.status, e)
             .toResponse()
     }
 }

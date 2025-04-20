@@ -1,74 +1,73 @@
 package com.rot.core.utils
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.exceptions.JWTDecodeException
-import com.auth0.jwt.exceptions.JWTVerificationException
-import com.auth0.jwt.interfaces.DecodedJWT
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.exceptions.ApplicationException
 import io.quarkus.logging.Log
+import io.smallrye.jwt.auth.principal.DefaultJWTParser
+import io.smallrye.jwt.auth.principal.ParseException
+import io.smallrye.jwt.build.Jwt
+import io.smallrye.jwt.util.KeyUtils
+import org.eclipse.microprofile.jwt.JsonWebToken
+import java.security.PrivateKey
+import java.time.Duration
 import java.time.Instant
-import java.util.*
 
 object JwtUtils {
 
-    fun decode(token: String) = try {
-        JWT.decode(token)
-    } catch (e: JWTDecodeException) {
-        Log.error("Inválid token: ${e.message}")
-        null
+    private val privateKey: PrivateKey by lazy {
+        KeyUtils.readPrivateKey("/META-INF/resources/private.pem")
     }
 
     fun generate(
         issuer: String,
         subject: String,
-        claims: MutableMap<String, Any> = mutableMapOf(),
+        claims: MutableMap<String, Any?> = mutableMapOf(),
+        groups: MutableSet<String> = mutableSetOf(),
         audience: String = "default-audience",
         clientType: String = "internal",
+        duration: Duration = Duration.ofHours(1),
+        username: String? = null,
     ): String {
-        val algorithm = Algorithm.HMAC256(ApplicationConfig.config.security().token())
-        val now = Date()
-        val expiry = Date(now.time + 3600_000)
+        val now = Instant.now()
+        val expiry = now.plusSeconds(duration.seconds) // 1 hour validity
 
-        val builder = JWT.create()
-            .withIssuer(issuer)
-            .withSubject(subject)
-            .withAudience(audience)
-            .withIssuedAt(now)
-            .withExpiresAt(expiry)
-            .withClaim("client_type", clientType)
+        val builder = Jwt.claims()
+            .upn(username)
+            .issuer(issuer)
+            .subject(subject)
+            .audience(audience)
+            .groups(groups)
+            .issuedAt(now.epochSecond)
+            .expiresIn(expiry.epochSecond)
+            .claim("client_type", clientType)
 
         claims.forEach { (key, value) ->
-            when (value) {
-                is String -> builder.withClaim(key, value)
-                is Int -> builder.withClaim(key, value)
-                is Long -> builder.withClaim(key, value)
-                is Boolean -> builder.withClaim(key, value)
-                is Double -> builder.withClaim(key, value)
-                is Date -> builder.withClaim(key, value)
-                is Instant -> builder.withClaim(key, value)
-                is List<*> -> builder.withClaim(key, value)
-                is Map<*, *> -> {
-                    @Suppress("UNCHECKED_CAST")
-                    builder.withClaim(key, value as Map<String, Any>)
-                }
-                else -> builder.withClaim(key, value.toString())
-            }
+            builder.claim(key, value)
         }
 
-        return builder.sign(algorithm)
+        return builder.sign(privateKey)
     }
 
-    fun decode(issuer: String, token: String): DecodedJWT {
+    fun decode(token: String) = try {
+        DefaultJWTParser().parse(token)
+    } catch (e: ParseException) {
+        Log.error("Inválid token: ${e.message}")
+        null
+    }
+
+    fun validate(token: String): JsonWebToken {
         return try {
-            val algorithm = Algorithm.HMAC256(ApplicationConfig.config.security().token())
-            val verificador = JWT.require(algorithm)
-                .withIssuer(issuer)
-                .build()
-            verificador.verify(token)
-        } catch (ex: JWTVerificationException) {
-            throw ApplicationException("Invalid JWT token", 400, ex)
+            val decoded = decode(token)
+                ?: throw ApplicationException("Token inválido ou expirado", 401)
+
+            val issuer = decoded.issuer
+            if (issuer != ApplicationConfig.config.security().issuer()) {
+                throw ApplicationException("Invalid issuer", 401)
+            }
+
+            decoded
+        } catch (e: Exception) {
+            throw ApplicationException("Invalid JWT token", 401, e)
         }
     }
 

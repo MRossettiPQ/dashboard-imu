@@ -7,11 +7,41 @@ application:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
   frontend:
-    url: ${FRONT_END_URL}
+    url: ${FRONTEND_URL}
+  backend:
+    host: ${BACKEND_HOST}
+    port: ${BACKEND_PORT:8000}
+    protocol: ${BACKEND_PROTOCOL}
   security:
+    issuer: ${SECURITY_ISSUER:dashboard-imu}
     token: ${SECURITY_TOKEN}
+    subject: ${SECURITY_ISSUER:dashboard-imu}
+  socket:
+    host: ${SOCKET_HOST}
+    port: ${SOCKET_PORT:8001}
+  mqtt:
+    host: ${MQTT_HOST}
+    port: ${MQTT_PORT:1893}
+  mdns:
+    protocol: ${MDNS_PROTOCOL:http}
+    name: ${MDNS_NAME:dashboard}
+
+smallrye:
+  jwt:
+    sign:
+      key:
+        location: classpath:META-INF/resources/private.pem
+mp:
+  jwt:
+    verify:
+      publickey:
+        location: classpath:META-INF/resources/public.pem
+      issuer: ${application.security.issuer}
 
 quarkus:
+  native:
+    resources:
+      includes: public.pem
   package:
     jar:
       type: fast-jar
@@ -27,7 +57,7 @@ quarkus:
   smallrye-openapi:
     path: /openapi
   http:
-    port: 9000
+    port: ${application.backend.port}
     cors:
       ~: true
       origins: "*"
@@ -38,8 +68,6 @@ quarkus:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %bbytes %Dms'
   hibernate-orm:
-    unsupported-properties:
-      "hibernate.order_inserts": true
     log:
       sql: false
     datasource: "<default>"
@@ -64,6 +92,5 @@ quarkus:
     baseline-on-migrate: true
     baseline-version: "1"
   locales: pt-BR
-#  debug:
-#    port: 5007
-#    enable: true
+  smallrye-jwt:
+    enabled: true

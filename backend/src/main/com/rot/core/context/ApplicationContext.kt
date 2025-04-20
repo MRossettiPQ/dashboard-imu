@@ -1,5 +1,7 @@
 package com.rot.core.context
 
+import com.rot.user.models.User
+import org.eclipse.microprofile.jwt.JsonWebToken
 import java.util.*
 
 object ApplicationContext {
@@ -12,6 +14,9 @@ object ApplicationContext {
             else holder.set(context)
         }
 
+    val user: User? = null
+        get() = field ?: context?.user
+
     fun clear(){
         holder.remove()
     }
@@ -20,8 +25,8 @@ object ApplicationContext {
 
 data class UserContext(
     val id: UUID,
+    val jwt: JsonWebToken
 ) {
-
-
-
+    val user: User
+        get() = User.findOrThrowById(id)
 }

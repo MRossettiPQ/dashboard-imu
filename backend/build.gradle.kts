@@ -8,8 +8,12 @@ val reflectionsVersion: String by project
 val kotlinVersion: String by project
 val authJavaJwt: String by project
 val authJavaRsa: String by project
+val socketIoVersion: String by project
+val moquetteVersion: String by project
 val jacksonVersion: String by project
+val jmdnsVersion: String by project
 
+apply(from = "pem.gradle.kts")
 apply(from = "vue.gradle.kts")
 
 plugins {
@@ -71,14 +75,14 @@ dependencies {
     implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation("io.quarkus:quarkus-smallrye-fault-tolerance")
     implementation("io.quarkus:quarkus-smallrye-context-propagation")
-
-    // === AUTH / OIDC / JWK ===
-    implementation("io.quarkus:quarkus-oidc")
-    implementation("com.auth0:java-jwt:$authJavaJwt")
-    implementation("com.auth0:jwks-rsa:$authJavaRsa")
+    implementation("io.quarkus:quarkus-smallrye-jwt")
+    implementation("io.quarkus:quarkus-smallrye-jwt-build")
 
     // === WEBSOCKET ===
     implementation("io.quarkus:quarkus-websockets")
+    implementation("io.moquette:moquette-broker:$moquetteVersion")
+    implementation("com.corundumstudio.socketio:netty-socketio:$socketIoVersion")
+    implementation("org.jmdns:jmdns:$jmdnsVersion")
 
     // === TEST ===
     testImplementation("io.quarkus:quarkus-junit5")
@@ -91,7 +95,7 @@ dependencies {
     implementation("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
     annotationProcessor("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
 
-    // === BLAZEPERSISTENCE ===
+    // === BLAZE PERSISTENCE ===
     implementation("com.blazebit:blaze-persistence-integration-quarkus-3:$blazePersistenceVersion")
     implementation("com.blazebit:blaze-persistence-integration-querydsl-expressions-jakarta:$blazePersistenceVersion")
     runtimeOnly("com.blazebit:blaze-persistence-integration-hibernate-6.2:$blazePersistenceVersion")

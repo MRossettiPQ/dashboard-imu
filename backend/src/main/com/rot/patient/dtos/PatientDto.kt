@@ -1,0 +1,31 @@
+package com.rot.patient.dtos
+
+import com.rot.patient.models.Patient
+import com.rot.session.enums.ProcedureType
+import com.rot.session.enums.SessionType
+import com.rot.session.models.Session
+import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.util.*
+
+class PatientDto {
+    var id: UUID? = null
+    var createdAt: LocalDateTime? = null
+    var birthday: LocalDateTime? = null
+    var cpf: String? = null
+    var phone: String? = null
+    var stature: BigDecimal? = null
+
+    companion object {
+        fun from(patient: Patient): PatientDto {
+           return PatientDto().apply {
+               this.id = patient.id
+               this.createdAt = patient.createdAt
+               this.cpf = patient.cpf
+               this.phone = patient.phone
+               this.stature = patient.stature
+               this.birthday = patient.birthday
+           }
+        }
+    }
+}

@@ -2,12 +2,12 @@ package com.rot.core.jaxrs
 
 
 import jakarta.ws.rs.core.Response
-import java.io.Serializable
 
-class ResultContent<T> : Serializable {
+class ResultContent<T> {
 
     private var statusCode: Int = 200
     private var data: ContentDto<T> = ContentDto()
+    private var fields: String? = null
 
     fun withStatusCode(code: Response.Status): ResultContent<T> {
         statusCode = code.statusCode
@@ -15,8 +15,14 @@ class ResultContent<T> : Serializable {
         return this
     }
 
+    fun filterFields(fields: String): ResultContent<T> {
+        this.fields = fields
+        return this
+    }
+
     fun withStatusCode(code: Int): ResultContent<T> {
         statusCode = code
+        data.code = code
         return this
     }
 
@@ -32,7 +38,7 @@ class ResultContent<T> : Serializable {
 
     fun build(): Response {
         return Response.status(statusCode)
-            .entity(data)
+            .entity(if (fields != null) null else data)
             .build()
     }
 
@@ -47,16 +53,34 @@ class ResultContent<T> : Serializable {
     }
 }
 
-class ContentDto<T> : Serializable {
+class ContentDto<T> {
     var code: Int = 200
     var message: String? = null
     var content: T? = null
 }
 
-class Pagination<T> : Serializable {
+class Pagination<T> {
     var page: Int = 1
     var rpp: Int = 10
+    var count: Long = 0
     var hasMore: Boolean = true
-    var list: List<T> = mutableListOf()
+    var list: MutableList<T> = mutableListOf()
     var extra: MutableMap<String, Any?> = mutableMapOf()
+
+    fun <R> transform(fn: (T) -> R): Pagination<R> {
+        val transformed = Pagination<R>()
+        transformed.page = page
+        transformed.rpp = rpp
+        transformed.hasMore = hasMore
+        transformed.count = count
+        transformed.list = list.map(fn).toMutableList()
+        transformed.extra = extra
+        return transformed
+    }
+
+    fun addExtraData(key: String, value: Any?): Pagination<T> {
+        this.extra[key] = value
+        return this
+    }
+
 }

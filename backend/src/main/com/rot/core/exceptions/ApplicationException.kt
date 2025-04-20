@@ -6,7 +6,7 @@ import java.lang.Exception
 
 class ApplicationException(
     override val message: String? = null,
-    private val statusCode: Int? = 400,
+    private val statusCode: Int? = 500,
     private val exception: Exception? = null,
 ) : RuntimeException(message) {
 
