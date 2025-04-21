@@ -18,7 +18,7 @@ class ApplicationExceptionProvider : ExceptionMapper<ApplicationException> {
 class ExceptionProvider : ExceptionMapper<Exception> {
     override fun toResponse(e: Exception): Response {
         e.printStackTrace()
-        return ApplicationException(e.message, 500).toResponse()
+        return ApplicationException("Undefined error", 500).toResponse()
     }
 }
 

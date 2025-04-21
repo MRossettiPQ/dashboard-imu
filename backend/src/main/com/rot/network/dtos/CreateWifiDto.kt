@@ -1,4 +1,4 @@
-package com.rot.wifi.dtos
+package com.rot.network.dtos
 
 import jakarta.validation.constraints.NotEmpty
 

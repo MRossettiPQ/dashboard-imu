@@ -12,6 +12,8 @@ val jmdnsVersion: String by project
 val mdnsVersion: String by project
 val sqliteVersion: String by project
 val jSerialCommVersion: String by project
+val oshiVersion: String by project
+val jnaVersion: String by project
 
 apply(from = "pem.gradle.kts")
 apply(from = "vue.gradle.kts")

@@ -2,6 +2,7 @@ package com.rot.user.controllers
 
 import com.rot.core.jaxrs.ResultContent
 import com.rot.user.dtos.UserDto
+import com.rot.user.enums.UserRoleString
 import com.rot.user.models.User
 import io.quarkus.security.Authenticated
 import jakarta.annotation.security.RolesAllowed
@@ -28,6 +29,7 @@ class UserController {
     }
 
     @GET
+    @RolesAllowed(UserRoleString.PHYSIOTHERAPIST, UserRoleString.ADMINISTRATOR)
     @Path("/")
     fun list(
         @DefaultValue("1") @RestQuery page: Int,

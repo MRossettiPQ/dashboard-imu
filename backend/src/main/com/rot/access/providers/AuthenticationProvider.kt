@@ -3,12 +3,17 @@ package com.rot.access.providers
 import com.rot.core.context.ApplicationContext
 import com.rot.core.context.UserContext
 import com.rot.core.exceptions.ApplicationException
+import com.rot.core.utils.TransactionUtils.runInNewTransaction
+import com.rot.user.models.User
+import io.quarkus.narayana.jta.QuarkusTransaction
 import io.quarkus.security.Authenticated
 import io.quarkus.security.PermissionsAllowed
 import io.quarkus.security.identity.SecurityIdentity
 import io.smallrye.jwt.auth.cdi.NullJsonWebToken
 import jakarta.annotation.Priority
-import jakarta.annotation.security.*
+import jakarta.annotation.security.DeclareRoles
+import jakarta.annotation.security.PermitAll
+import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.RequestScoped
 import jakarta.ws.rs.Priorities
 import jakarta.ws.rs.container.ContainerRequestContext
@@ -17,7 +22,7 @@ import jakarta.ws.rs.container.ResourceInfo
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.ext.Provider
 import org.eclipse.microprofile.jwt.JsonWebToken
-import java.util.UUID
+import java.util.*
 
 
 @Provider
@@ -47,6 +52,13 @@ class AuthenticationProvider(
 
         val uuid = jwt.getClaim<String>("reference")
             ?: throw ApplicationException("JWT claim 'reference' is missing.", 401)
+
+        runInNewTransaction().call {
+            User.createQuery()
+                .where(User.q.id.eq(UUID.fromString(uuid)))
+                .where(User.q.active.isTrue)
+                .fetchFirst() ?: throw ApplicationException("User not found or inactive", 401)
+        }
 
         ApplicationContext.context = UserContext(UUID.fromString(uuid), jwt)
     }

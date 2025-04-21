@@ -1,5 +1,6 @@
 package com.rot.session.dtos
 
+import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.ProcedureType
 import com.rot.session.enums.SessionType
 import com.rot.session.models.Session
@@ -15,13 +16,7 @@ class SessionDto {
 
     companion object {
         fun from(session: Session): SessionDto {
-           return SessionDto().apply {
-               this.id = session.id
-               this.date = session.date
-               this.type = session.type
-               this.procedure = session.procedure
-               this.observation = session.observation
-           }
+            return JsonUtils.MAPPER.convertValue(session, SessionDto::class.java)
         }
     }
 }

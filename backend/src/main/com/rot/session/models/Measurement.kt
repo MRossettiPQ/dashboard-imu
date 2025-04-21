@@ -36,20 +36,84 @@ class Measurement : BaseEntity<Measurement>() {
     var sensorName: String? = null
 
     @NotNull
-    @Column(name = "measurement_order", nullable = false, updatable = false)
-    var measurementOrder: Int? = null
+    @Column(name = "read_order", nullable = false, updatable = false)
+    var readOrder: Int? = null
 
-//    @NotNull
-//    @Column(name = "acc_x", nullable = false, updatable = false)
-//    var accX: BigDecimal? = null
-//
-//    @NotNull
-//    @Column(name = "acc_y", nullable = false, updatable = false)
-//    var accY: BigDecimal? = null
-//
-//    @NotNull
-//    @Column(name = "acc_z", nullable = false, updatable = false)
-//    var accZ: BigDecimal? = null
+    @NotNull
+    @Column(name = "accel_mss_x", nullable = false, updatable = false)
+    var accelMssX: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "accel_mss_y", nullable = false, updatable = false)
+    var accelMssY: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "accel_mss_z", nullable = false, updatable = false)
+    var accelMssZ: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "accel_lin_x", nullable = false, updatable = false)
+    var accelLinX: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "accel_lin_y", nullable = false, updatable = false)
+    var accelLinY: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "accel_lin_z", nullable = false, updatable = false)
+    var accelLinZ: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "gyro_rads_x", nullable = false, updatable = false)
+    var gyroRadsX: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "gyro_rads_y", nullable = false, updatable = false)
+    var gyroRadsY: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "gyro_rads_z", nullable = false, updatable = false)
+    var gyroRadsZ: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "roll", nullable = false, updatable = false)
+    var roll: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "pitch", nullable = false, updatable = false)
+    var pitch: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "yaw", nullable = false, updatable = false)
+    var yaw: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "euler_x", nullable = false, updatable = false)
+    var eulerX: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "euler_y", nullable = false, updatable = false)
+    var eulerY: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "euler_z", nullable = false, updatable = false)
+    var eulerZ: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "quaternion_x", nullable = false, updatable = false)
+    var quaternionX: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "quaternion_y", nullable = false, updatable = false)
+    var quaternionY: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "quaternion_z", nullable = false, updatable = false)
+    var quaternionZ: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "quaternion_w", nullable = false, updatable = false)
+    var quaternionW: BigDecimal? = null
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])

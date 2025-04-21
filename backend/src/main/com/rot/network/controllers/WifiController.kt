@@ -1,13 +1,10 @@
-package com.rot.wifi.controllers
+package com.rot.network.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.user.dtos.UserDto
-import com.rot.user.models.User
-import com.rot.wifi.dtos.CreateWifiDto
-import com.rot.wifi.dtos.WifiDto
-import com.rot.wifi.models.Wifi
+import com.rot.network.dtos.CreateWifiDto
+import com.rot.network.dtos.NetworkConfigurationDto
+import com.rot.network.models.NetworkConfiguration
 import io.quarkus.security.Authenticated
-import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.validation.Valid
 import jakarta.ws.rs.*
@@ -27,8 +24,8 @@ class WifiController {
     @GET
     @Path("/{uuid}")
     fun get(@RestPath("uuid") uuid: UUID): Response? {
-        val wifi = Wifi.findOrThrowById(uuid)
-        return ResultContent.of().withContent(WifiDto.from(wifi)).build()
+        val networkConfiguration = NetworkConfiguration.findOrThrowById(uuid)
+        return ResultContent.of().withContent(NetworkConfigurationDto.from(networkConfiguration)).build()
     }
 
     @GET
@@ -37,18 +34,18 @@ class WifiController {
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,
     ): Response? {
-        val query = Wifi.createQuery()
+        val query = NetworkConfiguration.createQuery()
 
-        return ResultContent.of().withContent(Wifi.fetch(query, page, rpp).transform(WifiDto::from)).build()
+        return ResultContent.of().withContent(NetworkConfiguration.fetch(query, page, rpp).transform(NetworkConfigurationDto::from)).build()
     }
 
     @POST
     @Path("")
     fun save(@Valid body: CreateWifiDto): Response? {
-        val wifi = Wifi()
-        wifi.ssid = body.ssid
-        wifi.encryptAndSetPassword(body.password!!)
-        return ResultContent.of().withContent(WifiDto.from(wifi.save())).build()
+        val networkConfiguration = NetworkConfiguration()
+        networkConfiguration.ssid = body.ssid
+        networkConfiguration.encryptAndSetPassword(body.password!!)
+        return ResultContent.of().withContent(NetworkConfigurationDto.from(networkConfiguration.save())).build()
     }
 
 }

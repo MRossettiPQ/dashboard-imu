@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+// Variável para controlar se o "START" já foi enviado
+bool alreadySent = false;
+
 class Logger {
     public:
         static void debug(const char* tag, const char* fmt, ...) {

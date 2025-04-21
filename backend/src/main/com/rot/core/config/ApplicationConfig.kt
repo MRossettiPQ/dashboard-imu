@@ -55,6 +55,9 @@ interface ApplicationConfig {
         @WithName("name")
         fun name(): String
 
+        @WithName("manufacturer")
+        fun manufacturer(): String
+
         @WithName("baud-rate")
         fun baudRate(): Int
     }

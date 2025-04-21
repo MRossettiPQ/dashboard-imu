@@ -1,4 +1,4 @@
-package com.rot.wifi.models
+package com.rot.network.models
 
 import com.querydsl.core.annotations.Config
 import com.rot.core.exceptions.ApplicationException
@@ -12,17 +12,25 @@ import java.util.*
 
 
 @Entity
-@Table(name = "wifi")
+@Table(name = "network_configurations")
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
-class Wifi : BaseEntity<Wifi>() {
-    companion object : BaseCompanion<Wifi, UUID, QWifi> {
-        override val entityClass: Class<Wifi> = Wifi::class.java
-        override val q: QWifi = QWifi.wifi
+class NetworkConfiguration : BaseEntity<NetworkConfiguration>() {
+    companion object : BaseCompanion<NetworkConfiguration, UUID, QNetworkConfiguration> {
+        override val entityClass: Class<NetworkConfiguration> = NetworkConfiguration::class.java
+        override val q: QNetworkConfiguration = QNetworkConfiguration.networkConfiguration
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     override var id: UUID? = null
+
+    @Column(name = "active", nullable = false)
+    var active: Boolean = false
+
+    @NotNull
+    @NotEmpty
+    @Column(name = "ip", unique = true, nullable = false, updatable = false)
+    var ip: String? = null
 
     @NotNull
     @NotEmpty
@@ -34,13 +42,11 @@ class Wifi : BaseEntity<Wifi>() {
     @Column(name = "password", nullable = false)
     var password: String? = null
 
-    @Transient
-    var decryptedPassword: String? = null
-        get() {
-            return password?.let {
-                val key = EncryptUtils.loadPrivateKey("/META-INF/resources/encrypt/private.key")
-                EncryptUtils.decryptWithPrivateKey(password!!, key)
-            }
+    @get:Transient
+    val decryptedPassword: String?
+        get() = password?.let {
+            val key = EncryptUtils.loadPrivateKey("/META-INF/resources/encrypt/private.key")
+            EncryptUtils.decryptWithPrivateKey(password!!, key)
         }
 
     fun encryptAndSetPassword(password: String) {
@@ -61,7 +67,7 @@ class Wifi : BaseEntity<Wifi>() {
         }
     }
 
-    override fun save(): Wifi {
+    override fun save(): NetworkConfiguration {
         validate()
         checkSameSsid()
         return super.save()

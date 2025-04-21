@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter
 
 object JsonUtils {
     // Instância do ObjectMapper configurado
-    private val MAPPER = createMapper()
+    val MAPPER = createMapper()
 
     /**
      * Cria e configura o ObjectMapper com módulos e configurações para tratamento de JSON
@@ -202,7 +202,6 @@ object JsonUtils {
         println(filtered)
         return filtered
     }
-
 
     /**
      * Filtra os campos de um JsonNode com base na lista de campos fornecida.

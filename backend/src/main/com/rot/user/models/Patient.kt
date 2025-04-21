@@ -1,14 +1,9 @@
-package com.rot.patient.models
+package com.rot.user.models
 
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.user.enums.UserRole
-import com.rot.user.models.User
 import jakarta.persistence.*
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*

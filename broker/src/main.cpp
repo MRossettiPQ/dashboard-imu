@@ -1,68 +1,129 @@
-#include "main.h"
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <esp_now.h>
+#include <WiFi.h>
+#include "logger.h"
 
-#define USB_VID 0x2341
-#define USB_PID 0x8036
-#define USB_PRODUCT "imu-dashboard-broker"
-#define USB_MANUFACTURER "mrossetti.dev"
-#define USB_SERIAL "ESP001"
+#define IMU_MANUFACTURER "rot"
+#define IMU_PRODUCT "imu-dashboard-broker"
+#define IMU_DESCRIPTOR "Broker esp-now"
 
-TaskHandle_t Task1;
-TaskHandle_t Task2;
-
-
-[[noreturn]] void Task1code(void* parameter) {
-    Logger::info("Task1code", "Running on core %d", xPortGetCoreID());
-    for (;;) {
-        const unsigned long current_millis = millis();
-        Logger::info("Task1code", "Running on core %d", current_millis);
-
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
+void sendToPeers(const String& msg) {
+    const uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // Broadcast
+    esp_now_send(broadcastAddress, reinterpret_cast<const uint8_t*>(msg.c_str()), msg.length());
 }
 
-[[noreturn]] void Task2code(void* parameter) {
-    Logger::info("Task2code", "Running on core %d", xPortGetCoreID());
-    for (;;) {
-        const unsigned long current_millis = millis();
-        Logger::info("Task2code", "Running on core %d", current_millis);
+void setupEspNow() {
+    // Inicializa Wi-Fi no modo STA
+    WiFiClass::mode(WIFI_STA);
+    if (esp_now_init() != ESP_OK) {
+        Logger::error("ESP-NOW", "Erro ao inicializar ESP-NOW");
+        return;
+    }
+    Logger::info("ESP-NOW", "ESP-NOW inicializado");
+}
 
-        sensor_instance.scanner();
-        sensor_instance.configure();
+void sendAvailableNetworks() {
+    const int n = WiFi.scanNetworks();
 
-        wifi_instance.check();
+    JsonDocument doc;
+    doc["type"] = "WIFI_SCAN_RESULT";
 
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+    // Novo jeito de criar um array
+    const JsonArray arr = doc["data"].to<JsonArray>();
+
+    for (int i = 0; i < n; ++i) {
+        // Novo jeito de adicionar objetos ao array
+        auto net = arr.add<JsonObject>();
+        net["ssid"] = WiFi.SSID(i);
+        net["rssi"] = WiFi.RSSI(i);
+    }
+
+    // Serializa o JSON e envia via ESP-NOW
+    String payload;
+    serializeJson(doc, payload);
+    sendToPeers(payload);
+}
+
+void sendDeviceInfo() {
+    JsonDocument doc;
+    doc["type"] = "DEVICE_INFO_RESPONSE";
+    const JsonObject data = doc["data"].to<JsonObject>();
+
+    data["descriptor"] = IMU_DESCRIPTOR;
+    data["productName"] = IMU_PRODUCT;
+    data["manufacturer"] = IMU_MANUFACTURER;
+
+    serializeJson(doc, Serial);
+    Serial.println();
+    alreadySent = true;
+}
+
+void processCommand(String command) {
+    command.trim();
+
+    // Se o comando começar com '{', trata como JSON
+    if (command.startsWith("{")) {
+        JsonDocument doc;
+        const DeserializationError error = deserializeJson(doc, command);
+
+        if (error) {
+            Logger::error("COMMAND", R"({"error":"INVALID_JSON"})");
+            return;
+        }
+
+        // Verifica se o JSON tem o campo "type" (nova sintaxe)
+        if (doc["type"].is<const char*>()) {
+            // Verifica se "type" existe e é string
+            const char* type = doc["type"];
+            if (strcmp(type, "DEVICE_INFO_REQUEST") == 0) {
+                sendDeviceInfo();
+            }
+            else if (doc["type"] == "WIFI_REGISTER_REQUEST") {
+                const char* ssid = doc["ssid"];
+                const char* password = doc["password"];
+
+                // Monta JSON para enviar para os peers via ESP-NOW
+                JsonDocument out;
+                out["type"] = "WIFI_REGISTER";
+                out["ssid"] = ssid;
+                out["password"] = password;
+
+                String payload;
+                serializeJson(out, payload);
+                sendToPeers(payload);
+            }
+        }
+    }
+    else if (command == "DEVICE_INFO_REQUEST") {
+        // Se for um comando de texto simples
+        sendDeviceInfo();
     }
 }
 
 void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
-    Logger::info("SETUP", "Initialize sensor");
-
-    wifi_instance.configure();
-
-    xTaskCreatePinnedToCore(
-        Task1code,
-        "Task1",
-        10000, /* Stack size in words */
-        nullptr,
-        1,
-        &Task1,
-        0
-    );
-
-    xTaskCreatePinnedToCore(
-        Task2code,
-        "Task2",
-        10000, /* Stack size in words */
-        nullptr,
-        1,
-        &Task2,
-        1
-    );
+    Logger::info("SETUP", "Initializing...");
+    Logger::info("SETUP", "Chip model: %s\n", ESP.getChipModel());
+    Logger::info("SETUP", "Chip revision: %d\n", ESP.getChipRevision());
+    Logger::info("SETUP", "Number of cores: %d\n", ESP.getChipCores());
 }
 
 void loop() {
+    // Verifica se há dados na serial e se é um comando
+    if (Serial.available()) {
+        const String command = Serial.readStringUntil('\n');
+        processCommand(command);
+    }
+
+    // Detecta reconexão (se a serial foi aberta após fechamento)
+    if (!alreadySent) {
+        sendDeviceInfo();
+    }
+
+    if (!Serial.available() && alreadySent) {
+        alreadySent = false;
+    }
+    vTaskDelay(200 / portTICK_PERIOD_MS);
 }

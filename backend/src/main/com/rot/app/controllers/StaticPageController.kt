@@ -48,4 +48,5 @@ class StaticPageResource {
 
         return Response.ok(file.readBytes()).type(mediaType).build()
     }
+
 }

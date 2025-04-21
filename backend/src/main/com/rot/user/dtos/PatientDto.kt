@@ -1,9 +1,6 @@
-package com.rot.patient.dtos
+package com.rot.user.dtos
 
-import com.rot.patient.models.Patient
-import com.rot.session.enums.ProcedureType
-import com.rot.session.enums.SessionType
-import com.rot.session.models.Session
+import com.rot.user.models.Patient
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
