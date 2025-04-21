@@ -54,8 +54,10 @@ void sendDeviceInfo() {
     data["productName"] = IMU_PRODUCT;
     data["manufacturer"] = IMU_MANUFACTURER;
 
-    serializeJson(doc, Serial);
-    Serial.println();
+    String payload;
+    serializeJson(doc, payload);
+    payload += '\n';
+    Serial.println(payload);
     alreadySent = true;
 }
 
@@ -91,6 +93,7 @@ void processCommand(String command) {
 
                 String payload;
                 serializeJson(out, payload);
+                payload += '\n';
                 sendToPeers(payload);
             }
         }
