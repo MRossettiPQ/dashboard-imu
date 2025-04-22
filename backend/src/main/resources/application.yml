@@ -21,7 +21,7 @@ application:
     port: ${SOCKET_PORT:8001}
   mqtt:
     host: ${MQTT_HOST}
-    port: ${MQTT_PORT:1893}
+    port: ${MQTT_PORT:8002}
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
     name: ${MDNS_NAME:dashboard}

@@ -281,10 +281,6 @@ class SensorUtils {
             }
         }
 
-        void loadCalibration() const {
-            calibration.load();
-        }
-
         void calibrate(const bool on_init = false) {
             calibrating = true;
             #if defined(ESP_PLATFORM) || defined(ESP32)
@@ -320,7 +316,6 @@ class SensorUtils {
                 writeJson('/memory.json', memory);
 
                 resetLed();
-
 
                 calibration.save();
 

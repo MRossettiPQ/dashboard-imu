@@ -12,9 +12,12 @@
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
+int count = 0;
+JsonDocument command;
+JsonDocument measurements;
 
 void StopMeasurement() {
-    measurements = "";
+    // measurements = "";
     cmdActual = 0;
     numberOfBuffer = 0;
 }
