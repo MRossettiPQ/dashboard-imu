@@ -1,11 +1,8 @@
 package com.rot.network.services
 
 import com.rot.network.models.NetworkConfiguration
-import com.rot.serial.dtos.SerialDeviceInfoRequestDto
-import com.rot.serial.dtos.SerialWifiListResponseDto
 import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.enterprise.event.Observes
 import jakarta.transaction.Transactional
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -18,11 +15,6 @@ import javax.jmdns.JmDNS
 class NetworkConfigurationService(
     private val jmdns: JmDNS
 ) {
-
-    @Transactional
-    fun onDeviceInfoRequestDto(@Observes serialDeviceInfoRequestDto: SerialWifiListResponseDto) {
-        println("onDeviceInfoRequestDto: $serialDeviceInfoRequestDto")
-    }
 
     @Transactional
     @Scheduled(every = "5m", delay = 20, delayUnit = TimeUnit.SECONDS)

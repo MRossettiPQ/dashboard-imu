@@ -14,10 +14,6 @@ inline void setupInternalWifi() {
     WiFi.softAPConfig(local_ip, gateway, subnet);
 
     // Inicia o AP
-    const String name = "MPU-MANAGER-";
-    const String mac = WiFi.macAddress();
-    ap_ssid = name + mac;
-    ap_password = mac;
     WiFi.softAP(ap_ssid, ap_password);
     Logger::info("WiFi", "Connecting to AP");
 
@@ -90,7 +86,7 @@ inline void onConnected() {
     Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", sta_ip.c_str());
 }
 
-inline void eventsWiFi(const WiFiEvent_t event) {
+inline void eventsWiFi(WiFiEvent_t event) {
     Logger::info("WiFi", "Event: %d", event);
     switch (event) {
         case ARDUINO_EVENT_WIFI_READY:

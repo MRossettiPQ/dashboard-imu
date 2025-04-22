@@ -3,8 +3,14 @@
 
 #include <Arduino.h>
 
+// Variável para controlar se o "START" já foi enviado
+bool alreadySent = false;
+
 class Logger {
     public:
+        static void setup() {
+            Serial.begin(115200);
+        }
         static void debug(const char* tag, const char* fmt, ...) {
             va_list args;
             va_start(args, fmt);

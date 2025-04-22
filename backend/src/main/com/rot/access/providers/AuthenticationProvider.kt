@@ -5,7 +5,6 @@ import com.rot.core.context.UserContext
 import com.rot.core.exceptions.ApplicationException
 import com.rot.core.utils.TransactionUtils.runInNewTransaction
 import com.rot.user.models.User
-import io.quarkus.narayana.jta.QuarkusTransaction
 import io.quarkus.security.Authenticated
 import io.quarkus.security.PermissionsAllowed
 import io.quarkus.security.identity.SecurityIdentity

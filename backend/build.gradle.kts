@@ -35,24 +35,13 @@ repositories {
 }
 
 dependencies {
-    // === PLATFORMS ===
-    implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
-    implementation(enforcedPlatform("${quarkusPlatformGroupId}:quarkus-blaze-persistence-bom:${quarkusPlatformVersion}"))
+    // === QUARKUS PLATFORM (BoM) ===
+    implementation(enforcedPlatform("$quarkusPlatformGroupId:$quarkusPlatformArtifactId:$quarkusPlatformVersion"))
+    implementation(enforcedPlatform("$quarkusPlatformGroupId:quarkus-blaze-persistence-bom:$quarkusPlatformVersion"))
 
     // === KOTLIN ===
     implementation(kotlin("stdlib-jdk8"))
     implementation("io.quarkus:quarkus-kotlin")
-
-    // === WEB / REST ===
-    implementation("io.quarkus:quarkus-rest")
-    implementation("io.quarkus:quarkus-rest-jaxb")
-    implementation("io.quarkus:quarkus-rest-jsonb")
-    implementation("io.quarkus:quarkus-rest-jackson")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-
-    // === SPA ===
-    implementation("io.quarkus:quarkus-vertx-http")
-    implementation("io.quarkus:quarkus-reactive-routes")
 
     // === QUARKUS CORE ===
     implementation("io.quarkus:quarkus-arc")
@@ -62,29 +51,49 @@ dependencies {
     implementation("io.quarkus:quarkus-scheduler")
     implementation("io.quarkus:quarkus-config-yaml")
 
-    // === DATABASE ===
-    implementation("org.reflections:reflections:$reflectionsVersion")
+    // === REST / JSON / WEBSERVICES ===
+    implementation("io.quarkus:quarkus-rest")
+    implementation("io.quarkus:quarkus-rest-jaxb")
+    implementation("io.quarkus:quarkus-rest-jsonb")
+    implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+
+    // === FRONTEND / SPA / HTTP ===
+    implementation("io.quarkus:quarkus-vertx-http")
+    implementation("io.quarkus:quarkus-reactive-routes")
+
+    // === DATABASE / ORM ===
     implementation("io.quarkus:quarkus-hibernate-orm")
     implementation("io.quarkus:quarkus-hibernate-orm-panache")
     implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin")
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-hibernate-validator")
+    implementation("io.quarkus:quarkus-flyway")
+    implementation("org.reflections:reflections:$reflectionsVersion")
     implementation("io.quarkiverse.hibernatetypes:quarkus-hibernate-types:$quarkusHibernateTypes")
     implementation("io.quarkiverse.jdbc:quarkus-jdbc-sqlite:$sqliteVersion")
 
-    // === FLYWAY ===
-    implementation("io.quarkus:quarkus-flyway")
+    // === QUERYDSL ===
+    implementation("com.querydsl:querydsl-core:$queryDslVersion")
+    implementation("com.querydsl:querydsl-jpa:$queryDslVersion:jakarta")
+    implementation("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
+    kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
+    annotationProcessor("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
+
+    // === BLAZEPERSISTENCE ===
+    implementation("com.blazebit:blaze-persistence-integration-quarkus-3:$blazePersistenceVersion")
+    implementation("com.blazebit:blaze-persistence-integration-querydsl-expressions-jakarta:$blazePersistenceVersion")
+    runtimeOnly("com.blazebit:blaze-persistence-integration-hibernate-6.2:$blazePersistenceVersion")
 
     // === SMALLRYE ===
     implementation("io.quarkus:quarkus-smallrye-jwt")
+    implementation("io.quarkus:quarkus-smallrye-jwt-build")
     implementation("io.quarkus:quarkus-smallrye-health")
     implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation("io.quarkus:quarkus-smallrye-fault-tolerance")
     implementation("io.quarkus:quarkus-smallrye-context-propagation")
-    implementation("io.quarkus:quarkus-smallrye-jwt")
-    implementation("io.quarkus:quarkus-smallrye-jwt-build")
 
-    // === WEBSOCKET ===
+    // === WEBSOCKET / SOCKET.IO ===
     implementation("io.quarkus:quarkus-websockets")
     implementation("com.corundumstudio.socketio:netty-socketio:$socketIoVersion")
 
@@ -95,24 +104,9 @@ dependencies {
     implementation("org.jmdns:jmdns:$jmdnsVersion")
     implementation("io.quarkiverse.mdns:quarkus-mdns:$mdnsVersion")
 
-    // === TEST ===
+    // === TESTING ===
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
-
-    // === SERIAL ===
-    implementation("com.fazecast:jSerialComm:$jSerialCommVersion")
-
-    // === QUERYDSL ===
-    kapt("com.querydsl:querydsl-apt:${queryDslVersion}:jakarta")
-    implementation("com.querydsl:querydsl-core:$queryDslVersion")
-    implementation("com.querydsl:querydsl-jpa:$queryDslVersion:jakarta")
-    implementation("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
-    annotationProcessor("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
-
-    // === BLAZE PERSISTENCE ===
-    implementation("com.blazebit:blaze-persistence-integration-quarkus-3:$blazePersistenceVersion")
-    implementation("com.blazebit:blaze-persistence-integration-querydsl-expressions-jakarta:$blazePersistenceVersion")
-    runtimeOnly("com.blazebit:blaze-persistence-integration-hibernate-6.2:$blazePersistenceVersion")
 }
 
 group = "com.rot"

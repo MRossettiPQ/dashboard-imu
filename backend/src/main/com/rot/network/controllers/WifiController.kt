@@ -48,4 +48,14 @@ class WifiController {
         return ResultContent.of().withContent(NetworkConfigurationDto.from(networkConfiguration.save())).build()
     }
 
+    @PATCH
+    @Path("/{uuid}")
+    fun update(@PathParam("uuid") uuid: UUID, @Valid body: CreateWifiDto): Response? {
+        val networkConfiguration = NetworkConfiguration.findOrThrowById(uuid)
+        networkConfiguration.ssid = body.ssid
+        networkConfiguration.encryptAndSetPassword(body.password!!)
+        return ResultContent.of().withContent(NetworkConfigurationDto.from(networkConfiguration.save())).build()
+    }
+
+
 }

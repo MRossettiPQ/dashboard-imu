@@ -1,7 +1,6 @@
 package com.rot.app.controllers
 
 import com.rot.core.exceptions.ApplicationException
-import com.rot.core.utils.ResourceUtils
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
