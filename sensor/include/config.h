@@ -19,6 +19,8 @@ String server_ip = "192.168.0.1";
 #define SOCKET_PORT 8001
 #define MQTT_PORT 8002
 
+#define BUFFER_LENGTH 30
+
 // Pin led
 #define LED_READY 2
 
@@ -43,7 +45,6 @@ IPAddress subnet(255, 255, 255, 0);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_TIME_API, -3 * 3600, 60000);
 
-WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
 
 // Network
@@ -71,5 +72,36 @@ void writeJson(const char *path, const JsonDocument &doc);
 // Sensor
 void configureMpu();
 void scannerMpu();
+
+
+// LOOP READ
+enum class CommandType { NONE, START, STOP, RESTART };
+
+constexpr unsigned long delay_interval = 8;
+long previous_millis = 0;
+
+JsonDocument command;
+JsonDocument buffer;
+CommandType actual_command;
+
+int last_dispatch = 0;
+int measurement_count = 0;
+int measurement_count_total = 0;
+
+inline CommandType getCommandTypeFromJson(const char* type_str) {
+    // Converte o valor do tipo string para CommandType
+    if (strcmp(type_str, "START") == 0) {
+        return CommandType::START;
+    }
+
+    if (strcmp(type_str, "STOP") == 0) {
+        return CommandType::STOP;
+    }
+
+    if (strcmp(type_str, "RESTART") == 0) {
+        return CommandType::RESTART;
+    }
+    return CommandType::NONE;
+}
 
 #endif //CONFIG_H

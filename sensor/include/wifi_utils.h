@@ -1,9 +1,43 @@
 #ifndef WIFI_UTILS_H
 #define WIFI_UTILS_H
+#include <HTTPClient.h>
 #include "config.h"
 #include "fs_utils.h"
 #include "logger.h"
 
+String protocol = "http";
+
+inline void getWifiExternal() {
+    const IPAddress apIP(192, 168, 4, 1);
+    String url = protocol + "://" + apIP.toString() + "/api/wifi";
+
+    HTTPClient http;
+    http.begin(url);
+    int httpResponseCode = http.GET();
+    if (httpResponseCode > 0) {
+        String payload = http.getString();
+        JsonDocument doc;
+        const DeserializationError error = deserializeJson(doc, payload);
+        if (error) {
+            Logger::error("WiFi", "deserializeJson() failed: %s", error.c_str());
+            return;
+        }
+
+        // Acessar os campos
+        const int code = doc["code"];
+        const String message = doc["message"].as<String>();
+        const char* sta_ssid = doc["content"]["sta_ssid"];
+
+        Logger::info("WiFi", "Code: %i", code);
+        Logger::info("WiFi", "Message: %s", message);
+        Logger::info("WiFi", "STA SSID: %s", String(sta_ssid));
+    }
+    else {
+        Logger::error("WiFi", "HTTP request failed, code: %i", httpResponseCode);
+    }
+
+    http.end();
+}
 
 inline void setupInternalWifi() {
     Logger::info("WiFi", "Configuring internal network");
@@ -40,7 +74,7 @@ inline void setupExternalWifi() {
     loadConfigWifi();
 
     if (sta_ssid.length() == 0) {
-      return;
+        return;
     }
 
     WiFi.begin(sta_ssid, sta_password);
@@ -60,6 +94,7 @@ inline void checkExternalWifi() {
     }
 
     if (WiFiClass::status() == WL_CONNECTED) {
+        WebSocketClient::configure();
         sta_ip = WiFi.localIP().toString();
         Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", sta_ip.c_str());
     }

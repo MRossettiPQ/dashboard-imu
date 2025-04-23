@@ -7,7 +7,7 @@
 #include <logger.h>
 
 constexpr uint8_t EEPROM_SIZE = 1 + sizeof(float) * 3 * 4;
-extern MPU9250 mpu;
+MPU9250 mpu;
 
 #define ADDRESS_SENSOR 0x68
 #define SDA_PIN 21
@@ -20,9 +20,6 @@ enum EEP_ADDR {
     EEP_MAG_BIAS   = 0x19,
     EEP_MAG_SCALE  = 0x25
 };
-
-class SensorUtils;
-extern SensorUtils sensor_instance;
 
 class SensorUtils {
     int nDevices = 0;
@@ -176,7 +173,7 @@ class SensorUtils {
     }
 
     public:
-        static JsonDocument read() {
+        static JsonObject read() {
             JsonDocument measurement;
             String read_at = timeClient.getFormattedTime();
             const double acc_bias_x = mpu.getAccBiasX();
@@ -247,9 +244,9 @@ class SensorUtils {
             String payload;
             serializeJsonPretty(measurement, payload);
 
-            Logger::info("SETUP", "Reading sensor:\n%s", payload.c_str());
+            Logger::info("SETUP", "Reading sensor: %s", payload.c_str());
 
-            return measurement;
+            return measurement.as<JsonObject>();
         }
 
         static void configure() {
@@ -297,8 +294,8 @@ class SensorUtils {
             Logger::info("MPU", "Loaded calibration value is : ");
             calibration.load();
 
-            JsonDocument memory = readJson('/memory.json');
-            const bool calibrated = memory['calibrate'].as<bool>();
+            JsonDocument memory = readJson("/memory.json");
+            const bool calibrated = memory["calibrate"].as<bool>();
             if (!on_init || !calibrated) {
                 mpu.verbose(true);
 
@@ -313,7 +310,7 @@ class SensorUtils {
                 mpu.calibrateMag();
 
                 memory["calibrate"] = true;
-                writeJson('/memory.json', memory);
+                writeJson("/memory.json", memory);
 
                 resetLed();
 
@@ -327,4 +324,5 @@ class SensorUtils {
         }
 };
 
+auto sensor_instance = SensorUtils();
 #endif  // MPU_SOCKET_SERVER_MPU_SENSOR_H

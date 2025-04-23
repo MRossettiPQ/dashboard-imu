@@ -86,7 +86,7 @@ inline void onConnected() {
     Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", sta_ip.c_str());
 }
 
-inline void eventsWiFi(WiFiEvent_t event) {
+inline void eventsWiFi(const WiFiEvent_t event) {
     Logger::info("WiFi", "Event: %d", event);
     switch (event) {
         case ARDUINO_EVENT_WIFI_READY:
