@@ -94,7 +94,7 @@ class SciLabServices {
 
         val length = syncList.size
         Log.info("Total synchronized timestamp pairs: $length")
-        val averagedPairs = syncList.map { (time, groups) ->
+        val averagedPairs = syncList.map { (_, groups) ->
             val avg1 = averageMeasurements(groups.first)
             val avg2 = averageMeasurements(groups.second)
             avg1 to avg2

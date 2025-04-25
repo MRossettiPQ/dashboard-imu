@@ -97,6 +97,7 @@ interface ApplicationConfig {
         fun host(): String
     }
 
+    @Suppress("FunctionalInterfaceClash")
     interface FrontendConfig {
         @WithName("url")
         fun url(): String

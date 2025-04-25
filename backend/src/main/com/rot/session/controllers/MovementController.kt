@@ -2,9 +2,7 @@ package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
 import com.rot.session.dtos.MovementDto
-import com.rot.session.dtos.SessionDto
 import com.rot.session.models.Movement
-import com.rot.session.models.Session
 import com.rot.session.services.SciLabServices
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.*

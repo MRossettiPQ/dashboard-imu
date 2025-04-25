@@ -13,7 +13,7 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
 object EncryptUtils {
-    private const val RSA_ALGORITHM = "RSA"
+    private const val RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding"
     private const val ITERATIONS = 120_000
     private const val KEY_LENGTH = 256
 
@@ -39,14 +39,14 @@ object EncryptUtils {
     }
 
     fun encryptWithPublicKey(text: String, publicKey: PublicKey): String {
-        val cipher = Cipher.getInstance(RSA_ALGORITHM)
+        val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, publicKey)
         val encryptedBytes = cipher.doFinal(text.toByteArray())
         return Base64.getEncoder().encodeToString(encryptedBytes)
     }
 
     fun decryptWithPrivateKey(encryptedText: String, privateKey: PrivateKey): String {
-        val cipher = Cipher.getInstance(RSA_ALGORITHM)
+        val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
         val decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText))
         return String(decryptedBytes)
@@ -55,13 +55,13 @@ object EncryptUtils {
     fun publicKeyFromBase64(base64Key: String): PublicKey {
         val keyBytes = Base64.getDecoder().decode(base64Key)
         val keySpec = X509EncodedKeySpec(keyBytes)
-        return KeyFactory.getInstance(RSA_ALGORITHM).generatePublic(keySpec)
+        return KeyFactory.getInstance(RSA_TRANSFORMATION).generatePublic(keySpec)
     }
 
     fun privateKeyFromBase64(base64Key: String): PrivateKey {
         val keyBytes = Base64.getDecoder().decode(base64Key)
         val keySpec = PKCS8EncodedKeySpec(keyBytes)
-        return KeyFactory.getInstance(RSA_ALGORITHM).generatePrivate(keySpec)
+        return KeyFactory.getInstance(RSA_TRANSFORMATION).generatePrivate(keySpec)
     }
 
     fun publicKeyToBase64(publicKey: PublicKey): String {
@@ -77,14 +77,14 @@ object EncryptUtils {
         val inputStream = ResourceUtils.getJarResourceStream(path)
         val keyBytes = readPemKey(inputStream, "PUBLIC")
         val keySpec = X509EncodedKeySpec(keyBytes)
-        return KeyFactory.getInstance(RSA_ALGORITHM).generatePublic(keySpec)
+        return KeyFactory.getInstance(RSA_TRANSFORMATION).generatePublic(keySpec)
     }
 
     fun loadPrivateKey(path: String): PrivateKey {
         val inputStream = ResourceUtils.getJarResourceStream(path)
         val keyBytes = readPemKey(inputStream)
         val keySpec = PKCS8EncodedKeySpec(keyBytes)
-        return KeyFactory.getInstance(RSA_ALGORITHM).generatePrivate(keySpec)
+        return KeyFactory.getInstance(RSA_TRANSFORMATION).generatePrivate(keySpec)
     }
 
     private fun readPemKey(inputStream: InputStream, type: String = "PRIVATE"): ByteArray {

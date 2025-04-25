@@ -1,8 +1,6 @@
 package com.rot.core.providers
 
 import com.rot.core.exceptions.ApplicationException
-import jakarta.persistence.PersistenceException
-import jakarta.validation.ConstraintViolationException
 import jakarta.ws.rs.ClientErrorException
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.ext.ExceptionMapper

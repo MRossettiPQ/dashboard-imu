@@ -51,12 +51,11 @@ class NetworkConfigurationService(
 
         val serviceInfos = jmdns.list("_http._tcp.local.")
         for (info in serviceInfos) {
-//            println("InetAddress: ${info.inetAddresses.joinToString()}")
+            println("InetAddress: ${info.inetAddresses.joinToString()}")
         }
 
         val ip = detect()
-        val gateway = gateway()
-//        println("localHost: $localHost - $ip")
+        println("localHost: $localHost - $ip")
     }
 
     fun gateway(): String? {
@@ -102,15 +101,15 @@ class NetworkConfigurationService(
 
             jmdns.registerService(serviceInfo)
             Log.infof("The application is available from: %s", url)
-            producer.initialize(jmdns, url)
-            shutdownContext.addShutdownTask { producer.close() }
+//            producer.initialize(jmdns, url)
+//            shutdownContext.addShutdownTask { producer.close() }
         } catch (e: IOException) {
             throw RuntimeException(e)
         }
     }
 
     private fun toURLFriendly(input: String?): String {
-        if (input == null || input.isEmpty()) {
+        if (input.isNullOrEmpty()) {
             return ""
         }
 

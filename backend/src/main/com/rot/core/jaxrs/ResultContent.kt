@@ -1,7 +1,6 @@
 package com.rot.core.jaxrs
 
 
-import com.querydsl.jpa.JPQLQuery
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 

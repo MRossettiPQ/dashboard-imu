@@ -140,52 +140,71 @@ object JsonUtils {
 
     private fun parseFields(fields: String): Map<String, Any> {
         val result = mutableMapOf<String, Any>()
-        val stack = ArrayDeque<Char>()
-        var buffer = StringBuilder()
-        var key = ""
-        var i = 0
+        var index = 0
 
-        while (i < fields.length) {
-            when (val c = fields[i]) {
+        while (index < fields.length) {
+            when (val c = fields[index]) {
                 '(' -> {
-                    key = buffer.toString().trim()
-                    buffer = StringBuilder()
-                    stack.addLast('(')
-                    i++
-                    val sub = StringBuilder()
-                    while (stack.isNotEmpty() && i < fields.length) {
-                        val ch = fields[i]
-                        if (ch == '(') stack.addLast('(')
-                        if (ch == ')') stack.removeLast()
-                        if (stack.isNotEmpty()) sub.append(ch)
-                        i++
-                    }
-                    result[key] = parseFields(sub.toString())
-                    buffer = StringBuilder()
+                    val key = extractKey(fields, index)
+                    val (subFields, newIndex) = extractSubFields(fields, index)
+                    result[key] = parseFields(subFields)
+                    index = newIndex
                 }
 
-                ',' -> {
-                    if (buffer.isNotBlank()) {
-                        val field = buffer.toString().trim()
-                        if (field.isNotBlank()) result[field] = true
-                        buffer = StringBuilder()
-                    }
-                    i++
-                }
+                ',' -> index++ // skip commas
 
                 else -> {
-                    buffer.append(c)
-                    i++
+                    val (field, newIndex) = extractSimpleField(fields, index)
+                    if (field.isNotBlank()) result[field] = true
+                    index = newIndex
                 }
             }
         }
 
-        if (buffer.isNotBlank()) {
-            val field = buffer.toString().trim()
-            if (field.isNotBlank()) result[field] = true
+        return result
+    }
+
+    private fun extractKey(fields: String, currentIndex: Int): String {
+        var i = currentIndex - 1
+        val buffer = StringBuilder()
+        while (i >= 0 && fields[i] != ',' && fields[i] != ')') {
+            buffer.insert(0, fields[i])
+            i--
+        }
+        return buffer.toString().trim()
+    }
+
+    private fun extractSubFields(fields: String, startIndex: Int): Pair<String, Int> {
+        val stack = ArrayDeque<Char>()
+        val sub = StringBuilder()
+        var i = startIndex
+
+        stack.addLast('(')
+        i++ // skip initial '('
+
+        while (stack.isNotEmpty() && i < fields.length) {
+            val ch = fields[i]
+            when (ch) {
+                '(' -> stack.addLast('(')
+                ')' -> stack.removeLast()
+            }
+            if (stack.isNotEmpty()) sub.append(ch)
+            i++
         }
 
-        return result
+        return sub.toString() to i
+    }
+
+    private fun extractSimpleField(fields: String, startIndex: Int): Pair<String, Int> {
+        val buffer = StringBuilder()
+        var i = startIndex
+
+        while (i < fields.length && fields[i] != ',' && fields[i] != '(' && fields[i] != ')') {
+            buffer.append(fields[i])
+            i++
+        }
+
+        return buffer.toString().trim() to i
     }
 
     private fun filterFieldsRecursive(node: JsonNode, fields: Map<String, Any>): JsonNode {
@@ -214,7 +233,7 @@ object JsonUtils {
 
     /**
      * Filtra os campos de um JsonNode com base na lista de campos fornecida.
-     * @param node O JsonNode a ser filtrado.
+     * @param entity O JsonNode a ser filtrado.
      * @param fields A lista de campos que devem ser mantidos.
      * @return Um novo JsonNode com apenas os campos especificados.
      */

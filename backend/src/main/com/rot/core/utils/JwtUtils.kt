@@ -29,7 +29,7 @@ object JwtUtils {
         username: String? = null,
     ): String {
         val now = Instant.now()
-        val expiry = now.plusSeconds(duration.seconds) // 1 hour validity
+        val expiry = now.plus(duration) // 1 hour validity
 
         val builder = Jwt.claims()
             .upn(username)
@@ -37,8 +37,8 @@ object JwtUtils {
             .subject(subject)
             .audience(audience)
             .groups(groups)
-            .issuedAt(now.epochSecond)
-            .expiresIn(expiry.epochSecond)
+            .issuedAt(now)
+            .expiresAt(expiry)
             .claim("client_type", clientType)
 
         claims.forEach { (key, value) ->
@@ -49,26 +49,22 @@ object JwtUtils {
     }
 
     fun decode(token: String) = try {
-        DefaultJWTParser().parse(token)
+        val parser = DefaultJWTParser()
+        parser.parseOnly(token)
     } catch (e: ParseException) {
         Log.error("Inválid token: ${e.message}")
         null
     }
 
     fun validate(token: String): JsonWebToken {
-        return try {
-            val decoded = decode(token)
-                ?: throw ApplicationException("Token inválido ou expirado", 401)
+        val decoded = decode(token)
+            ?: throw ApplicationException("Token inválido ou expirado")
 
-            val issuer = decoded.issuer
-            if (issuer != ApplicationConfig.config.security().issuer()) {
-                throw ApplicationException("Invalid issuer", 401)
-            }
-
-            decoded
-        } catch (e: Exception) {
-            throw ApplicationException("Invalid JWT token", 401, e)
+        if (decoded.issuer != ApplicationConfig.config.security().issuer()) {
+            throw ApplicationException("Invalid issuer")
         }
+
+        return decoded
     }
 
 }

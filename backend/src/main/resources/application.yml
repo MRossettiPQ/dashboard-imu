@@ -110,3 +110,5 @@ quarkus:
   locales: pt-BR
   smallrye-jwt:
     enabled: true
+  jacoco:
+    enabled: true

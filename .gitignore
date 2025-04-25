@@ -5,3 +5,4 @@
 *.njsproj
 *.sln
 *.iml
+.env

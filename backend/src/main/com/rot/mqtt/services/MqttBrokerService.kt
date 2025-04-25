@@ -2,7 +2,6 @@ package com.rot.mqtt.services
 
 import com.rot.core.config.ApplicationConfig
 import io.moquette.broker.Server
-import io.moquette.broker.config.IConfig
 import io.moquette.broker.config.MemoryConfig
 import io.moquette.interception.AbstractInterceptHandler
 import io.moquette.interception.messages.InterceptConnectMessage
@@ -14,11 +13,8 @@ import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
-import org.eclipse.microprofile.config.inject.ConfigProperty
-import org.jboss.logging.Logger
 import java.io.IOException
-import java.util.Properties
-import java.util.UUID
+import java.util.*
 
 @ApplicationScoped
 class MqttBrokerService {

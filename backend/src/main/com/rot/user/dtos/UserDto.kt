@@ -1,6 +1,5 @@
 package com.rot.user.dtos
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.rot.user.enums.UserRole
 import com.rot.user.models.User

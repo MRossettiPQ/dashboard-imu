@@ -80,7 +80,7 @@ dependencies {
     kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
     annotationProcessor("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
 
-    // === BLAZEPERSISTENCE ===
+    // === BLAZE PERSISTENCE ===
     implementation("com.blazebit:blaze-persistence-integration-quarkus-3:$blazePersistenceVersion")
     implementation("com.blazebit:blaze-persistence-integration-querydsl-expressions-jakarta:$blazePersistenceVersion")
     runtimeOnly("com.blazebit:blaze-persistence-integration-hibernate-6.2:$blazePersistenceVersion")
@@ -105,8 +105,10 @@ dependencies {
     implementation("io.quarkiverse.mdns:quarkus-mdns:$mdnsVersion")
 
     // === TESTING ===
+    testImplementation("io.quarkus:quarkus-jacoco")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+    testImplementation(kotlin("test"))
 }
 
 group = "com.rot"
@@ -126,6 +128,7 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.withType<Test> {
+    useJUnitPlatform()
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
 
