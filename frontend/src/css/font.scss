@@ -1,0 +1,60 @@
+// Block: text
+.text {
+  font-size: medium;
+}
+
+// Weight modifiers
+$text-weights: (100, 300, 400, 500, 700);
+
+@each $weight in $text-weights {
+  .text--weight-#{$weight} {
+    font-weight: $weight;
+  }
+}
+
+// Optional alias
+.text--bold {
+  @extend .text--weight-700;
+}
+
+// Size modifiers
+$text-sizes: (
+        xxsmall: xx-small,
+        xsmall: x-small,
+        smaller: smaller,
+        small: small,
+        medium: medium,
+        large: large,
+        larger: larger,
+        xlarge: x-large,
+        xxlarge: xx-large
+);
+
+@each $name, $size in $text-sizes {
+  .text--#{$name} {
+    font-size: $size;
+  }
+}
+
+// Text transform
+.text--lowercase   { text-transform: lowercase; }
+.text--uppercase   { text-transform: uppercase; }
+.text--capitalize  { text-transform: capitalize; }
+
+// Whitespace / word wrap
+.text--nowrap        { white-space: nowrap; }
+.text--break         { word-wrap: break-word; }
+.text--break-lines   { white-space: initial !important; }
+.text--pre-line      { white-space: pre-line !important; }
+.text--clamp-none    { -webkit-line-clamp: initial; }
+
+@for $lines from 1 through 25 {
+  .text--clamp-#{$lines} {
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: $lines;
+    white-space: initial;
+  }
+}

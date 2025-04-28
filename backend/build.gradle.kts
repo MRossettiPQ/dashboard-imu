@@ -74,10 +74,10 @@ dependencies {
     implementation("io.quarkiverse.jdbc:quarkus-jdbc-sqlite:$sqliteVersion")
 
     // === QUERYDSL ===
+    kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
     implementation("com.querydsl:querydsl-core:$queryDslVersion")
     implementation("com.querydsl:querydsl-jpa:$queryDslVersion:jakarta")
     implementation("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
-    kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
     annotationProcessor("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
 
     // === BLAZE PERSISTENCE ===

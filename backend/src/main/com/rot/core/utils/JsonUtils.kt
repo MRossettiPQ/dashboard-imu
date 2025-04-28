@@ -1,5 +1,6 @@
 package com.rot.core.utils
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -93,6 +94,28 @@ object JsonUtils {
     fun <T> toObject(string: String, clazz: Class<T>): T {
         return try {
             MAPPER.readValue(string, clazz)
+        } catch (e: IOException) {
+            throw RuntimeException("Erro ao converter String para objeto", e)
+        }
+    }
+
+    /**
+     * Converte um array de bytes JSON em um objeto do tipo especificado.
+     * @param data String JSON.
+     * @return Objeto convertido.
+     */
+    inline fun <reified T> toObject(data: String): T {
+        return MAPPER.readValue(data, object : TypeReference<T>() {})
+    }
+
+    /**
+     * Converte um array de bytes JSON em um objeto do tipo especificado.
+     * @param byteArray Array de bytes JSON.
+     * @return Objeto convertido.
+     */
+    inline fun <reified T> toObject(byteArray: ByteArray): T {
+        return try {
+            MAPPER.readValue(byteArray, object : TypeReference<T>() {})
         } catch (e: IOException) {
             throw RuntimeException("Erro ao converter String para objeto", e)
         }

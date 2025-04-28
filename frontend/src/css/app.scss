@@ -1,1 +1,10 @@
-// app global css in SCSS form
+@import 'quasar.variables.scss';
+@import 'utils.scss';
+@import 'font.scss';
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: inherit;
+  scroll-margin-right: -10px;
+}

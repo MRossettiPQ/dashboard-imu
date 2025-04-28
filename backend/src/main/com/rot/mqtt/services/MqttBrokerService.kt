@@ -1,6 +1,9 @@
 package com.rot.mqtt.services
 
 import com.rot.core.config.ApplicationConfig
+import com.rot.core.utils.JsonUtils
+import com.rot.mqtt.dto.MqttMessage
+import com.rot.session.dtos.MeasurementDto
 import io.moquette.broker.Server
 import io.moquette.broker.config.MemoryConfig
 import io.moquette.interception.AbstractInterceptHandler
@@ -21,23 +24,22 @@ class MqttBrokerService {
 
     private lateinit var mqttBroker: Server
 
-    fun startBroker(@Observes event: StartupEvent) {
+    fun start(@Observes event: StartupEvent) {
         try {
             mqttBroker = Server()
-//            mqttBroker.addInterceptHandler(MqttInterceptor())
 
             val property = Properties()
             property.setProperty("host", ApplicationConfig.config.mqtt().host())
             property.setProperty("port", ApplicationConfig.config.mqtt().port().toString())
-
             mqttBroker.startServer(MemoryConfig(property))
+            mqttBroker.addInterceptHandler(MqttInterceptor())
             Log.info("MQTT Broker iniciado na porta ${ApplicationConfig.config.mqtt().port()}")
         } catch (e: IOException) {
             Log.error("Falha ao iniciar o broker MQTT - ${e.message}")
         }
     }
 
-    fun stopBroker(@Observes event: ShutdownEvent) {
+    fun stop(@Observes event: ShutdownEvent) {
         if (::mqttBroker.isInitialized) {
             mqttBroker.stopServer()
             Log.info("🛑 MQTT Broker parado")
@@ -46,31 +48,59 @@ class MqttBrokerService {
 }
 
 class MqttInterceptor : AbstractInterceptHandler() {
+    private fun getBytes(data: InterceptPublishMessage): ByteArray {
+        // Obtém o ByteBuf
+        val byteBuf = data.payload
+
+        // Cria um array de bytes com o tamanho do ByteBuf
+        val bytes = ByteArray(byteBuf.readableBytes())
+
+        // Copia o conteúdo do ByteBuf para o array de bytes
+        byteBuf.getBytes(byteBuf.readerIndex(), bytes)
+        return bytes
+    }
+
+    private inline fun <reified T> convertPayload(data: InterceptPublishMessage): T {
+        val bytes: ByteArray = getBytes(data)
+        return JsonUtils.toObject<T>(bytes)
+    }
+
     override fun getID(): String {
         return UUID.randomUUID().toString()
     }
 
     // Chamado quando um cliente se conecta
-    override fun onConnect(msg: InterceptConnectMessage) {
-        Log.infof("🟢 Cliente conectado: ID=${msg.clientID}, Usuário=${msg.username}")
-        return super.onConnect(msg)
+    override fun onConnect(data: InterceptConnectMessage) {
+        Log.info("Cliente conectado: ID=${data.clientID}, Usuário=${data.username}")
+        return super.onConnect(data)
     }
 
     // Chamado quando um cliente publica uma mensagem
-    override fun onPublish(msg: InterceptPublishMessage) {
-        Log.infof("📤 Publicação recebida: Tópico=${msg.topicName}, Payload=${String(msg.payload.array())}")
-        return super.onPublish(msg)
+    override fun onPublish(data: InterceptPublishMessage) {
+        Log.info("Publicação recebida: Tópico=${data.topicName} - Cliente: ${data.username} - clientID: ${data.clientID}")
+
+        val converted = when (data.topicName.lowercase()) {
+            "message" -> convertPayload<MqttMessage<String>>(data)
+            "join-room" -> convertPayload<MqttMessage<String>>(data)
+            "leave-room" -> convertPayload<MqttMessage<String>>(data)
+            "command" -> convertPayload<MqttMessage<String>>(data)
+            "measurement" -> convertPayload<MqttMessage<MutableList<MeasurementDto>>>(data)
+            else -> convertPayload<MqttMessage<String>>(data)
+        }
+
+        println(JsonUtils.toJsonString(converted))
+        return super.onPublish(data)
     }
 
     // Chamado quando um cliente assina um tópico
-    override fun onSubscribe(msg: InterceptSubscribeMessage) {
-        Log.infof("🔔 Assinatura: Cliente=${msg.clientID}, Tópico=${msg.topicFilter}")
-        return super.onSubscribe(msg)
+    override fun onSubscribe(data: InterceptSubscribeMessage) {
+        Log.info("Assinatura: Cliente=${data.clientID}, Tópico=${data.topicFilter}")
+        return super.onSubscribe(data)
     }
 
     // Chamado quando um cliente se desconecta
-    override fun onDisconnect(msg: InterceptDisconnectMessage) {
-        Log.infof("🔴 Cliente desconectado: ID=${msg.clientID}")
-        return super.onDisconnect(msg)
+    override fun onDisconnect(data: InterceptDisconnectMessage) {
+        Log.info("Cliente desconectado: ID=${data.clientID}")
+        return super.onDisconnect(data)
     }
 }

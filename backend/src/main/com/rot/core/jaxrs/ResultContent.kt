@@ -1,15 +1,18 @@
 package com.rot.core.jaxrs
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
+import java.time.LocalDateTime
 
 class ResultContent<T> {
-
+    private var date: LocalDateTime = LocalDateTime.now()
     private var statusCode: Int = 200
     private var data: ContentDto<T> = ContentDto()
-    private var fields: String? = null
     private var type: String = MediaType.APPLICATION_JSON
+    private var headers: MutableMap<String, Any> = mutableMapOf()
+    private var fields: String? = null
 
     fun withStatusCode(code: Response.Status): ResultContent<T> {
         statusCode = code.statusCode
@@ -48,11 +51,21 @@ class ResultContent<T> {
         return this
     }
 
+    fun withHeader(key: String, value: Any): ResultContent<T> {
+        headers[key] = value
+        return this
+    }
+
     fun build(): Response {
-        return Response.status(statusCode)
+        val builder = Response.status(statusCode)
             .type(type)
             .entity(if (fields != null) null else data)
-            .build()
+
+        headers.forEach {
+            builder.header(it.key, it.value)
+        }
+
+        return builder.build()
     }
 
     companion object {
