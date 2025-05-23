@@ -34,7 +34,10 @@ export interface User {
 }
 
 export interface AccessDto extends User {
-  accessToken?: string;
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresAt: dayjs.Dayjs;
+  refreshTokenExpiresAt: dayjs.Dayjs;
 }
 
 export interface BasicResponse<T> {
@@ -49,4 +52,13 @@ export interface Pagination<T> {
   pageCount: number;
   page: number;
   rpp: number;
+}
+
+export interface AuthStore {
+  loading: boolean;
+  user: User | null;
+  accessTokenExpiresAt: dayjs.Dayjs | null;
+  accessToken: string | null;
+  refreshTokenExpiresAt: dayjs.Dayjs | null;
+  refreshToken: string | null;
 }
