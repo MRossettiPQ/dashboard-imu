@@ -1,7 +1,10 @@
-import { defineStore, acceptHMRUpdate } from 'pinia';
+import { Cookies } from 'quasar';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import type { AccessDto, AuthStore, UserRole } from 'src/common/models/models';
 import { useRouter } from 'vue-router';
 import { accessService } from 'src/common/services/access/access-service';
+import { CookieType, getCookieConfiguration } from 'src/common/utils/cookieUtils';
+
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 
 export const useAuthStore = defineStore('auth', {
@@ -20,6 +23,26 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    loadCookies(): void {
+      this.accessToken = Cookies.get('accessToken');
+      this.refreshToken = Cookies.get('refreshToken');
+      this.accessTokenExpiresAt = Cookies.get('accessTokenExpiresAt');
+      this.refreshTokenExpiresAt = Cookies.get('refreshTokenExpiresAt');
+    },
+    logOut(): void {
+      this.user = null;
+      this.accessToken = null;
+      this.refreshToken = null;
+      this.accessTokenExpiresAt = null;
+      this.refreshTokenExpiresAt = null;
+
+      Cookies.remove(CookieType.ACCESS_TOKEN);
+      Cookies.remove(CookieType.ACCESS_TOKEN_DATE);
+      Cookies.remove(CookieType.REFRESH_TOKEN);
+      Cookies.remove(CookieType.REFRESH_TOKEN_DATE);
+
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+    },
     async checkPermission(roles: UserRole[]): Promise<void> {
       const router = useRouter();
       const authenticated = await this.isAuthenticatedOrLoadContext();
@@ -33,10 +56,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     async isAuthenticatedOrLoadContext(): Promise<boolean> {
-      this.accessToken = getAuthToken();
-      this.refreshToken = getRefreshToken();
-      this.accessTokenExpiresAt = getAccessTokenExpiresAt();
-      this.refreshTokenExpiresAt = getRefreshTokenExpiresAt();
+      this.loadCookies();
       const now = new Date();
 
       if (this.accessTokenExpiresAt && this.accessTokenExpiresAt.isAfter(now)) {
@@ -65,14 +85,10 @@ export const useAuthStore = defineStore('auth', {
       return false;
     },
     async loadContext() {
+      this.loadCookies();
+
       const router = useRouter();
-
-      this.accessToken = getAuthToken();
-      this.refreshToken = getRefreshToken();
-      this.accessTokenExpiresAt = getAccessTokenExpiresAt();
-      this.refreshTokenExpiresAt = getRefreshTokenExpiresAt();
       const now = new Date();
-
       if (!this.accessTokenExpiresAt || !this.refreshTokenExpiresAt) {
         return;
       }
@@ -85,12 +101,12 @@ export const useAuthStore = defineStore('auth', {
           this.scheduleRefresh();
         } else {
           console.log('Session expired, redirect to login');
-          await this.logOut();
+          this.logOut();
           await router.push({ name: 'login' });
         }
       } catch (e) {
         console.error('Error on loadContext', e);
-        await this.logOut();
+        this.logOut();
         await router.push({ name: 'login' });
       } finally {
         this.loading = false;
@@ -101,20 +117,21 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = data.refreshToken;
       this.accessTokenExpiresAt = data.accessTokenExpiresAt;
       this.refreshTokenExpiresAt = data.refreshTokenExpiresAt;
-      saveAuthData(data, rememberMe);
+
+      const accessTokenExpiry = data.accessTokenExpiresAt;
+      const confAccess = getCookieConfiguration(accessTokenExpiry.toDate());
+      Cookies.set(CookieType.ACCESS_TOKEN, data.accessToken, confAccess);
+      Cookies.set(CookieType.ACCESS_TOKEN_DATE, accessTokenExpiry.toISOString(), confAccess);
+
+      if (rememberMe) {
+        const refreshTokenExpiry = data.refreshTokenExpiresAt;
+        const confRefresh = getCookieConfiguration(refreshTokenExpiry.toDate());
+        Cookies.set(CookieType.REFRESH_TOKEN, data.accessToken, confRefresh);
+        Cookies.set(CookieType.ACCESS_TOKEN_DATE, refreshTokenExpiry.toISOString(), confRefresh);
+      }
 
       this.scheduleRefresh();
       await this.loadContext();
-    },
-    async logOut(): Promise<void> {
-      this.accessToken = null;
-      this.refreshToken = null;
-      this.accessTokenExpiresAt = null;
-      this.refreshTokenExpiresAt = null;
-      this.user = null;
-
-      await clearAuthData();
-      if (refreshTimeout) clearTimeout(refreshTimeout);
     },
     scheduleRefresh() {
       if (refreshTimeout) clearTimeout(refreshTimeout);
@@ -124,14 +141,13 @@ export const useAuthStore = defineStore('auth', {
         const refreshTime = this.accessTokenExpiresAt;
 
         if (refreshTime.isBefore(now)) {
-          refreshTimeout = setTimeout(async () => {
-            console.log('Checking refresh token');
-            await this.refreshTokens();
-          }, refreshTime.toDate().getTime() - now.getTime());
+          const delay = refreshTime.toDate().getTime() - now.getTime();
+          refreshTimeout = setTimeout(this.refreshTokens, delay);
         }
       }
     },
-    async refreshTokens() {
+    async refreshTokens(): Promise<void> {
+      console.log('Checking refresh token');
       const router = useRouter();
       if (!this.refreshToken) throw new Error('No refresh token available');
 
@@ -139,12 +155,11 @@ export const useAuthStore = defineStore('auth', {
         const { data } = await accessService.refreshToken(this.refreshToken);
         if (!data.content) new Error('No content in response');
 
-        await this.save(data.content);
-
+        await this.save(data.content!);
         this.scheduleRefresh();
       } catch (e) {
         console.error('Error refreshing token', e);
-        await this.logOut();
+        this.logOut();
         await router.push({ name: 'login' });
       }
     },
