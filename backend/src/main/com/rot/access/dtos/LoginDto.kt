@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotEmpty
 
 class LoginDto {
     @field:NotEmpty(message = "Username is required")
-    var username: String? = null
+    lateinit var username: String
     @field:NotEmpty(message = "Password is required")
-    var password: String? = null
+    lateinit var password: String
 }

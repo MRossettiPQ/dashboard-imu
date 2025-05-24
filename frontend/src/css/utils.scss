@@ -73,7 +73,7 @@
     width: #{$val + '%'};
   }
   .u-h-#{$val} {
-    width: #{$val + '%'};
+    height: #{$val + '%'}; // <-- ERRO AQUI!
   }
 }
 

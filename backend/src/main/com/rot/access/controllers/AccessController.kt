@@ -25,12 +25,14 @@ class AccessController {
     @POST
     @Transactional
     @Path("/register")
-    fun register(@Valid body: RegisterDto): Response? {
+    fun register(@Valid body: RegisterDto): Response {
         val user = User()
         user.username = body.username
         user.name = body.name
         user.email = body.email
-        user.encryptAndSetPassword(body.password!!)
+        user.encryptAndSetPassword(body.password)
+        user.active = true
+        user.validate()
 
         return ResultContent.of().withContent(UserDto.from(user.save(), true)).build()
     }
@@ -38,14 +40,12 @@ class AccessController {
     @POST
     @Transactional
     @Path("/login")
-    fun login(@Valid body: LoginDto): Response? {
-        val user = User.createQuery()
-            .where(User.q.username.eq(body.username))
-            .fetchFirst() ?: throw ApplicationException("User not found", 404)
+    fun login(@Valid body: LoginDto): Response {
+        val user = User.findByUsername(body.username)
 
-        val password = EncryptUtils.generateHash(body.password!!, user.salt!!)
+        val password = EncryptUtils.generateHash(body.password, user.salt!!)
         if (user.password != password) {
-            throw ApplicationException("Passwords do not match", 401)
+            throw ApplicationException("Passwords do not match", Response.Status.UNAUTHORIZED)
         }
 
         return ResultContent.of().withContent(UserDto.from(user, true)).build()
@@ -54,9 +54,9 @@ class AccessController {
     @GET
     @Authenticated
     @Path("/context")
-    fun context(): Response? {
+    fun context(): Response {
         val user = ApplicationContext.user
-            ?: throw ApplicationException("User not authenticated", 403)
+            ?: throw ApplicationException("User not authenticated", Response.Status.FORBIDDEN)
         return ResultContent.of().withContent(UserDto.from(user)).build()
     }
 

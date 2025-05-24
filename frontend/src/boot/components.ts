@@ -1,12 +1,7 @@
 import { boot } from 'quasar/wrappers';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
-// import Vue3Lottie from 'vue3-lottie';
 
-// interface Component {
-//   default: never;
-// }
-
-export default boot(async ({ app }): Promise<void> => {
+export default boot(({ app }): void => {
   console.log('[INIT] - Loading components');
   // src/components/*.vue
   // const modules = import.meta.glob('../components/**/*.vue');

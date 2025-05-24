@@ -5,16 +5,21 @@ import com.querydsl.jpa.JPQLQuery
 import com.querydsl.jpa.impl.JPAQuery
 import com.rot.core.context.ApplicationContext
 import com.rot.core.exceptions.ApplicationException
+import com.rot.core.hibernate.findIdField
 import com.rot.core.jaxrs.Pagination
+import com.rot.core.utils.JsonUtils
 import io.quarkus.hibernate.orm.panache.Panache
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanionBase
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntityBase
 import jakarta.persistence.*
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validation
+import jakarta.ws.rs.core.Response
 import java.io.Serializable
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.jvm.isAccessible
 
 interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : PanacheCompanionBase<T, Id> {
     val entityClass: Class<T>
@@ -26,7 +31,69 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
 
     fun findOrThrowById(uuid: Id, lockModeType: LockModeType? = LockModeType.NONE, message: String? = "${entityClass.simpleName} not found"): T {
         return findById(uuid, lockModeType!!)
-            ?: throw ApplicationException(message, 404)
+            ?: throw ApplicationException(message!!, Response.Status.NOT_FOUND)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <Dto : Any> toDto(dto: Dto): Dto {
+        val dtoClass = dto::class
+        val entityClass = this.entityClass
+
+        val entity = this as T
+
+        // Tenta achar o método estático fromEntity no DTO: fromEntity(entity: T): Dto
+        val fromEntityMethod = dtoClass.java.methods.find {
+            it.name == "fromEntity" &&
+                    it.parameterTypes.size == 1 &&
+                    it.parameterTypes[0].isAssignableFrom(entityClass)
+        }
+
+        return if (fromEntityMethod != null) {
+            fromEntityMethod.isAccessible = true
+            fromEntityMethod.invoke(dto, entity) as Dto
+        } else {
+            // Fallback: usa Jackson para mapear a entidade para DTO
+            JsonUtils.MAPPER.convertValue(entity, dtoClass.java)
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <Dto : Any> fromDto(dto: Dto): T {
+        val dtoClass = dto::class
+        val entityClass = this.entityClass
+
+        val idFieldName = findIdField<BaseEntity<T>>()
+
+        // Tentar obter o ID da DTO
+        val dtoIdValue = dtoClass.declaredMemberProperties
+            .find { it.name == idFieldName }
+            ?.apply { isAccessible = true }
+            ?.getter?.call(dto)
+
+        val entity: T = if (dtoIdValue != null) {
+            try {
+                Panache.getEntityManager().find(entityClass, dtoIdValue) ?: entityClass.getDeclaredConstructor().newInstance()
+            } catch (ex: Exception) {
+                entityClass.getDeclaredConstructor().newInstance()
+            }
+        } else {
+            entityClass.getDeclaredConstructor().newInstance()
+        }
+
+        // Tenta usar método `toEntity(entity)` da DTO, se existir
+        val toEntityMethod = dtoClass.java.methods.find {
+            it.name == "toEntity" &&
+                    it.parameterTypes.size == 1 &&
+                    it.parameterTypes[0].isAssignableFrom(entityClass)
+        }
+
+        return if (toEntityMethod != null) {
+            toEntityMethod.isAccessible = true
+            toEntityMethod.invoke(dto) as T
+        } else {
+            // Fallback: usa Jackson para mergear os campos da DTO na entidade
+            JsonUtils.MAPPER.updateValue(entity, dto)
+        }
     }
 
     fun <T> fetch(query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): Pagination<T> {
@@ -124,14 +191,14 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
     fun validate() {
         val errors = validator.validate(this)
         if (errors.isNotEmpty()) {
-            throw ConstraintViolationException(errors)
+            throw ApplicationException(ConstraintViolationException(errors))
         }
     }
 
     @Suppress("UNCHECKED_CAST")
     open fun save(): T {
-        if (!isNewBean) return Panache.getEntityManager().merge(this) as T
         audit()
+        if (!isNewBean) return Panache.getEntityManager().merge(this) as T
         this.persist()
         return this as T
     }

@@ -29,7 +29,8 @@ export const useAuthStore = defineStore('auth', {
       this.accessTokenExpiresAt = Cookies.get('accessTokenExpiresAt');
       this.refreshTokenExpiresAt = Cookies.get('refreshTokenExpiresAt');
     },
-    logOut(): void {
+    async logOut(): Promise<void> {
+      const router = useRouter();
       this.user = null;
       this.accessToken = null;
       this.refreshToken = null;
@@ -42,6 +43,7 @@ export const useAuthStore = defineStore('auth', {
       Cookies.remove(CookieType.REFRESH_TOKEN_DATE);
 
       if (refreshTimeout) clearTimeout(refreshTimeout);
+      await router.push({ name: 'login' });
     },
     async checkPermission(roles: UserRole[]): Promise<void> {
       const router = useRouter();
@@ -59,35 +61,37 @@ export const useAuthStore = defineStore('auth', {
       this.loadCookies();
       const now = new Date();
 
-      if (this.accessTokenExpiresAt && this.accessTokenExpiresAt.isAfter(now)) {
+      if (this.accessTokenExpiresAt?.isAfter(now)) {
         if (!this.user) {
           try {
             await this.loadContext();
           } catch (e) {
             console.error('Failed to load context', e);
+            this.user = null;
             return false;
           }
         }
         return true;
       }
 
-      if (this.refreshTokenExpiresAt && this.refreshTokenExpiresAt.isAfter(now)) {
+      if (this.refreshTokenExpiresAt?.isAfter(now)) {
         try {
           await this.refreshTokens();
           await this.loadContext();
           return true;
         } catch (e) {
           console.error('Failed to refresh token', e);
+          this.user = null;
           return false;
         }
       }
 
+      this.user = null;
       return false;
     },
     async loadContext() {
       this.loadCookies();
 
-      const router = useRouter();
       const now = new Date();
       if (!this.accessTokenExpiresAt || !this.refreshTokenExpiresAt) {
         return;
@@ -101,23 +105,16 @@ export const useAuthStore = defineStore('auth', {
           this.scheduleRefresh();
         } else {
           console.log('Session expired, redirect to login');
-          this.logOut();
-          await router.push({ name: 'login' });
+          await this.logOut();
         }
       } catch (e) {
         console.error('Error on loadContext', e);
-        this.logOut();
-        await router.push({ name: 'login' });
+        await this.logOut();
       } finally {
         this.loading = false;
       }
     },
     async save(data: AccessDto, rememberMe: boolean = false) {
-      this.accessToken = data.accessToken;
-      this.refreshToken = data.refreshToken;
-      this.accessTokenExpiresAt = data.accessTokenExpiresAt;
-      this.refreshTokenExpiresAt = data.refreshTokenExpiresAt;
-
       const accessTokenExpiry = data.accessTokenExpiresAt;
       const confAccess = getCookieConfiguration(accessTokenExpiry.toDate());
       Cookies.set(CookieType.ACCESS_TOKEN, data.accessToken, confAccess);
@@ -142,25 +139,35 @@ export const useAuthStore = defineStore('auth', {
 
         if (refreshTime.isBefore(now)) {
           const delay = refreshTime.toDate().getTime() - now.getTime();
-          refreshTimeout = setTimeout(this.refreshTokens, delay);
+          refreshTimeout = setTimeout(() => {
+            this.refreshTokens().catch((e) => {
+              console.error('Error in scheduled refreshTokens:', e);
+            });
+          }, delay);
         }
       }
     },
     async refreshTokens(): Promise<void> {
       console.log('Checking refresh token');
-      const router = useRouter();
-      if (!this.refreshToken) throw new Error('No refresh token available');
+      if (!this.refreshToken) {
+        console.warn('No refresh token available');
+        await this.logOut();
+        return;
+      }
 
       try {
         const { data } = await accessService.refreshToken(this.refreshToken);
-        if (!data.content) new Error('No content in response');
+        if (!data.content) {
+          console.warn('No content in refresh token response');
+          await this.logOut();
+          return;
+        }
 
-        await this.save(data.content!);
+        await this.save(data.content);
         this.scheduleRefresh();
       } catch (e) {
         console.error('Error refreshing token', e);
-        this.logOut();
-        await router.push({ name: 'login' });
+        await this.logOut();
       }
     },
   },

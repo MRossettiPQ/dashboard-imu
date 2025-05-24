@@ -3,6 +3,8 @@ package com.rot.user.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
+import com.rot.user.dtos.PatientDto
+import com.rot.user.dtos.UserDto
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -46,5 +48,9 @@ class Patient : BaseEntity<Patient>() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     var user: User? = null
+
+    fun toDto(): PatientDto {
+        return PatientDto.from(this)
+    }
 
 }

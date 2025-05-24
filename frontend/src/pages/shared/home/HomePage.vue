@@ -1,9 +1,9 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="test-area">
+  <div class="u-w-100 u-h-100 test-area">
     Teste
-    <div style="height: 25000px; width: 100%"></div>
+    <div style="height: 25px; width: 100%"></div>
   </div>
 </template>
 

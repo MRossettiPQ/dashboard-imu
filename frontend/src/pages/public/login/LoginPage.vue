@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <q-page class="row items-center justify-evenly"> </q-page>
+  <q-page class="row items-center justify-evenly"> Login </q-page>
 </template>
 
 <style scoped></style>

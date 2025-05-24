@@ -4,11 +4,11 @@ import jakarta.validation.constraints.NotEmpty
 
 class RegisterDto {
     @field:NotEmpty(message = "Username is required")
-    var username: String? = null
+    lateinit var username: String
     @field:NotEmpty(message = "Name is required")
-    var name: String? = null
+    lateinit var name: String
     @field:NotEmpty(message = "E-mail is required")
-    var email: String? = null
+    lateinit var email: String
     @field:NotEmpty(message = "Password is required")
-    var password: String? = null
+    lateinit var password: String
 }
