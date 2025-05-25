@@ -1,8 +1,10 @@
 package com.rot.user.dtos
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.rot.core.jaxrs.ContentDto
 import com.rot.user.enums.UserRole
 import com.rot.user.models.User
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.util.*
 
 class UserDto {
@@ -32,4 +34,26 @@ class UserDto {
             return dto
         }
     }
+}
+
+@Schema(description = "Resposta com dados do usuário autenticado")
+class UserResponse : ContentDto<UserDto>() {
+    companion object {
+        internal const val USER_RESPONSE_EXAMPLE = """
+                    {
+                      "code": 200,
+                      "message": "Login realizado com sucesso",
+                      "content": {
+                        "id": "d6d1f144-31b3-4f50-a6f3-3289c86f3a73",
+                        "active": true,
+                        "username": "usuario123",
+                        "name": "Usuário Exemplo",
+                        "email": "usuario@example.com",
+                        "role": "PHYSIOTHERAPIST",
+                        "token": "eyJhbGciOiJIUzI1NiIsInR5..."
+                      }
+                    }
+                    """
+    }
+
 }

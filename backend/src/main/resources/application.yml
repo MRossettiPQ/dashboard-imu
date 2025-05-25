@@ -25,10 +25,6 @@ application:
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
     name: ${MDNS_NAME:dashboard}
-  serial:
-    name: ${SERIAL_NAME:imu-dashboard-broker}
-    manufacturer: ${SERIAL_NAME:Silicon Labs}
-    baud-rate: ${SERIAL_BAUD_RATE:115200}
 
 smallrye:
   jwt:
@@ -77,9 +73,9 @@ quarkus:
     access-log:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %bbytes %Dms'
-    non-application-root-path: /api
-    root-path: /
-    enable-compression: true
+#    non-application-root-path: /api
+#    root-path: /
+#    enable-compression: true
   hibernate-orm:
     log:
       sql: false

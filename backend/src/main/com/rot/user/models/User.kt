@@ -38,7 +38,7 @@ class User : BaseEntity<User>() {
         override val q: QUser = QUser.user
 
         fun findByUsername(username: String): User {
-            return User.createQuery()
+            return createQuery()
                 .where(q.username.eq(username))
                 .fetchFirst() ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
         }

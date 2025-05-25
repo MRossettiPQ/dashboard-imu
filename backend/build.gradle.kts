@@ -45,6 +45,7 @@ dependencies {
 
     // === QUARKUS CORE ===
     implementation("io.quarkus:quarkus-arc")
+    implementation("io.quarkus:quarkus-qute")
     implementation("io.quarkus:quarkus-cache")
     implementation("io.quarkus:quarkus-mutiny")
     implementation("io.quarkus:quarkus-quartz")
@@ -148,5 +149,5 @@ kotlin {
     }
 }
 
-//System.setProperty("quarkus.config.locations", "application.yml,application.base.yml")
-//System.setProperty("quarkus.analytics.disabled", "true")
+System.setProperty("quarkus.config.locations", "application.base.yml,application.yml")
+System.setProperty("quarkus.analytics.disabled", "true")

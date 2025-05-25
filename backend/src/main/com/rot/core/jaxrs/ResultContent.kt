@@ -4,6 +4,7 @@ package com.rot.core.jaxrs
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
 
 class ResultContent<T> {
@@ -79,18 +80,29 @@ class ResultContent<T> {
     }
 }
 
-class ContentDto<T> {
+@Schema(description = "Resposta genérica da API")
+open class ContentDto<T> {
+    @Schema(description = "Código HTTP da resposta")
     var code: Int = 200
+    @Schema(description = "Mensagem da resposta (opcional)")
     var message: String? = null
+    @Schema(description = "Conteúdo da resposta")
     var content: T? = null
 }
 
+@Schema(description = "Resposta paginada da API")
 class Pagination<T> {
+    @Schema(description = "Página atual")
     var page: Int = 1
+    @Schema(description = "Registros por página")
     var rpp: Int = 10
+    @Schema(description = "Total de registros")
     var count: Long = 0
+    @Schema(description = "Se há mais páginas")
     var hasMore: Boolean = true
+    @Schema(description = "Lista de resultados")
     var list: MutableList<T> = mutableListOf()
+    @Schema(description = "Informações adicionais")
     var extra: MutableMap<String, Any?> = mutableMapOf()
 
     fun <R> transform(fn: (T) -> R): Pagination<R> {

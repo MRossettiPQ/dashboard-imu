@@ -7,6 +7,8 @@ import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.ResultContent
 import com.rot.core.utils.EncryptUtils
 import com.rot.user.dtos.UserDto
+import com.rot.user.dtos.UserResponse
+import com.rot.user.dtos.UserResponse.Companion.USER_RESPONSE_EXAMPLE
 import com.rot.user.models.User
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -15,6 +17,12 @@ import jakarta.validation.Valid
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
+import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.media.Content
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject
+import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
+import kotlin.arrayOf
 
 @ApplicationScoped
 @Path("/api/access")
@@ -25,13 +33,33 @@ class AccessController {
     @POST
     @Transactional
     @Path("/register")
+    @Operation(
+        summary = "Registrar novo usuário",
+        description = "Cria um novo usuário no sistema e retorna seus dados"
+    )
+    @APIResponse(
+        responseCode = "201",
+        description = "Usuário registrado com sucesso",
+        content = [
+            Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = Schema(implementation = UserResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "Usuário registrado",
+                        summary = "Usuário registrado",
+                        value = USER_RESPONSE_EXAMPLE
+                    )
+                ]
+            )
+        ]
+    )
+    @APIResponse(responseCode = "400", description = "Dados inválidos para registro")
+    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun register(@Valid body: RegisterDto): Response {
-        val user = User()
-        user.username = body.username
-        user.name = body.name
-        user.email = body.email
-        user.encryptAndSetPassword(body.password)
+        val user = User.fromDto(body)
         user.active = true
+        user.encryptAndSetPassword(body.password)
         user.validate()
 
         return ResultContent.of().withContent(UserDto.from(user.save(), true)).build()
@@ -40,6 +68,35 @@ class AccessController {
     @POST
     @Transactional
     @Path("/login")
+    @Operation(
+        summary = "Login do usuário",
+        description = "Autentica um usuário e retorna os dados"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Usuário autenticado",
+        content = [
+            Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = Schema(implementation = UserResponse::class),
+                examples = arrayOf(
+                    ExampleObject(
+                        name = "Usuário logado",
+                        summary = "Resposta com token",
+                        value = USER_RESPONSE_EXAMPLE
+                    )
+                )
+            )
+        ]
+    )
+    @APIResponse(
+        responseCode = "404",
+        description = "Usuário não encontrado"
+    )
+    @APIResponse(
+        responseCode = "401",
+        description = "Senha incorreta"
+    )
     fun login(@Valid body: LoginDto): Response {
         val user = User.findByUsername(body.username)
 
@@ -54,6 +111,31 @@ class AccessController {
     @GET
     @Authenticated
     @Path("/context")
+    @Operation(
+        summary = "Contexto do usuário",
+        description = "Retorna os dados do usuário autenticado"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Usuário autenticado",
+        content = [
+            Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = Schema(implementation = UserResponse::class),
+                examples = [
+                    ExampleObject(
+                        name = "Usuário do Contexto",
+                        summary = "Usuário autenticado",
+                        value = USER_RESPONSE_EXAMPLE
+                    )
+                ]
+            )
+        ]
+    )
+    @APIResponse(
+        responseCode = "403",
+        description = "Usuário não autenticado"
+    )
     fun context(): Response {
         val user = ApplicationContext.user
             ?: throw ApplicationException("User not authenticated", Response.Status.FORBIDDEN)

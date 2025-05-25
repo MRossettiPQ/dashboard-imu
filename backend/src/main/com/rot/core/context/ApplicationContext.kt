@@ -14,8 +14,8 @@ object ApplicationContext {
             else holder.set(context)
         }
 
-    val user: User? = null
-        get() = field ?: context?.user
+    val user: User?
+        get() = context?.user
 
     fun clear(){
         holder.remove()
@@ -27,6 +27,7 @@ data class UserContext(
     val id: UUID,
     val jwt: JsonWebToken
 ) {
-    val user: User
-        get() = User.findOrThrowById(id)
+    val user: User by lazy {
+        User.findOrThrowById(id)
+    }
 }
