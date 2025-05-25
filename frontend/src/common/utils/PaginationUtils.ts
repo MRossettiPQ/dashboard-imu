@@ -1,6 +1,14 @@
 import type { AxiosResponse } from 'axios';
 import type { Pagination } from 'src/common/models/models';
 
+type PaginationUtilsConstructorType<T, R> = {
+  service: (params: R) => Promise<AxiosResponse<Pagination<T>>>;
+  params: R;
+  onError?: (error: unknown) => void;
+  onSuccess?: (data: Pagination<T>) => void;
+  onLoad?: (data: Pagination<T>) => void;
+};
+
 export default class PaginationUtils<T, R extends { page: number; rpp: number }> {
   constructor({
     service,
@@ -8,13 +16,7 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
     onError,
     onSuccess,
     onLoad,
-  }: {
-    service: (params: R) => Promise<AxiosResponse<Pagination<T>>>;
-    params: R;
-    onError?: (error: unknown) => void;
-    onSuccess?: (data: Pagination<T>) => void;
-    onLoad?: (data: Pagination<T>) => void;
-  }) {
+  }: PaginationUtilsConstructorType<T, R>) {
     this.service = service;
     this.params = params;
     this.onError = onError;
@@ -75,6 +77,16 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
 
   get hasMore(): boolean {
     return this.result.page < this.result.pageCount;
+  }
+
+  async loadFirstPage(): Promise<void> {
+    this.params.page = 1;
+    await this.search();
+  }
+
+  async loadPage(page: number): Promise<void> {
+    this.params.page = page;
+    await this.search();
   }
 
   async loadNext(): Promise<void> {

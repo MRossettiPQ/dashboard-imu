@@ -6,7 +6,7 @@ const publicRoutes: RouteRecordRaw[] = [
   {
     name: 'public.login',
     path: 'login',
-    component: () => import('pages/public/login/LoginPage.vue'),
+    component: () => import('pages/shared/public/login/LoginPage.vue'),
     meta: {
       hideAuthenticated: true,
       private: false,
@@ -15,7 +15,7 @@ const publicRoutes: RouteRecordRaw[] = [
   {
     name: 'public.register',
     path: 'register',
-    component: () => import('pages/public/register/RegisterPage.vue'),
+    component: () => import('pages/shared/public/register/RegisterPage.vue'),
     meta: {
       hideAuthenticated: true,
       private: false,
@@ -24,7 +24,7 @@ const publicRoutes: RouteRecordRaw[] = [
   {
     name: 'public.socket',
     path: 'socket',
-    component: () => import('pages/public/socket/SocketPage.vue'),
+    component: () => import('pages/shared/public/socket/SocketPage.vue'),
     meta: {
       hideAuthenticated: true,
       private: false,
@@ -35,7 +35,7 @@ const privateRoutes: RouteRecordRaw[] = [
   {
     name: 'private.account',
     path: 'account',
-    component: () => import('pages/private/account/AccountPage.vue'),
+    component: () => import('pages/shared/private/account/AccountPage.vue'),
     meta: {
       private: true,
     },
@@ -43,7 +43,7 @@ const privateRoutes: RouteRecordRaw[] = [
   {
     name: 'private.patient',
     path: 'patient',
-    component: () => import('pages/private/patient/PatientPage.vue'),
+    component: () => import('pages/shared/private/patient/PatientPage.vue'),
     meta: {
       private: true,
     },
@@ -51,7 +51,7 @@ const privateRoutes: RouteRecordRaw[] = [
   {
     name: 'private.session',
     path: 'session',
-    component: () => import('pages/private/session/SessionPage.vue'),
+    component: () => import('pages/shared/private/session/SessionPage.vue'),
     meta: {
       private: true,
     },
@@ -75,7 +75,7 @@ const typeRoutes: RouteRecordRaw[] = [
       {
         name: 'public',
         path: '/',
-        component: () => import('pages/public/PublicApp.vue'),
+        component: () => import('pages/shared/public/PublicApp.vue'),
         children: publicRoutes,
         beforeEnter: (to, from, next) => {
           console.log('Before enter - publico');
@@ -91,7 +91,7 @@ const typeRoutes: RouteRecordRaw[] = [
       {
         name: 'private',
         path: '/private',
-        component: () => import('pages/private/PrivateApp.vue'),
+        component: () => import('pages/shared/private/PrivateApp.vue'),
         children: privateRoutes,
         beforeEnter: (to, from, next) => {
           console.log('Before enter - privados');

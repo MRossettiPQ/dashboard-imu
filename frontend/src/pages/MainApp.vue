@@ -34,9 +34,15 @@ import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink
 const linksList: EssentialLinkProps[] = [
   {
     title: 'Perfil',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev',
+    caption: 'Ir para seu perfil',
+    icon: 'person',
+    to: { name: 'private.account' }, // ← Rota nomeada
+  },
+  {
+    title: 'Pacientes',
+    caption: 'Lista de pacientes',
+    icon: 'people',
+    to: { name: 'private.patient' }, // ← Outra rota nomeada
   },
 ];
 

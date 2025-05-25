@@ -1,10 +1,17 @@
 import api from 'src/common/services/http-client';
-import type { AccessDto, BasicResponse, User } from 'src/common/models/models';
-import type { AxiosResponse } from 'axios';
+import type { AccessDto, BasicResponse, LoginRequestDto, User } from 'src/common/models/models';
+import type { AxiosResponse, GenericAbortSignal } from 'axios';
 
 export const accessService = {
-  async login(): Promise<AxiosResponse<BasicResponse<AccessDto>>> {
-    return await api.post<BasicResponse<AccessDto>>('/api/access/login');
+  async login({
+    form,
+  }: {
+    form: LoginRequestDto;
+    signal?: GenericAbortSignal;
+  }): Promise<AxiosResponse<BasicResponse<AccessDto>>> {
+    return await api.post<BasicResponse<AccessDto>>('/api/access/login', {
+      ...form,
+    });
   },
   async register(): Promise<AxiosResponse<BasicResponse<AccessDto>>> {
     return await api.post<BasicResponse<AccessDto>>('/api/access/register');
