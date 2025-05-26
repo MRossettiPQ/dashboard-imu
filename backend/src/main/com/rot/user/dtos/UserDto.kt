@@ -28,7 +28,7 @@ class UserDto {
             dto.role = user.role
 
             if (token) {
-                dto.token = user.generateToken()
+                dto.token = user.token
             }
 
             return dto

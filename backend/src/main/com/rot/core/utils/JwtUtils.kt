@@ -1,7 +1,5 @@
 package com.rot.core.utils
 
-import com.rot.core.config.ApplicationConfig
-import com.rot.core.exceptions.ApplicationException
 import io.quarkus.logging.Log
 import io.smallrye.jwt.auth.principal.DefaultJWTParser
 import io.smallrye.jwt.auth.principal.JWTAuthContextInfo

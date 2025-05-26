@@ -2,6 +2,7 @@ package com.rot.access.controllers
 
 import com.rot.access.dtos.LoginDto
 import com.rot.access.dtos.RegisterDto
+import com.rot.core.config.ApplicationConfig
 import com.rot.core.context.ApplicationContext
 import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.ResultContent
@@ -22,13 +23,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
-import kotlin.arrayOf
 
 @ApplicationScoped
 @Path("/api/access")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-class AccessController {
+class AccessController(
+    private val applicationConfig: ApplicationConfig
+) {
 
     @POST
     @Transactional
@@ -61,6 +63,7 @@ class AccessController {
         user.active = true
         user.encryptAndSetPassword(body.password)
         user.validate()
+        user.generateToken(applicationConfig.security().issuer(), applicationConfig.security().subject())
 
         return ResultContent.of().withContent(UserDto.from(user.save(), true)).build()
     }
@@ -105,6 +108,7 @@ class AccessController {
             throw ApplicationException("Passwords do not match", Response.Status.UNAUTHORIZED)
         }
 
+        user.generateToken(applicationConfig.security().issuer(), applicationConfig.security().subject())
         return ResultContent.of().withContent(UserDto.from(user, true)).build()
     }
 

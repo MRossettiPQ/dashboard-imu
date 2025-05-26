@@ -11,7 +11,9 @@ import java.time.format.DateTimeFormatter
 import kotlin.test.assertTrue
 
 @QuarkusTest
-class DevelopmentControllerTest {
+class DevelopmentControllerTest(
+    private val applicationConfig: ApplicationConfig,
+) {
 
     @Test
     fun getPingShouldReturnApplicationMetadata() {
@@ -44,8 +46,8 @@ class DevelopmentControllerTest {
         val returnedDateTime = LocalDateTime.parse(dateTimeString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         val afterCall = LocalDateTime.now()
 
-        assertEquals(ApplicationConfig.config.name(), name)
-        assertEquals(ApplicationConfig.config.environment(), environment)
+        assertEquals(applicationConfig.name(), name)
+        assertEquals(applicationConfig.environment(), environment)
 
         // Verifica se a data está dentro do intervalo de tolerância de 3 segundos
         val minTime = beforeCall.minusSeconds(3)

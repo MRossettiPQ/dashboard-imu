@@ -21,13 +21,15 @@ import jakarta.transaction.Transactional
 
 
 @Singleton
-class SocketService {
+class SocketService(
+    private val applicationConfig: ApplicationConfig
+) {
     lateinit var server: SocketIOServer
 
     fun onStart(@Observes event: StartupEvent) {
         val config = Configuration()
-        config.hostname = ApplicationConfig.config.socket().host()
-        config.port = ApplicationConfig.config.socket().port()
+        config.hostname = applicationConfig.socket().host()
+        config.port = applicationConfig.socket().port()
         config.pingInterval = 25000
         config.pingTimeout = 60000
 
@@ -60,7 +62,7 @@ class SocketService {
         val token = client.handshakeData.getSingleUrlParam("token")
 
         val decoded = JwtUtils.decode(token)
-        if (token == null || decoded == null || decoded.issuer != ApplicationConfig.config.security().issuer()) {
+        if (token == null || decoded == null || decoded.issuer != applicationConfig.security().issuer()) {
             Log.warn("Conexão recusada para IP ${client.remoteAddress}")
             return client.disconnect()
         }

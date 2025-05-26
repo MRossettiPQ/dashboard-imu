@@ -47,6 +47,7 @@ export interface AccessDto extends User {
 
 export interface BasicResponse<T> {
   date: dayjs.Dayjs | null;
+  code: number;
   message: string | null;
   content: T | null;
 }

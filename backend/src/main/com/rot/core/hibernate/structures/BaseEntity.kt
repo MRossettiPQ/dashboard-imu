@@ -35,29 +35,6 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <Dto : Any> toDto(dto: Dto): Dto {
-        val dtoClass = dto::class
-        val entityClass = this.entityClass
-
-        val entity = this as T
-
-        // Tenta achar o método estático fromEntity no DTO: fromEntity(entity: T): Dto
-        val fromEntityMethod = dtoClass.java.methods.find {
-            it.name == "fromEntity" &&
-                    it.parameterTypes.size == 1 &&
-                    it.parameterTypes[0].isAssignableFrom(entityClass)
-        }
-
-        return if (fromEntityMethod != null) {
-            fromEntityMethod.isAccessible = true
-            fromEntityMethod.invoke(dto, entity) as Dto
-        } else {
-            // Fallback: usa Jackson para mapear a entidade para DTO
-            JsonUtils.MAPPER.convertValue(entity, dtoClass.java)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
     fun <Dto : Any> fromDto(dto: Dto): T {
         val dtoClass = dto::class
         val entityClass = this.entityClass
@@ -192,6 +169,29 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
         val errors = validator.validate(this)
         if (errors.isNotEmpty()) {
             throw ApplicationException(ConstraintViolationException(errors))
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <Dto : Any> toDto(dto: Dto): Dto {
+        val dtoClass = dto::class
+        val entityClass = this::class.java
+
+        val entity = this as T
+
+        // Tenta achar o método estático fromEntity no DTO: fromEntity(entity: T): Dto
+        val toDtoMethod = dtoClass.java.methods.find {
+            it.name == "toDto" &&
+                    it.parameterTypes.size == 1 &&
+                    it.parameterTypes[0].isAssignableFrom(entityClass)
+        }
+
+        return if (toDtoMethod != null) {
+            toDtoMethod.isAccessible = true
+            toDtoMethod.invoke(dto, entity) as Dto
+        } else {
+            // Fallback: usa Jackson para mapear a entidade para DTO
+            JsonUtils.MAPPER.convertValue(entity, dtoClass.java)
         }
     }
 

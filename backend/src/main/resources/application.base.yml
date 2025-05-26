@@ -3,7 +3,7 @@ application:
   environment: development
   database:
     host: localhost
-    name: dashboard-imu
+    name: dashboard
     username: postgres
     password: 1
   frontend:

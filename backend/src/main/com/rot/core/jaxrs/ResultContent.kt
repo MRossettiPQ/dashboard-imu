@@ -1,14 +1,12 @@
 package com.rot.core.jaxrs
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
 
 class ResultContent<T> {
-    private var date: LocalDateTime = LocalDateTime.now()
     private var statusCode: Int = 200
     private var data: ContentDto<T> = ContentDto()
     private var type: String = MediaType.APPLICATION_JSON
@@ -82,10 +80,15 @@ class ResultContent<T> {
 
 @Schema(description = "Resposta genérica da API")
 open class ContentDto<T> {
+    @Schema(description = "Horário da resposta")
+    private var date: LocalDateTime = LocalDateTime.now()
+
     @Schema(description = "Código HTTP da resposta")
     var code: Int = 200
+
     @Schema(description = "Mensagem da resposta (opcional)")
     var message: String? = null
+
     @Schema(description = "Conteúdo da resposta")
     var content: T? = null
 }

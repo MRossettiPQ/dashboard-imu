@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.core.Response
 import java.time.Duration
 import java.util.*
+import kotlin.jvm.Transient
 
 
 @Entity
@@ -87,10 +88,13 @@ class User : BaseEntity<User>() {
         return UserDto.from(this)
     }
 
-    fun generateToken(): String {
-        return JwtUtils.generate(
-            issuer = ApplicationConfig.config.security().issuer(),
-            subject = ApplicationConfig.config.security().subject(),
+    @Transient
+    var token: String? = null
+
+    fun generateToken(issuer: String, subject: String): String {
+        token = JwtUtils.generate(
+            issuer = issuer,
+            subject = subject,
             groups = mutableSetOf(role.name),
             claims = mutableMapOf(
                 "roles" to listOf(role.name),
@@ -99,6 +103,7 @@ class User : BaseEntity<User>() {
             duration = Duration.ofHours(12),
             username = username,
         )
+        return token!!
     }
 
     fun encryptAndSetPassword(password: String) {

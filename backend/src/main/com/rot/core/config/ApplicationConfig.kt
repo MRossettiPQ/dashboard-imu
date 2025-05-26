@@ -1,21 +1,13 @@
 package com.rot.core.config
 
 import io.smallrye.config.ConfigMapping
-import io.smallrye.config.SmallRyeConfig
 import io.smallrye.config.WithName
-import org.eclipse.microprofile.config.ConfigProvider
 
 @ConfigMapping(
     prefix = "application",
     namingStrategy = ConfigMapping.NamingStrategy.KEBAB_CASE
 )
 interface ApplicationConfig {
-
-    companion object {
-        val config: ApplicationConfig = ConfigProvider.getConfig()
-            .unwrap(SmallRyeConfig::class.java)
-            .getConfigMapping(ApplicationConfig::class.java)
-    }
 
     @WithName("environment")
     fun environment(): String

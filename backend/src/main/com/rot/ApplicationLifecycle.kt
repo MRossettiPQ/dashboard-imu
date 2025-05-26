@@ -11,7 +11,6 @@ class ApplicationLifecycle {
 
     fun onStart(@Observes ev: StartupEvent?) {
         Log.info("The application is starting...")
-        Log.info("Database migrations applied successfully.")
     }
 
     fun onStop(@Observes ev: ShutdownEvent?) {

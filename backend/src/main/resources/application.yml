@@ -41,7 +41,7 @@ mp:
 quarkus:
   application:
     name: ${application.mdns.name}
-    host: ${application.backend.host}
+#    host: ${application.backend.host}
   mdns:
     enabled: true
   native:
@@ -56,13 +56,13 @@ quarkus:
     instrumentation: true
   analytics:
     disabled: true
-  swagger-ui:
-    always-include: true
-    path: /api/swagger-ui
-  smallrye-openapi:
-    path: /api/openapi
+#  swagger-ui:
+#    always-include: true
+#    path: /api/swagger-ui
+#  smallrye-openapi:
+#    path: /api/openapi
   http:
-    host: ${application.backend.host}
+#    host: ${application.backend.host}
     port: ${application.backend.port}
     cors:
       ~: true
@@ -73,9 +73,6 @@ quarkus:
     access-log:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %bbytes %Dms'
-#    non-application-root-path: /api
-#    root-path: /
-#    enable-compression: true
   hibernate-orm:
     log:
       sql: false
@@ -84,7 +81,6 @@ quarkus:
       generation: update
     implicit-naming-strategy: com.rot.core.hibernate.implementation.ImplicitNamingStrategyImpl
     second-level-caching-enabled: false
-#    dialect: org.hibernate.community.dialect.SQLiteDialect
   datasource:
     devservices:
       enabled: false
@@ -93,12 +89,10 @@ quarkus:
       max-lifetime: 50M
       max-size: 500
       leak-detection-interval: 8000
-#      url: jdbc:sqlite:${SQLITE_DB_PATH:database.db}
       url: jdbc:postgresql://${application.database.host}/${application.database.name}?autoReconnect=true&useSSL=false
     username: ${application.database.username}
     password: ${application.database.password}
     db-kind: postgresql
-  #    db-kind: sqlite
   flyway:
     migrate-at-start: true
     baseline-on-migrate: true

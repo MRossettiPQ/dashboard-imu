@@ -34,20 +34,20 @@ class RuntimeExceptionProvider : ExceptionMapper<ClientErrorException> {
     }
 }
 
-@Provider
-class NotFoundExceptionMapper(
-    @Location("404") val template: Template,
-) : ExceptionMapper<NotFoundException> {
-
-    @Context
-    lateinit var uriInfo: UriInfo
-
-    override fun toResponse(exception: NotFoundException): Response {
-        val path = uriInfo.path
-        val renderedTemplate: TemplateInstance = template.data("path", "/$path")
-
-        return Response.status(Response.Status.NOT_FOUND)
-            .entity(renderedTemplate)
-            .build()
-    }
-}
+//@Provider
+//class NotFoundExceptionMapper(
+//    @Location("404") val template: Template,
+//) : ExceptionMapper<NotFoundException> {
+//
+//    @Context
+//    lateinit var uriInfo: UriInfo
+//
+//    override fun toResponse(exception: NotFoundException): Response {
+//        val path = uriInfo.path
+//        val renderedTemplate: TemplateInstance = template.data("path", "/$path")
+//
+//        return Response.status(Response.Status.NOT_FOUND)
+//            .entity(renderedTemplate)
+//            .build()
+//    }
+//}

@@ -40,7 +40,7 @@ class WifiController {
     }
 
     @POST
-    @Path("")
+    @Path("/")
     fun save(@Valid body: CreateWifiDto): Response? {
         val networkConfiguration = NetworkConfiguration()
         networkConfiguration.ssid = body.ssid

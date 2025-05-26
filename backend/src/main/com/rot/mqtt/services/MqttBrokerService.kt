@@ -20,7 +20,9 @@ import java.io.IOException
 import java.util.*
 
 @ApplicationScoped
-class MqttBrokerService {
+class MqttBrokerService(
+    private val applicationConfig: ApplicationConfig
+) {
 
     private lateinit var mqttBroker: Server
 
@@ -29,11 +31,11 @@ class MqttBrokerService {
             mqttBroker = Server()
 
             val property = Properties()
-            property.setProperty("host", ApplicationConfig.config.mqtt().host())
-            property.setProperty("port", ApplicationConfig.config.mqtt().port().toString())
+            property.setProperty("host", applicationConfig.mqtt().host())
+            property.setProperty("port", applicationConfig.mqtt().port().toString())
             mqttBroker.startServer(MemoryConfig(property))
             mqttBroker.addInterceptHandler(MqttInterceptor())
-            Log.info("MQTT Broker iniciado na porta ${ApplicationConfig.config.mqtt().port()}")
+            Log.info("MQTT Broker iniciado na porta ${applicationConfig.mqtt().port()}")
         } catch (e: IOException) {
             Log.error("Falha ao iniciar o broker MQTT - ${e.message}")
         }

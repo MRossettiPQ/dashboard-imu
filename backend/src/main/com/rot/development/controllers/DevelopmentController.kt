@@ -16,15 +16,15 @@ import java.time.LocalDateTime
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 class DevelopmentController(
-    private val applicationConfig: ApplicationConfig
+    val config: ApplicationConfig
 ) {
 
     @GET
     @Path("/ping")
     fun ping(): Response {
         val metadata = mutableMapOf<String, Any?>()
-        metadata["name"] = applicationConfig.name()
-        metadata["environment"] = applicationConfig.environment()
+        metadata["name"] = config.name()
+        metadata["environment"] = config.environment()
         metadata["dateTime"] = LocalDateTime.now()
 
         return ResultContent.of().withContent(metadata).build()
