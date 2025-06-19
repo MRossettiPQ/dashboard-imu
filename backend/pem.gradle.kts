@@ -10,7 +10,7 @@ fun registerGenerateJwtKeysTask(name: String, targetDir: String) {
         group = "build setup"
         description = "Gera chaves RSA para JWT na pasta '$targetDir'"
 
-        val outputDir = File("$projectDir/src/main/resources/META-INF/resources", targetDir)
+        val outputDir = File("$projectDir/src/main/resources", targetDir)
 
         doLast {
             if (!outputDir.exists()) outputDir.mkdirs()

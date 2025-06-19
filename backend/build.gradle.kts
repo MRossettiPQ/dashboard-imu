@@ -16,7 +16,7 @@ val oshiVersion: String by project
 val jnaVersion: String by project
 
 apply(from = "pem.gradle.kts")
-apply(from = "vue.gradle.kts")
+//apply(from = "vue.gradle.kts")
 
 plugins {
     val kotlinVersion = "2.0.21"

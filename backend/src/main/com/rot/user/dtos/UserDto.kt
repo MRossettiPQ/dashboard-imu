@@ -55,5 +55,4 @@ class UserResponse : ContentDto<UserDto>() {
                     }
                     """
     }
-
 }

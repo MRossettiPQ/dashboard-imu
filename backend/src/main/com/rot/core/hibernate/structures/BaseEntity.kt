@@ -173,29 +173,6 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <Dto : Any> toDto(dto: Dto): Dto {
-        val dtoClass = dto::class
-        val entityClass = this::class.java
-
-        val entity = this as T
-
-        // Tenta achar o método estático fromEntity no DTO: fromEntity(entity: T): Dto
-        val toDtoMethod = dtoClass.java.methods.find {
-            it.name == "toDto" &&
-                    it.parameterTypes.size == 1 &&
-                    it.parameterTypes[0].isAssignableFrom(entityClass)
-        }
-
-        return if (toDtoMethod != null) {
-            toDtoMethod.isAccessible = true
-            toDtoMethod.invoke(dto, entity) as Dto
-        } else {
-            // Fallback: usa Jackson para mapear a entidade para DTO
-            JsonUtils.MAPPER.convertValue(entity, dtoClass.java)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
     open fun save(): T {
         audit()
         if (!isNewBean) return Panache.getEntityManager().merge(this) as T

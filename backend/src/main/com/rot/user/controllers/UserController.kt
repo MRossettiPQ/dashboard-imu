@@ -1,5 +1,6 @@
 package com.rot.user.controllers
 
+import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
 import com.rot.user.dtos.UserDto
 import com.rot.user.enums.UserRole

@@ -30,12 +30,12 @@ smallrye:
   jwt:
     sign:
       key:
-        location: classpath:META-INF/resources/security/private.pem
+        location: classpath:security/private.pem
 mp:
   jwt:
     verify:
       publickey:
-        location: classpath:META-INF/resources/security/public.pem
+        location: classpath:security/public.pem
       issuer: ${application.security.issuer}
 
 quarkus:
