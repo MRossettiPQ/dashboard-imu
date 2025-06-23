@@ -1,8 +1,8 @@
 import type { AxiosResponse } from 'axios';
-import type { Pagination } from 'src/common/models/models';
+import type { BasicResponse, Pagination } from 'src/common/models/models';
 
 type PaginationUtilsConstructorType<T, R> = {
-  service: (params: R) => Promise<AxiosResponse<Pagination<T>>>;
+  service: (params: R) => Promise<AxiosResponse<BasicResponse<Pagination<T>>>>;
   params: R;
   onError?: (error: unknown) => void;
   onSuccess?: (data: Pagination<T>) => void;
@@ -24,7 +24,7 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
     this.onLoad = onLoad;
   }
 
-  service: (params: R) => Promise<AxiosResponse<Pagination<T>>>;
+  service: (params: R) => Promise<AxiosResponse<BasicResponse<Pagination<T>>>>;
   result: Pagination<T> = {
     list: [],
     page: 1,
@@ -132,7 +132,8 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
       }
 
       const { data, status } = await this.service({ ...this.params, signal });
-      this.result = data;
+      if (data.content == null) return;
+      this.result = data.content;
       this.status = status;
 
       if (this.infinite) {

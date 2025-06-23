@@ -1,5 +1,6 @@
 package com.rot.user.controllers
 
+import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.ResultContent
 import com.rot.user.dtos.PatientDto
 import com.rot.user.enums.UserRoleString
@@ -43,6 +44,8 @@ class PatientController {
     @Path("/")
     fun save(body: PatientDto): Response {
         var entity = Patient.fromDto(body)
+        val user = entity.user ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
+        entity.user = user.save()
         entity.active = true
         entity.validate()
 

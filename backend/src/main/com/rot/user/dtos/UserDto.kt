@@ -1,6 +1,7 @@
 package com.rot.user.dtos
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.rot.access.dtos.AccessDto
 import com.rot.core.jaxrs.ContentDto
 import com.rot.user.enums.UserRole
 import com.rot.user.models.User
@@ -15,7 +16,7 @@ class UserDto {
     var email: String? = null
     var role: UserRole = UserRole.PHYSIOTHERAPIST
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    var token: String? = null
+    var access: AccessDto? = null
 
     companion object {
         fun from(user: User, token: Boolean = false): UserDto {
@@ -28,7 +29,7 @@ class UserDto {
             dto.role = user.role
 
             if (token) {
-                dto.token = user.token
+                dto.access = user.access
             }
 
             return dto
@@ -49,8 +50,7 @@ class UserResponse : ContentDto<UserDto>() {
                         "username": "usuario123",
                         "name": "Usuário Exemplo",
                         "email": "usuario@example.com",
-                        "role": "PHYSIOTHERAPIST",
-                        "token": "eyJhbGciOiJIUzI1NiIsInR5..."
+                        "role": "PHYSIOTHERAPIST"
                       }
                     }
                     """

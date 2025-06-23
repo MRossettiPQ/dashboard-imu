@@ -1,42 +1,41 @@
 <script setup lang="ts" generic="T, R extends { page: number; rpp: number }">
 import type { QTableProps } from 'quasar';
 import type PaginationUtils from 'src/common/utils/PaginationUtils';
-import { computed } from 'vue';
+import { computed, toRaw } from 'vue';
+import type { TableColumn } from 'src/common/models/models';
 
 // T = tipo dos dados por linha, ex: Record<string, any> ou algo mais específico
-interface Props<T, R extends { page: number; rpp: number }> extends QTableProps {
+type TableProps = Omit<Partial<QTableProps>, 'columns'>;
+interface Props<T, R extends { page: number; rpp: number }> extends TableProps {
   service: PaginationUtils<T, R>;
   editable?: boolean;
-  title?: string;
-  bordered?: boolean;
-  dense?: boolean;
-  flat?: boolean;
   rowKey?: string;
-  columns: QTableProps['columns'];
+  columns: TableColumn<T>[];
   orderType?: 'ad' | 'da';
 }
 
-async function sortBy(): Promise<void> {}
+async function sortBy(): Promise<void> {
+  console.log('sortBy', paginationInfo.value);
+  await props.service.search();
+}
 
-const emit = defineEmits<{
-  (e: 'update:params', val: typeof props.service.params): void;
-}>();
+const emit = defineEmits<(e: 'update:params', val: R) => void>();
 
 const paginationInfo = computed({
   get: () => props.service.params,
   set: (val) => emit('update:params', val),
 });
-
 const props = defineProps<Props<T, R>>();
+console.log(props.columns);
 </script>
 
 <template>
   <q-table
-    :bordered="props.bordered"
-    :columns="props.columns"
-    :flat="props.flat"
-    :dense="props.dense"
     :row-key="props.rowKey"
+    :columns="props.columns"
+    :dense="props.dense"
+    :bordered="props.bordered"
+    :flat="props.flat"
     :rows="props.service.items"
     :loading="props.service.loading"
     v-model:pagination="paginationInfo"
@@ -44,47 +43,36 @@ const props = defineProps<Props<T, R>>();
     :column-sort-order="props.orderType"
     binary-state-sort
     @request="sortBy"
-    :title="props.title"
     virtual-scroll
     no-data-label="Não encontrei nada para você"
     no-results-label="O filtro não encontrou nenhum resultado"
   >
-    <template v-slot:header="props">
-      <q-tr :props="props">
-        <q-th v-for="col in props.cols" :key="col.name" :props="props">
-          {{ col.label }}
-        </q-th>
-        <q-th v-if="editable" auto-width />
-      </q-tr>
+    <slot />
+
+    <template v-slot:top>
+      <slot name="top" />
     </template>
 
     <template v-slot:body="props">
       <q-tr :props="props">
         <q-td v-for="col in props.cols" :key="col.name" :props="props">
-          <div v-if="col.type == 'btn'">
+          <div v-if="col.type == 'button'">
             <q-btn
-              v-if="col.value?.show"
-              :icon="col.value?.icon"
-              :label="col.value?.label"
-              :disable="col.value?.disable"
-              :loading="col.value?.loading"
-              @click="col.value?.click(col.value)"
+              v-bind="col.props"
+              @click="(event) => col.props.onClick?.(event, toRaw(props.row))"
               size="sm"
               round
               outline
               dense
             />
           </div>
-          <div v-else>{{ col.value }}</div>
-        </q-td>
-        <q-td v-if="editable" auto-width>
-          <q-btn size="sm" round outline dense icon="edit" />
+          <template v-else>{{ col.value }}</template>
         </q-td>
       </q-tr>
     </template>
 
     <template v-slot:bottom>
-      <div class="row w-100 items-center justify-between">
+      <div class="row u-w-100 items-center justify-between">
         <div>Página {{ service.result.page }} de {{ service.result.pageCount }}</div>
 
         <div class="row">

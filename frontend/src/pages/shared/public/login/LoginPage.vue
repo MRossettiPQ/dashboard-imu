@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { ref } from 'vue';
-import { accessService } from 'src/common/services/access/access-service';
+import type { QForm } from 'quasar';
 import type { LoginRequestDto } from 'src/common/models/models';
+import { accessService } from 'src/common/services/access/access-service';
 import { formUtils } from 'src/common/utils/FormUtils';
-import { QForm } from 'quasar';
+import { useAuthStore } from 'stores/auth-store';
+import { useRouter } from 'vue-router';
 
-// 👇 Captura o ref do form
+const store = useAuthStore();
+const router = useRouter();
 const mainForm = ref<QForm | null>(null);
 const loading = ref(false);
 const form = ref<LoginRequestDto>({
@@ -16,13 +20,20 @@ const form = ref<LoginRequestDto>({
 async function login(): Promise<void> {
   try {
     loading.value = true;
-    if (mainForm.value == null || (form.value.username === '' && form.value.password === '')) {
+    if (mainForm.value == null) {
+      return;
+    }
+    if (form.value.username.trim() === '' && form.value.password.trim() === '') {
       return;
     }
 
     await formUtils.validate(mainForm.value);
 
-    await accessService.login({ form: form.value });
+    const { data } = await accessService.login({ form: form.value });
+    if (data?.content?.access) {
+      await store.save(data.content.access);
+      await router.push({ name: 'shared.home' });
+    }
   } catch (error) {
     console.error(error);
   } finally {
@@ -32,28 +43,31 @@ async function login(): Promise<void> {
 </script>
 
 <template>
-  <q-card class="access-card self-center">
-    <q-card-section horizontal class="column gap-15 justify-center">
-      <div class="column">
-        <div class="row items-center">
-          <h5 class="title col">Login</h5>
+  <custom-page>
+    <div class="flex u-h-100 u-w-100 justify-center items-center content-center">
+      <q-card
+        bordered
+        class="self-center column u-w-100 flex column justify-between u-p-24 no-wrap u-gap-30"
+        style="max-width: 530px"
+      >
+        <div class="column">
+          <div class="row items-center">
+            <h2 class="col text-center u-p-12 u-m-0" style="font-size: 52px">Login</h2>
+          </div>
         </div>
-      </div>
-      <q-form ref="mainForm" class="h-100 w-100">
-        <q-card-section class="col self-center column gap-20">
+
+        <q-form ref="mainForm" class="flex u-w-100 column u-gap-30">
           <q-input
             v-model.trim="form.username"
             label="Username"
-            dense
             outlined
             @keyup.enter="login"
-            :rules="[$rules.notBlank, $rules.email]"
+            :rules="[$rules.notBlank]"
           />
 
-          <div class="col column gap-5">
+          <div class="column gap-5">
             <q-input
               v-model.trim="form.password"
-              dense
               outlined
               type="password"
               label="Senha"
@@ -64,19 +78,17 @@ async function login(): Promise<void> {
               Esqueci minha senha
             </router-link>
           </div>
+        </q-form>
 
-          <q-btn
-            color="primary"
-            :disable="loading"
-            :loading="loading"
-            label="Entrar"
-            size="16px"
-            @click="login"
-          />
-        </q-card-section>
-      </q-form>
-    </q-card-section>
-  </q-card>
+        <q-btn
+          color="primary"
+          :disable="loading"
+          :loading="loading"
+          label="Entrar"
+          size="16px"
+          @click="login"
+        />
+      </q-card>
+    </div>
+  </custom-page>
 </template>
-
-<style scoped></style>

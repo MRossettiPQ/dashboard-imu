@@ -1,9 +1,28 @@
 import type { Component } from 'vue';
 import type dayjs from 'dayjs';
+import type { QBtnProps, QTableColumn } from 'quasar';
 
 export type PropsOf<T extends Component> = T extends new (...args: unknown[]) => { $props: infer P }
   ? P
   : never;
+
+export interface BtnProps<T> extends Omit<Partial<QBtnProps>, 'onClick'> {
+  onClick?: (
+    evt: Event,
+    row?: T,
+    go?: (opts?: {
+      // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+      to?: string | unknown;
+      replace?: boolean;
+      returnRouterError?: boolean;
+    }) => Promise<unknown>,
+  ) => void | Promise<void>;
+}
+
+export interface TableColumn<T> extends QTableColumn {
+  type?: 'button' | 'normal' | undefined;
+  props?: BtnProps<T> | undefined;
+}
 
 export interface LoginRequestDto {
   username: string;
@@ -24,21 +43,38 @@ export enum UserRole {
   PATIENT = 'PATIENT',
 }
 
+export enum SessionType {
+  REAL = 'REAL',
+  DEMO = 'DEMO',
+  GOLD = 'GOLD',
+}
+
 export interface Patient {
-  id: number;
-  user: User;
+  id?: string;
+  birthday?: dayjs.Dayjs | undefined;
+  cpf?: string;
+  phone?: string;
+  stature?: number;
+  user?: User;
+}
+
+export interface Session {
+  id?: string;
+  type?: SessionType;
+  date?: dayjs.Dayjs;
 }
 
 export interface User {
-  id: number;
+  id?: string;
   username: string;
   name: string;
   email: string;
   password?: string;
   role: UserRole;
+  access?: AccessDto;
 }
 
-export interface AccessDto extends User {
+export interface AccessDto {
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt: dayjs.Dayjs;

@@ -1,7 +1,7 @@
 import api from 'src/common/services/http-client';
 import type { BasicResponse, Pagination, Patient } from 'src/common/models/models';
 
-export const patientService = {
+export const sessionService = {
   get: async ({ uuid }: { uuid: string }) => {
     return await api.get<BasicResponse<Patient>>(`/api/patients/${uuid}`);
   },

@@ -8,3 +8,17 @@
   scrollbar-color: inherit;
   scroll-margin-right: -10px;
 }
+
+.router-link {
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin: 0;
+  transition: all 0.5s ease-in-out;
+
+  &:hover {
+    filter: brightness(1.5);
+  }
+}

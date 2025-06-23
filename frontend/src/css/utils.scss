@@ -1,68 +1,68 @@
 // Spacing
-@for $index from 0 through 25 {
-  $space: $index * 4;
+@for $index from 0 through 50 {
+  $val: $index * 2;
 
-  .u-gap-#{$space} {
-    gap: #{$space}px;
-  }
-
-  .u-top-#{$space} {
-    top: #{$space}px;
-  }
-  .u-right-#{$space} {
-    right: #{$space}px;
-  }
-  .u-left-#{$space} {
-    left: #{$space}px;
-  }
-  .u-bottom-#{$space} {
-    bottom: #{$space}px;
+  .u-gap-#{$val} {
+    gap: #{$val}px;
   }
 
-  .u-m-#{$space} {
-    margin: #{$space}px;
+  .u-top-#{$val} {
+    top: #{$val}px;
   }
-  .u-mv-#{$space} {
-    margin: #{$space}px 0;
+  .u-right-#{$val} {
+    right: #{$val}px;
   }
-  .u-mh-#{$space} {
-    margin: 0 #{$space}px;
+  .u-left-#{$val} {
+    left: #{$val}px;
   }
-  .u-mt-#{$space} {
-    margin-top: #{$space}px;
-  }
-  .u-mb-#{$space} {
-    margin-bottom: #{$space}px;
-  }
-  .u-ml-#{$space} {
-    margin-left: #{$space}px;
-  }
-  .u-mr-#{$space} {
-    margin-right: #{$space}px;
+  .u-bottom-#{$val} {
+    bottom: #{$val}px;
   }
 
-  .u-p-#{$space} {
-    padding: #{$space}px;
+  .u-m-#{$val} {
+    margin: #{$val}px;
   }
-  .u-pv-#{$space} {
-    padding-top: #{$space}px;
-    padding-bottom: #{$space}px;
+  .u-mv-#{$val} {
+    margin: #{$val}px 0;
   }
-  .u-ph-#{$space} {
-    padding-left: #{$space}px;
-    padding-right: #{$space}px;
+  .u-mh-#{$val} {
+    margin: 0 #{$val}px;
   }
-  .u-pt-#{$space} {
-    padding-top: #{$space}px;
+  .u-mt-#{$val} {
+    margin-top: #{$val}px;
   }
-  .u-pb-#{$space} {
-    padding-bottom: #{$space}px;
+  .u-mb-#{$val} {
+    margin-bottom: #{$val}px;
   }
-  .u-pl-#{$space} {
-    padding-left: #{$space}px;
+  .u-ml-#{$val} {
+    margin-left: #{$val}px;
   }
-  .u-pr-#{$space} {
-    padding-right: #{$space}px;
+  .u-mr-#{$val} {
+    margin-right: #{$val}px;
+  }
+
+  .u-p-#{$val} {
+    padding: #{$val}px;
+  }
+  .u-pv-#{$val} {
+    padding-top: #{$val}px;
+    padding-bottom: #{$val}px;
+  }
+  .u-ph-#{$val} {
+    padding-left: #{$val}px;
+    padding-right: #{$val}px;
+  }
+  .u-pt-#{$val} {
+    padding-top: #{$val}px;
+  }
+  .u-pb-#{$val} {
+    padding-bottom: #{$val}px;
+  }
+  .u-pl-#{$val} {
+    padding-left: #{$val}px;
+  }
+  .u-pr-#{$val} {
+    padding-right: #{$val}px;
   }
 }
 

@@ -1,7 +1,5 @@
 <template>
   <q-page class="page">
-    <slot class="page__header" name="header" />
-
     <div class="page__content bordered">
       <div class="page__inner-content scroll">
         <slot />
@@ -20,7 +18,9 @@
   max-height: calc(100vh - 50px);
   min-height: 0;
   height: 100%;
-  padding: 12px 15px 0 15px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 15px 5px 15px;
 
   &__header {
     grid-area: header;
@@ -29,7 +29,10 @@
   &__content {
     overflow: hidden;
     grid-area: page-content;
+    min-height: 0;
     height: 100%;
+    min-width: 0;
+    width: 100%;
     display: grid;
     grid-template-rows: 1fr minmax(0, min-content);
     grid-template-areas: 'page-inner-content' 'page-actions';
@@ -39,7 +42,11 @@
 
   &__inner-content {
     grid-area: page-inner-content;
+    display: flex;
     height: 100%;
+    width: 100%;
+    min-width: 0;
+    padding: 2px;
   }
 
   &__actions {

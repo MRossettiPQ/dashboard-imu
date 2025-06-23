@@ -4,8 +4,16 @@ import type { AccessDto, AuthStore, UserRole } from 'src/common/models/models';
 import { useRouter } from 'vue-router';
 import { accessService } from 'src/common/services/access/access-service';
 import { CookieType, getCookieConfiguration } from 'src/common/utils/cookieUtils';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
+
+const trimDate = (input: string | null): Dayjs | null => {
+  const formated = input?.replace(/\.(\d{3})\d+/, '.$1');
+  if (formated == null) return null;
+  return dayjs(input?.replace(/\.(\d{3})\d+/, '.$1'));
+};
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthStore => ({
@@ -24,10 +32,10 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     loadCookies(): void {
-      this.accessToken = Cookies.get('accessToken');
-      this.refreshToken = Cookies.get('refreshToken');
-      this.accessTokenExpiresAt = Cookies.get('accessTokenExpiresAt');
-      this.refreshTokenExpiresAt = Cookies.get('refreshTokenExpiresAt');
+      this.accessToken = Cookies.get(CookieType.ACCESS_TOKEN);
+      this.refreshToken = Cookies.get(CookieType.REFRESH_TOKEN);
+      this.accessTokenExpiresAt = trimDate(Cookies.get(CookieType.ACCESS_TOKEN_DATE));
+      this.refreshTokenExpiresAt = trimDate(Cookies.get(CookieType.REFRESH_TOKEN_DATE));
     },
     logOut(): void {
       this.user = null;
@@ -47,19 +55,19 @@ export const useAuthStore = defineStore('auth', {
       const router = useRouter();
       const authenticated = await this.isAuthenticatedOrLoadContext();
       if (!authenticated || this.user?.role == undefined) {
-        await router.push({ name: 'login' });
+        await router.push({ name: 'public.login' });
         return;
       }
 
       if (roles.length && !roles.includes(this.user.role)) {
-        await router.push({ name: 'forbidden' });
+        await router.push({ name: 'public.forbidden' });
       }
     },
     async isAuthenticatedOrLoadContext(): Promise<boolean> {
       this.loadCookies();
       const now = new Date();
 
-      if (this.accessTokenExpiresAt && this.accessTokenExpiresAt.isAfter(now)) {
+      if (this.accessTokenExpiresAt && this.accessTokenExpiresAt?.isAfter(now) === true) {
         if (!this.user) {
           try {
             await this.loadContext();
@@ -71,7 +79,7 @@ export const useAuthStore = defineStore('auth', {
         return true;
       }
 
-      if (this.refreshTokenExpiresAt && this.refreshTokenExpiresAt.isAfter(now)) {
+      if (this.refreshTokenExpiresAt && this.refreshTokenExpiresAt?.isAfter(now) === true) {
         try {
           await this.refreshTokens();
           await this.loadContext();
@@ -88,26 +96,26 @@ export const useAuthStore = defineStore('auth', {
       this.loadCookies();
 
       const router = useRouter();
-      const now = new Date();
-      if (!this.accessTokenExpiresAt || !this.refreshTokenExpiresAt) {
+      const now = dayjs();
+      if (!this.accessTokenExpiresAt) {
         return;
       }
 
       try {
         this.loading = true;
-        if (this.accessTokenExpiresAt?.isAfter(now) || this.refreshTokenExpiresAt?.isAfter(now)) {
+        if (this.accessTokenExpiresAt?.isAfter(now) === true) {
           const { data } = await accessService.context();
           this.user = data.content;
           this.scheduleRefresh();
         } else {
           console.log('Session expired, redirect to login');
           this.logOut();
-          await router.push({ name: 'login' });
+          await router.push({ name: 'public.login' });
         }
       } catch (e) {
         console.error('Error on loadContext', e);
         this.logOut();
-        await router.push({ name: 'login' });
+        await router.push({ name: 'public.login' });
       } finally {
         this.loading = false;
       }
@@ -115,19 +123,21 @@ export const useAuthStore = defineStore('auth', {
     async save(data: AccessDto, rememberMe: boolean = false) {
       this.accessToken = data.accessToken;
       this.refreshToken = data.refreshToken;
-      this.accessTokenExpiresAt = data.accessTokenExpiresAt;
-      this.refreshTokenExpiresAt = data.refreshTokenExpiresAt;
+      this.accessTokenExpiresAt = trimDate(String(data.accessTokenExpiresAt));
+      this.refreshTokenExpiresAt = trimDate(String(data.refreshTokenExpiresAt));
 
-      const accessTokenExpiry = data.accessTokenExpiresAt;
-      const confAccess = getCookieConfiguration(accessTokenExpiry.toDate());
-      Cookies.set(CookieType.ACCESS_TOKEN, data.accessToken, confAccess);
+      if (this.accessTokenExpiresAt == null || this.refreshTokenExpiresAt == null) return;
+
+      const accessTokenExpiry = this.accessTokenExpiresAt.toDate();
+      const confAccess = getCookieConfiguration(accessTokenExpiry);
+      Cookies.set(CookieType.ACCESS_TOKEN, this.accessToken, confAccess);
       Cookies.set(CookieType.ACCESS_TOKEN_DATE, accessTokenExpiry.toISOString(), confAccess);
 
       if (rememberMe) {
-        const refreshTokenExpiry = data.refreshTokenExpiresAt;
-        const confRefresh = getCookieConfiguration(refreshTokenExpiry.toDate());
-        Cookies.set(CookieType.REFRESH_TOKEN, data.accessToken, confRefresh);
-        Cookies.set(CookieType.ACCESS_TOKEN_DATE, refreshTokenExpiry.toISOString(), confRefresh);
+        const refreshTokenExpiry = this.refreshTokenExpiresAt.toDate();
+        const confRefresh = getCookieConfiguration(refreshTokenExpiry);
+        Cookies.set(CookieType.REFRESH_TOKEN, this.accessToken, confRefresh);
+        Cookies.set(CookieType.REFRESH_TOKEN_DATE, refreshTokenExpiry.toISOString(), confRefresh);
       }
 
       this.scheduleRefresh();
@@ -136,12 +146,12 @@ export const useAuthStore = defineStore('auth', {
     scheduleRefresh() {
       if (refreshTimeout) clearTimeout(refreshTimeout);
 
-      if (this.accessTokenExpiresAt != null && this.refreshToken != null) {
-        const now = new Date();
+      if (this.accessTokenExpiresAt != null) {
+        const now = dayjs();
         const refreshTime = this.accessTokenExpiresAt;
 
         if (refreshTime.isBefore(now)) {
-          const delay = refreshTime.toDate().getTime() - now.getTime();
+          const delay = refreshTime.toDate().getTime() - now.toDate().getTime();
           refreshTimeout = setTimeout(() => {
             this.refreshTokens().catch((e) => console.error(e));
           }, delay);
@@ -153,16 +163,15 @@ export const useAuthStore = defineStore('auth', {
       const router = useRouter();
       if (!this.refreshToken) throw new Error('No refresh token available');
 
+      const { data } = await accessService.refreshToken(this.refreshToken);
+      if (!data?.content?.access) throw new Error('No content in response');
       try {
-        const { data } = await accessService.refreshToken(this.refreshToken);
-        if (!data.content) new Error('No content in response');
-
-        await this.save(data.content!);
+        await this.save(data.content.access);
         this.scheduleRefresh();
       } catch (e) {
         console.error('Error refreshing token', e);
         this.logOut();
-        await router.push({ name: 'login' });
+        await router.push({ name: 'public.login' });
       }
     },
   },

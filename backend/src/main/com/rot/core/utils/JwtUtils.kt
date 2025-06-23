@@ -12,19 +12,25 @@ import java.security.PublicKey
 import java.time.Duration
 import java.time.Instant
 
+enum class JwtType(val description: String) {
+    REFRESH("Refresh"),
+    ACCESS("Access")
+}
+
 object JwtUtils {
 
     private val privateKey: PrivateKey by lazy {
-        KeyUtils.readPrivateKey("/META-INF/resources/security/private.pem")
+        KeyUtils.readPrivateKey("/security/private.pem")
     }
 
     private val publicKey: PublicKey by lazy {
-        KeyUtils.readPublicKey("/META-INF/resources/security/public.pem")
+        KeyUtils.readPublicKey("/security/public.pem")
     }
 
     fun generate(
         issuer: String,
         subject: String,
+        type: JwtType = JwtType.ACCESS,
         claims: MutableMap<String, Any?> = mutableMapOf(),
         groups: MutableSet<String> = mutableSetOf(),
         clientType: String = "internal",
@@ -43,6 +49,7 @@ object JwtUtils {
             .issuedAt(now)
             .expiresAt(expiry)
             .claim("client_type", clientType)
+            .claim("token_type", type.name.lowercase())
 
         claims.forEach { (key, value) ->
             builder.claim(key, value)
@@ -63,7 +70,6 @@ object JwtUtils {
         val context = JWTAuthContextInfo()
         context.clockSkew = 30
         context.publicVerificationKey = publicKey
-        context.subjectPath = "TESTE"
         context.issuedBy = issuer
         context.expectedAudience = setOf(audience)
         val parser = DefaultJWTParser(context)

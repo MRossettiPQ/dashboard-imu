@@ -31,6 +31,8 @@ export interface EssentialLinkProps {
   link?: string; // external URL
   icon?: string;
   to?: { name: string }; // Vue Router route object
+  authenticated?: boolean;
+  hiddenAuthenticated?: boolean;
 }
 
 export default defineComponent({

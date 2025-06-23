@@ -49,6 +49,11 @@ class AuthenticationProvider(
             throw ApplicationException("JWT is null or not properly injected.", 401)
         }
 
+        val tokenType = jwt.getClaim<String>("token_type")
+        if (tokenType != "access") {
+            throw ApplicationException("Invalid token type. Access token required.", 401)
+        }
+
         val uuid = jwt.getClaim<String>("reference")
             ?: throw ApplicationException("JWT claim 'reference' is missing.", 401)
 

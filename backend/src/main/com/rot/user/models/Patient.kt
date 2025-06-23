@@ -45,7 +45,7 @@ class Patient : BaseEntity<Patient>() {
     @Column(name = "stature")
     var stature: BigDecimal? = null
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "user_id")
     var user: User? = null
 

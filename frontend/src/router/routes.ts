@@ -4,8 +4,8 @@ import { UserRole } from 'src/common/models/models';
 
 const publicRoutes: RouteRecordRaw[] = [
   {
-    name: 'public.login',
     path: 'login',
+    name: 'public.login',
     component: () => import('pages/shared/public/login/LoginPage.vue'),
     meta: {
       hideAuthenticated: true,
@@ -13,8 +13,8 @@ const publicRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    name: 'public.register',
     path: 'register',
+    name: 'public.register',
     component: () => import('pages/shared/public/register/RegisterPage.vue'),
     meta: {
       hideAuthenticated: true,
@@ -22,8 +22,8 @@ const publicRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    name: 'public.socket',
     path: 'socket',
+    name: 'public.socket',
     component: () => import('pages/shared/public/socket/SocketPage.vue'),
     meta: {
       hideAuthenticated: true,
@@ -33,24 +33,32 @@ const publicRoutes: RouteRecordRaw[] = [
 ];
 const privateRoutes: RouteRecordRaw[] = [
   {
-    name: 'private.account',
     path: 'account',
+    name: 'private.account',
     component: () => import('pages/shared/private/account/AccountPage.vue'),
     meta: {
       private: true,
     },
   },
   {
-    name: 'private.patient',
     path: 'patient',
+    name: 'private.patients',
+    component: () => import('pages/shared/private/patient/PatientsPage.vue'),
+    meta: {
+      private: true,
+    },
+  },
+  {
+    path: 'patient/:uuid([0-9a-fA-F-]{36})',
+    name: 'private.patient',
     component: () => import('pages/shared/private/patient/PatientPage.vue'),
     meta: {
       private: true,
     },
   },
   {
-    name: 'private.session',
     path: 'session',
+    name: 'private.session',
     component: () => import('pages/shared/private/session/SessionPage.vue'),
     meta: {
       private: true,
@@ -60,48 +68,49 @@ const privateRoutes: RouteRecordRaw[] = [
 
 const typeRoutes: RouteRecordRaw[] = [
   {
+    path: '/',
     name: 'shared',
-    path: '',
     component: () => import('pages/shared/SharedApp.vue'),
     children: [
       {
-        name: 'shared-home',
         path: '',
-        component: () => import('pages/shared/home/HomePage.vue'),
-        meta: {
-          private: false,
-        },
-      },
-      {
         name: 'public',
-        path: '/',
         component: () => import('pages/shared/public/PublicApp.vue'),
         children: publicRoutes,
-        beforeEnter: (to, from, next) => {
-          console.log('Before enter - publico');
+        beforeEnter: (to, _from, next) => {
+          console.log('Before enter - publico ->', to.fullPath);
           const store = useAuthStore();
 
           if (store.isAuthenticated && to.meta.hideAuthenticated) {
-            return next({ name: 'shared' });
+            return next({ name: 'shared.home' });
           }
 
           return next();
         },
       },
       {
-        name: 'private',
         path: '/private',
+        name: 'private',
         component: () => import('pages/shared/private/PrivateApp.vue'),
         children: privateRoutes,
-        beforeEnter: (to, from, next) => {
-          console.log('Before enter - privados');
+        beforeEnter: (to, _from, next) => {
+          console.log('Before enter - privados ->', to.fullPath);
           const store = useAuthStore();
           const role = store.user?.role;
-          if (role && ![UserRole.PHYSIOTHERAPIST, UserRole.ADMINISTRATOR].includes(role)) {
+
+          if (role && [UserRole.PHYSIOTHERAPIST, UserRole.ADMINISTRATOR].includes(role)) {
             return next();
           }
 
           return next({ name: 'public.login' });
+        },
+      },
+      {
+        path: '/home',
+        name: 'shared.home',
+        component: () => import('pages/shared/home/HomePage.vue'),
+        meta: {
+          private: false,
         },
       },
     ],
@@ -127,7 +136,7 @@ export const routeBeforeGuard = async (
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ): Promise<void> => {
-  console.log('Before enter - geral');
+  console.log('Before enter - geral ->', to.fullPath);
   const store = useAuthStore();
   await store.isAuthenticatedOrLoadContext();
 

@@ -1,11 +1,13 @@
 package com.rot.user.models
 
 import com.querydsl.core.annotations.Config
+import com.rot.access.dtos.AccessDto
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.exceptions.ApplicationException
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.core.utils.EncryptUtils
+import com.rot.core.utils.JwtType
 import com.rot.core.utils.JwtUtils
 import com.rot.user.dtos.UserDto
 import com.rot.user.enums.UserRole
@@ -15,6 +17,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.core.Response
 import java.time.Duration
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.jvm.Transient
 
@@ -89,21 +92,42 @@ class User : BaseEntity<User>() {
     }
 
     @Transient
-    var token: String? = null
+    var access: AccessDto? = null
 
-    fun generateToken(issuer: String, subject: String): String {
-        token = JwtUtils.generate(
+    fun generateToken(issuer: String, subject: String): AccessDto {
+        val durationAccess = Duration.ofHours(12)
+        val durationRefresh = Duration.ofDays(4)
+        val accessTokenExpiresAt = LocalDateTime.now().plusHours(12)
+        val refreshTokenExpiresAt = LocalDateTime.now().plusDays(4)
+
+        access = AccessDto()
+        access?.accessTokenExpiresAt = accessTokenExpiresAt
+        access?.accessToken = JwtUtils.generate(
             issuer = issuer,
             subject = subject,
+            type = JwtType.ACCESS,
             groups = mutableSetOf(role.name),
             claims = mutableMapOf(
                 "roles" to listOf(role.name),
                 "reference" to id
             ),
-            duration = Duration.ofHours(12),
+            duration = durationAccess,
             username = username,
         )
-        return token!!
+
+        access?.refreshTokenExpiresAt = refreshTokenExpiresAt
+        access?.refreshToken = JwtUtils.generate(
+            issuer = issuer,
+            subject = subject,
+            type = JwtType.REFRESH,
+            claims = mutableMapOf(
+                "reference" to id
+            ),
+            duration = durationRefresh,
+            username = username,
+        )
+
+        return access!!
     }
 
     fun encryptAndSetPassword(password: String) {

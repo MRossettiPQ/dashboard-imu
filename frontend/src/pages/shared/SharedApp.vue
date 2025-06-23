@@ -1,8 +1,3 @@
 <template>
-  <custom-page>
-    <router-view />
-  </custom-page>
+  <router-view />
 </template>
-<script setup lang="ts">
-import CustomPage from 'components/CustomPage/CustomPage.vue';
-</script>

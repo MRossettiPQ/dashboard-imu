@@ -59,13 +59,14 @@ class AccessController(
     @APIResponse(responseCode = "400", description = "Dados inválidos para registro")
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun register(@Valid body: RegisterDto): Response {
-        val user = User.fromDto(body)
+        var user = User.fromDto(body)
         user.active = true
         user.encryptAndSetPassword(body.password)
         user.validate()
+        user = user.save()
         user.generateToken(applicationConfig.security().issuer(), applicationConfig.security().subject())
 
-        return ResultContent.of().withContent(UserDto.from(user.save(), true)).build()
+        return ResultContent.of().withContent(UserDto.from(user, true)).build()
     }
 
     @POST

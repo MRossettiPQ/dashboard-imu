@@ -12,6 +12,7 @@ class PatientDto {
     var cpf: String? = null
     var phone: String? = null
     var stature: BigDecimal? = null
+    var user: UserDto? = null
 
     companion object {
         fun from(patient: Patient): PatientDto {
@@ -22,6 +23,7 @@ class PatientDto {
                this.phone = patient.phone
                this.stature = patient.stature
                this.birthday = patient.birthday
+               this.user = UserDto.from(patient.user!!)
            }
         }
     }
