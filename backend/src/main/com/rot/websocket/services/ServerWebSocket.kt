@@ -12,7 +12,6 @@ import jakarta.websocket.server.ServerEndpoint
 @ApplicationScoped
 @ServerEndpoint("/api/websocket/{name}")
 class ServerWebSocket {
-
     @OnOpen
     fun onOpen(session: Session?, @PathParam("name") name: String) {
         println("onOpen - $name")

@@ -1,0 +1,27 @@
+application:
+  name: Dashboard IMU
+  environment: development
+  database:
+    host: localhost
+    name: dashboard
+    username: postgres
+    password: 1
+  frontend:
+    url: http://localhost:8000
+  backend:
+    host: localhost
+    port: 8000
+    protocol: http
+  security:
+    issuer: dashboard-imu
+    token: 1
+    subject: dashboard-imu
+  socket:
+    host: localhost
+    port: 8001
+  mqtt:
+    host: localhost
+    port: 8002
+  mdns:
+    protocol: http
+    name: dashboard

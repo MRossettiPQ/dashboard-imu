@@ -8,7 +8,6 @@ import jakarta.enterprise.event.Observes
 
 @ApplicationScoped
 class ApplicationLifecycle {
-
     fun onStart(@Observes ev: StartupEvent?) {
         Log.info("The application is starting...")
     }
@@ -16,5 +15,4 @@ class ApplicationLifecycle {
     fun onStop(@Observes ev: ShutdownEvent?) {
         Log.info("The application is stopping...")
     }
-
 }

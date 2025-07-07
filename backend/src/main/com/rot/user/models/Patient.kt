@@ -4,7 +4,6 @@ import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.user.dtos.PatientDto
-import com.rot.user.dtos.UserDto
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -15,8 +14,8 @@ import java.util.*
 @Table(
     name = "patients",
     indexes = [
-        Index(name = "idx_patient_active", columnList = "active"),
         Index(name = "idx_patient_cpf", columnList = "cpf"),
+        Index(name = "idx_patient_active", columnList = "active"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -52,5 +51,4 @@ class Patient : BaseEntity<Patient>() {
     fun toDto(): PatientDto {
         return PatientDto.from(this)
     }
-
 }
