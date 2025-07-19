@@ -1,26 +1,27 @@
 application:
   name: Dashboard IMU
-  environment: ${ENVIRONMENT}
+  environment: ${ENVIRONMENT:production}
   database:
-    host: ${DATABASE_HOST}
-    name: ${DATABASE_NAME}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    host: ${DATABASE_HOST:localhost}
+    name: ${DATABASE_NAME:dashboard-imu}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:1}
+    port: ${DATABASE_PORT:5432}
   frontend:
-    url: ${FRONTEND_URL}
+    url: ${FRONTEND_URL:"http://localhost:8080"}
   backend:
     host: ${BACKEND_HOST:0.0.0.0}
     port: ${BACKEND_PORT:8000}
-    protocol: ${BACKEND_PROTOCOL}
+    protocol: ${BACKEND_PROTOCOL:http}
   security:
     issuer: ${SECURITY_ISSUER:dashboard-imu}
-    token: ${SECURITY_TOKEN}
+    token: ${SECURITY_TOKEN:1}
     subject: ${SECURITY_ISSUER:dashboard-imu}
   socket:
-    host: ${SOCKET_HOST}
+    host: ${SOCKET_HOST:localhost}
     port: ${SOCKET_PORT:8001}
   mqtt:
-    host: ${MQTT_HOST}
+    host: ${MQTT_HOST:localhost}
     port: ${MQTT_PORT:8002}
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
@@ -41,7 +42,6 @@ mp:
 quarkus:
   application:
     name: ${application.mdns.name}
-#    host: ${application.backend.host}
   mdns:
     enabled: true
   native:
@@ -56,13 +56,8 @@ quarkus:
     instrumentation: true
   analytics:
     disabled: true
-#  swagger-ui:
-#    always-include: true
-#    path: /api/swagger-ui
-#  smallrye-openapi:
-#    path: /api/openapi
   http:
-#    host: ${application.backend.host}
+    #    host: ${application.backend.host}
     port: ${application.backend.port}
     cors:
       ~: true
@@ -76,12 +71,17 @@ quarkus:
   hibernate-orm:
     log:
       sql: false
-    datasource: "<default>"
+    jdbc:
+      timezone: America/Sao_Paulo
     database:
       generation: update
+    packages: com.rot, com.blazebit.persistence.impl.function.entity
     implicit-naming-strategy: com.rot.core.hibernate.implementation.ImplicitNamingStrategyImpl
     second-level-caching-enabled: false
   datasource:
+    username: ${application.database.username}
+    password: ${application.database.password}
+    db-kind: postgresql
     devservices:
       enabled: false
     jdbc:
@@ -89,10 +89,7 @@ quarkus:
       max-lifetime: 50M
       max-size: 500
       leak-detection-interval: 8000
-      url: jdbc:postgresql://${application.database.host}/${application.database.name}?autoReconnect=true&useSSL=false
-    username: ${application.database.username}
-    password: ${application.database.password}
-    db-kind: postgresql
+      url: jdbc:postgresql://${application.database.host}:${application.database.port}/${application.database.name}?autoReconnect=true&useSSL=false
   flyway:
     migrate-at-start: true
     baseline-on-migrate: true
@@ -101,4 +98,4 @@ quarkus:
   smallrye-jwt:
     enabled: true
   config:
-    locations: application.yml,application.base.yml
+    locations: application.dev.yml,application.yml

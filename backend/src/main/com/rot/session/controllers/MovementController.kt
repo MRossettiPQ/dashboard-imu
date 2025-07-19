@@ -1,9 +1,10 @@
 package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.MovementDto
+import com.rot.session.dtos.RetrieveMovementDto
 import com.rot.session.models.Movement
 import com.rot.session.services.SciLabServices
+import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
@@ -12,6 +13,7 @@ import org.jboss.resteasy.reactive.RestPath
 import org.jboss.resteasy.reactive.RestQuery
 import java.util.*
 
+@Authenticated
 @ApplicationScoped
 @Path("/api/movements")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -32,7 +34,7 @@ class MovementController(
     @Path("/{uuid}")
     fun get(@RestPath("uuid") uuid: UUID): Response? {
         val session = Movement.findOrThrowById(uuid)
-        return ResultContent.of().withContent(MovementDto.from(session)).build()
+        return ResultContent.of().withContent(RetrieveMovementDto.from(session)).build()
     }
 
     @GET

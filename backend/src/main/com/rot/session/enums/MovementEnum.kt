@@ -1,6 +1,6 @@
 package com.rot.session.enums
 
-enum class MovementType(val description: String) {
+enum class MovementEnum(val description: String) {
     FLEXION("Flexion"),
     EXTENSION("Extension"),
     ADDUCTION("Adduction"),

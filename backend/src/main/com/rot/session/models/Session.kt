@@ -28,10 +28,11 @@ class Session : BaseEntity<Session>() {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", nullable = false, updatable = false)
     override var id: UUID? = null
 
     @NotNull
-    @Column(name = "date", nullable = false)
+    @Column(name = "date", nullable = false, updatable = false)
     var date: LocalDateTime = LocalDateTime.now()
 
     @NotNull
@@ -39,23 +40,20 @@ class Session : BaseEntity<Session>() {
     @Column(name = "type", nullable = false)
     var type: SessionType = SessionType.REAL
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "procedure", nullable = false)
-    var procedure: ProcedureType? = null
-
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "observation", columnDefinition = "TEXT")
     var observation: String? = null
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id")
     var patient: User? = null
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "physiotherapist_id")
     var physiotherapist: User? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
-    var movements = mutableSetOf<Movement>()
+    var procedures = mutableSetOf<Procedure>()
 }

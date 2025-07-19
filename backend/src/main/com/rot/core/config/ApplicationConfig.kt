@@ -103,5 +103,8 @@ interface ApplicationConfig {
 
         @WithName("password")
         fun password(): String
+
+        @WithName("port")
+        fun port(): Int
     }
 }

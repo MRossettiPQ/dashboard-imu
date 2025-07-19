@@ -149,5 +149,5 @@ kotlin {
     }
 }
 
-System.setProperty("quarkus.config.locations", "application.base.yml,application.yml")
+//System.setProperty("quarkus.config.locations", "application.yml,application.base.yml")
 System.setProperty("quarkus.analytics.disabled", "true")

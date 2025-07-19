@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 
-class MeasurementDto {
+open class BaseMeasurementDto {
     var id: UUID? = null
     var capturedAt: LocalDateTime? = null
     var sensorName: String? = null
@@ -31,10 +31,20 @@ class MeasurementDto {
     var quaternionY: BigDecimal? = null
     var quaternionZ: BigDecimal? = null
     var quaternionW: BigDecimal? = null
+}
 
+class CreateMeasurementDto: BaseMeasurementDto() {
     companion object {
-        fun from(measurement: Measurement) : MeasurementDto {
-            return JsonUtils.MAPPER.convertValue(measurement, MeasurementDto::class.java)
+        fun from(measurement: Measurement) : CreateMeasurementDto {
+            return JsonUtils.MAPPER.convertValue(measurement, CreateMeasurementDto::class.java)
+        }
+    }
+}
+
+class RetrieveMeasurementDto: BaseMeasurementDto() {
+    companion object {
+        fun from(measurement: Measurement) : RetrieveMeasurementDto {
+            return JsonUtils.MAPPER.convertValue(measurement, RetrieveMeasurementDto::class.java)
         }
     }
 }

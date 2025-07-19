@@ -28,10 +28,17 @@ class Sensor : BaseEntity<Sensor>() {
     @GeneratedValue(strategy = GenerationType.UUID)
     override var id: UUID? = null
 
+    @NotNull
     @NotEmpty
     @Column(name = "mac_address")
     var macAddress: String? = null
 
+    @NotNull
+    @NotEmpty
+    @Column(name = "ip")
+    var ip: String? = null
+
+    @NotNull
     @NotEmpty
     @Column(name = "sensor_name")
     var sensorName: String? = null

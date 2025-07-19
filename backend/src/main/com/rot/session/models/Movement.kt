@@ -3,7 +3,6 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.session.enums.MovementType
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.util.*
@@ -27,19 +26,19 @@ class Movement : BaseEntity<Movement>() {
     @GeneratedValue(strategy = GenerationType.UUID)
     override var id: UUID? = null
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    var type: MovementType? = null
-
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "observation", columnDefinition = "TEXT")
     var observation: String? = null
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "session_id", nullable = false)
-    var session: Session? = null
+    @JoinColumn(name = "procedure_id", nullable = false)
+    var procedure: Procedure? = null
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @JoinColumn(name = "type_id", nullable = false)
+    var type: MovementType? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "movement", cascade = [CascadeType.ALL])
     var sensors = mutableSetOf<Sensor>()

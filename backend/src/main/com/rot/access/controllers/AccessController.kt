@@ -9,7 +9,6 @@ import com.rot.core.jaxrs.ResultContent
 import com.rot.core.utils.EncryptUtils
 import com.rot.user.dtos.UserDto
 import com.rot.user.dtos.UserResponse
-import com.rot.user.dtos.UserResponse.Companion.USER_RESPONSE_EXAMPLE
 import com.rot.user.models.User
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -20,7 +19,6 @@ import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.media.Content
-import org.eclipse.microprofile.openapi.annotations.media.ExampleObject
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 
@@ -46,13 +44,6 @@ class AccessController(
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
                 schema = Schema(implementation = UserResponse::class),
-                examples = [
-                    ExampleObject(
-                        name = "Usuário registrado",
-                        summary = "Usuário registrado",
-                        value = USER_RESPONSE_EXAMPLE
-                    )
-                ]
             )
         ]
     )
@@ -83,13 +74,6 @@ class AccessController(
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
                 schema = Schema(implementation = UserResponse::class),
-                examples = arrayOf(
-                    ExampleObject(
-                        name = "Usuário logado",
-                        summary = "Resposta com token",
-                        value = USER_RESPONSE_EXAMPLE
-                    )
-                )
             )
         ]
     )
@@ -127,13 +111,6 @@ class AccessController(
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
                 schema = Schema(implementation = UserResponse::class),
-                examples = [
-                    ExampleObject(
-                        name = "Usuário do Contexto",
-                        summary = "Usuário autenticado",
-                        value = USER_RESPONSE_EXAMPLE
-                    )
-                ]
             )
         ]
     )

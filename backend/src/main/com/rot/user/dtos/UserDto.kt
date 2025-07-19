@@ -37,22 +37,5 @@ class UserDto {
     }
 }
 
-@Schema(description = "Resposta com dados do usuário autenticado")
-class UserResponse : ContentDto<UserDto>() {
-    companion object {
-        internal const val USER_RESPONSE_EXAMPLE = """
-                    {
-                      "code": 200,
-                      "message": "Login realizado com sucesso",
-                      "content": {
-                        "id": "d6d1f144-31b3-4f50-a6f3-3289c86f3a73",
-                        "active": true,
-                        "username": "usuario123",
-                        "name": "Usuário Exemplo",
-                        "email": "usuario@example.com",
-                        "role": "PHYSIOTHERAPIST"
-                      }
-                    }
-                    """
-    }
-}
+@Schema(description = "Resposta com dados do usuário")
+class UserResponse : ContentDto<UserDto>()
