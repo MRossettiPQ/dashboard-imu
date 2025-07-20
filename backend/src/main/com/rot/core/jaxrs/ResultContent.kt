@@ -5,21 +5,26 @@ import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
+import kotlin.reflect.KMutableProperty1
 
 class ResultContent<T> {
     private var statusCode: Int = 200
     private var data: ContentDto<T> = ContentDto()
     private var type: String = MediaType.APPLICATION_JSON
     private var headers: MutableMap<String, Any> = mutableMapOf()
-    private var fields: String? = null
+    private var fields: List<KMutableProperty1<out T, *>> = emptyList()
 
-    fun withStatusCode(code: Response.Status): ResultContent<T> {
-        statusCode = code.statusCode
-        data.code = code.statusCode
-        return this
+    private fun filterSelectedFields(): Any {
+        val content = data.content ?: return data
+
+        return ContentDto<Any>().apply {
+            this.code = data.code
+            this.message = data.message
+            this.content = content
+        }
     }
 
-    fun filterFields(fields: String): ResultContent<T> {
+    fun filterFields(fields: List<KMutableProperty1<out T, *>>): ResultContent<T> {
         this.fields = fields
         return this
     }
@@ -31,6 +36,12 @@ class ResultContent<T> {
 
     fun withType(type: String): ResultContent<T> {
         this.type = type
+        return this
+    }
+
+    fun withStatusCode(code: Response.Status): ResultContent<T> {
+        statusCode = code.statusCode
+        data.code = code.statusCode
         return this
     }
 
@@ -58,7 +69,7 @@ class ResultContent<T> {
     fun build(): Response {
         val builder = Response.status(statusCode)
             .type(type)
-            .entity(if (fields != null) null else data)
+            .entity(if (fields.isNotEmpty()) filterSelectedFields() else data)
 
         headers.forEach {
             builder.header(it.key, it.value)

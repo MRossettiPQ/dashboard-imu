@@ -5,6 +5,7 @@ import com.rot.session.dtos.CreateSessionDto
 import com.rot.session.dtos.RetrieveSessionDto
 import com.rot.session.dtos.SessionResponse
 import com.rot.session.models.Session
+import com.rot.user.dtos.UserDto
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
@@ -53,7 +54,7 @@ class SessionController {
         session = session.save()
 
         return ResultContent.of()
-            .withStatusCode(Response.Status.CREATED)
+            .withStatusCode(Response.Status.OK)
             .withContent(RetrieveSessionDto.from(session))
             .build()
     }
@@ -78,7 +79,9 @@ class SessionController {
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun retrieve(@RestPath("uuid") uuid: UUID): Response {
         val session = Session.findOrThrowById(uuid, message = "Sessão de medição não encontrada")
-        return ResultContent.of().withContent(RetrieveSessionDto.from(session)).build()
+        return ResultContent.of()
+            .withContent(RetrieveSessionDto.from(session))
+            .build()
     }
 
     @GET

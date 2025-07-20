@@ -29,6 +29,10 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
         return JPAQuery<T>(em).from(q).select(q)
     }
 
+    fun findOrThrowById(uuid: Id, message: String? = "${entityClass.simpleName} not found"): T {
+        return findOrThrowById(uuid, message = message!!)
+    }
+
     fun findOrThrowById(uuid: Id, lockModeType: LockModeType? = LockModeType.NONE, message: String? = "${entityClass.simpleName} not found"): T {
         return findById(uuid, lockModeType!!)
             ?: throw ApplicationException(message!!, Response.Status.NOT_FOUND)
@@ -39,9 +43,8 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
         val dtoClass = dto::class
         val entityClass = this.entityClass
 
-        val idFieldName = findIdField<BaseEntity<T>>()
-
         // Tentar obter o ID da DTO
+        val idFieldName = findIdField<BaseEntity<T>>()
         val dtoIdValue = dtoClass.declaredMemberProperties
             .find { it.name == idFieldName }
             ?.apply { isAccessible = true }
@@ -66,10 +69,10 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
 
         return if (toEntityMethod != null) {
             toEntityMethod.isAccessible = true
-            toEntityMethod.invoke(dto) as T
+            toEntityMethod.invoke(dtoClass) as T
         } else {
             // Fallback: usa Jackson para mergear os campos da DTO na entidade
-            JsonUtils.MAPPER.updateValue(entity, dto)
+            JsonUtils.MAPPER.updateValue(entity, dtoClass)
         }
     }
 

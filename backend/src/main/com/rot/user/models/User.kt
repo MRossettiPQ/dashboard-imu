@@ -46,7 +46,6 @@ class User : BaseEntity<User>() {
                 .where(q.username.eq(username))
                 .fetchFirst() ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
         }
-
     }
 
     @Id
