@@ -1,11 +1,9 @@
 package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.CreateSessionDto
-import com.rot.session.dtos.RetrieveSessionDto
+import com.rot.session.dtos.SessionDto
 import com.rot.session.dtos.SessionResponse
 import com.rot.session.models.Session
-import com.rot.user.dtos.UserDto
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
@@ -47,15 +45,12 @@ class SessionController {
     )
     @APIResponse(responseCode = "400", description = "Dados inválidos para registro")
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
-    fun save(@Valid body: CreateSessionDto): Response {
-        var session = Session.fromDto(body)
+    fun save(@Valid body: SessionDto): Response {
+        val session = Session.fromDto(body)
 
-        session.validate()
-        session = session.save()
-
-        return ResultContent.of()
-            .withStatusCode(Response.Status.OK)
-            .withContent(RetrieveSessionDto.from(session))
+        return ResultContent.of(session.save())
+            .withStatusCode(if(session.isNewBean) Response.Status.CREATED else Response.Status.OK)
+            .transform(SessionDto::from)
             .build()
     }
 
@@ -79,8 +74,8 @@ class SessionController {
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun retrieve(@RestPath("uuid") uuid: UUID): Response {
         val session = Session.findOrThrowById(uuid, message = "Sessão de medição não encontrada")
-        return ResultContent.of()
-            .withContent(RetrieveSessionDto.from(session))
+        return ResultContent.of(session)
+            .transform(SessionDto::from)
             .build()
     }
 
@@ -107,8 +102,8 @@ class SessionController {
     ): Response {
         val query = Session.createQuery()
 
-        return ResultContent.of()
-            .withContent(Session.fetch(query, page, rpp).transform(RetrieveSessionDto::from))
+        return ResultContent.of(Session.fetch(query, page, rpp))
+            .transform(SessionDto::from)
             .build()
     }
 

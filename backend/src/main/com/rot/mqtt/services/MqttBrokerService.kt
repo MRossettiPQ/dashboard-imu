@@ -3,7 +3,7 @@ package com.rot.mqtt.services
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JsonUtils
 import com.rot.mqtt.dto.MqttMessage
-import com.rot.session.dtos.CreateMeasurementDto
+import com.rot.session.dtos.MeasurementDto
 import io.moquette.broker.Server
 import io.moquette.broker.config.MemoryConfig
 import io.moquette.interception.AbstractInterceptHandler
@@ -86,7 +86,7 @@ class MqttInterceptor : AbstractInterceptHandler() {
             "join-room" -> convertPayload<MqttMessage<String>>(data)
             "leave-room" -> convertPayload<MqttMessage<String>>(data)
             "command" -> convertPayload<MqttMessage<String>>(data)
-            "measurement" -> convertPayload<MqttMessage<MutableList<CreateMeasurementDto>>>(data)
+            "measurement" -> convertPayload<MqttMessage<MutableList<MeasurementDto>>>(data)
             else -> convertPayload<MqttMessage<String>>(data)
         }
 

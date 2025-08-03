@@ -38,42 +38,28 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
             ?: throw ApplicationException(message!!, Response.Status.NOT_FOUND)
     }
 
-    @Suppress("UNCHECKED_CAST")
+    private fun findOrCreateInstance(dtoIdValue: Any?): T {
+        if (dtoIdValue == null) return entityClass.getDeclaredConstructor().newInstance()
+        return (try {
+            Panache.getEntityManager().find(entityClass, dtoIdValue)
+        } catch (ex: Exception) {
+            null
+        }) ?: entityClass.getDeclaredConstructor().newInstance()
+    }
+
     fun <Dto : Any> fromDto(dto: Dto): T {
         val dtoClass = dto::class
-        val entityClass = this.entityClass
 
         // Tentar obter o ID da DTO
         val idFieldName = findIdField<BaseEntity<T>>()
         val dtoIdValue = dtoClass.declaredMemberProperties
             .find { it.name == idFieldName }
             ?.apply { isAccessible = true }
-            ?.getter?.call(dto)
+            ?.getter
+            ?.call(dto)
 
-        val entity: T = if (dtoIdValue != null) {
-            try {
-                Panache.getEntityManager().find(entityClass, dtoIdValue) ?: entityClass.getDeclaredConstructor().newInstance()
-            } catch (ex: Exception) {
-                entityClass.getDeclaredConstructor().newInstance()
-            }
-        } else {
-            entityClass.getDeclaredConstructor().newInstance()
-        }
-
-        // Tenta usar método `toEntity(entity)` da DTO, se existir
-        val toEntityMethod = dtoClass.java.methods.find {
-            it.name == "toEntity" &&
-                    it.parameterTypes.size == 1 &&
-                    it.parameterTypes[0].isAssignableFrom(entityClass)
-        }
-
-        return if (toEntityMethod != null) {
-            toEntityMethod.isAccessible = true
-            toEntityMethod.invoke(dtoClass) as T
-        } else {
-            // Fallback: usa Jackson para mergear os campos da DTO na entidade
-            JsonUtils.MAPPER.updateValue(entity, dtoClass)
-        }
+        val entity: T = findOrCreateInstance(dtoIdValue)
+        return JsonUtils.MAPPER.updateValue(entity, dtoClass)
     }
 
     fun <T> fetch(query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): Pagination<T> {
@@ -175,8 +161,13 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     open fun save(): T {
+        return save(false)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    open fun save(ignoreValidation: Boolean = false): T {
+        if (!ignoreValidation) validate()
         audit()
         if (!isNewBean) return Panache.getEntityManager().merge(this) as T
         this.persist()

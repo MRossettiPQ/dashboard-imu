@@ -1,6 +1,7 @@
 package com.rot.session.dtos
 
 import com.rot.core.jaxrs.ContentDto
+import com.rot.core.jaxrs.Pagination
 import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.SessionType
 import com.rot.session.models.Session
@@ -9,34 +10,25 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
 import java.util.*
 
-open class BaseSessionDto {
+open class SessionDto {
     var id: UUID? = null
     var date: LocalDateTime? = null
     var type: SessionType = SessionType.REAL
     var observation: String? = null
     var patient: UserDto? = null
     var physiotherapist: UserDto? = null
-}
-
-class RetrieveSessionDto: BaseSessionDto() {
-    var procedures = mutableSetOf<RetrieveProcedureDto>()
+    var procedures = mutableSetOf<ProcedureDto>()
 
     companion object {
-        fun from(entity: Session): RetrieveSessionDto {
-            return JsonUtils.MAPPER.convertValue(entity, RetrieveSessionDto::class.java)
+        fun from(entity: Session): SessionDto {
+            return JsonUtils.MAPPER.convertValue(entity, SessionDto::class.java)
         }
-    }
-}
 
-class CreateSessionDto: BaseSessionDto() {
-    var procedures = mutableSetOf<CreateProcedureDto>()
-
-    companion object {
-        fun from(entity: Session): CreateSessionDto {
-            return JsonUtils.MAPPER.convertValue(entity, CreateSessionDto::class.java)
+        fun from(pagination: Pagination<Session>): Pagination<SessionDto> {
+            return pagination.transform { from(it) }
         }
     }
 }
 
 @Schema(description = "Resposta com dados da sessão realizada")
-class SessionResponse : ContentDto<RetrieveSessionDto>()
+class SessionResponse : ContentDto<SessionDto>()

@@ -6,7 +6,7 @@ application:
     name: dashboard
     username: postgres
     password: 1
-    port: 5436
+    port: 5432
   frontend:
     url: http://localhost:8000
   backend:

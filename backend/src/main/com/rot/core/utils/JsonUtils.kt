@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
@@ -260,9 +262,14 @@ object JsonUtils {
      * @param fields A lista de campos que devem ser mantidos.
      * @return Um novo JsonNode com apenas os campos especificados.
      */
-    fun filterFields(entity: Any?, fields: String?): JsonNode {
+    fun filterFields(entity: Any?, fields: String?, vararg fieldsToIgnore: String): JsonNode {
         val jsonNode = toJson(entity)
         val fieldList = parseFields(fields ?: return jsonNode)
+
+        val filter = SimpleBeanPropertyFilter.serializeAllExcept(*fieldsToIgnore)
+        val filters = SimpleFilterProvider().addFilter("sessionDtoFilter", filter)
+        MAPPER.writer(filters).writeValueAsString(jsonNode)
+
         return filterFieldsRecursive(jsonNode, fieldList)
     }
 }

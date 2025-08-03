@@ -1,5 +1,6 @@
 package com.rot.session.dtos
 
+import com.rot.core.jaxrs.Pagination
 import com.rot.core.utils.JsonUtils
 import com.rot.session.models.Measurement
 import java.math.BigDecimal
@@ -7,7 +8,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 
-open class BaseMeasurementDto {
+open class MeasurementDto {
     var id: UUID? = null
     var capturedAt: LocalDateTime? = null
     var sensorName: String? = null
@@ -31,20 +32,13 @@ open class BaseMeasurementDto {
     var quaternionY: BigDecimal? = null
     var quaternionZ: BigDecimal? = null
     var quaternionW: BigDecimal? = null
-}
 
-class CreateMeasurementDto: BaseMeasurementDto() {
     companion object {
-        fun from(measurement: Measurement) : CreateMeasurementDto {
-            return JsonUtils.MAPPER.convertValue(measurement, CreateMeasurementDto::class.java)
+        fun from(measurement: Measurement) : MeasurementDto {
+            return JsonUtils.MAPPER.convertValue(measurement, MeasurementDto::class.java)
         }
-    }
-}
-
-class RetrieveMeasurementDto: BaseMeasurementDto() {
-    companion object {
-        fun from(measurement: Measurement) : RetrieveMeasurementDto {
-            return JsonUtils.MAPPER.convertValue(measurement, RetrieveMeasurementDto::class.java)
+        fun from(pagination: Pagination<Measurement>): Pagination<MeasurementDto> {
+            return pagination.transform { from(it) }
         }
     }
 }

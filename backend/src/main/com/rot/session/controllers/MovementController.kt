@@ -1,7 +1,7 @@
 package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.RetrieveMovementDto
+import com.rot.session.dtos.MovementDto
 import com.rot.session.models.Movement
 import com.rot.session.services.SciLabServices
 import io.quarkus.security.Authenticated
@@ -32,9 +32,11 @@ class MovementController(
 
     @GET
     @Path("/{uuid}")
-    fun get(@RestPath("uuid") uuid: UUID): Response? {
+    fun retrieve(@RestPath("uuid") uuid: UUID): Response? {
         val session = Movement.findOrThrowById(uuid)
-        return ResultContent.of().withContent(RetrieveMovementDto.from(session)).build()
+        return ResultContent.of(session)
+            .transform(MovementDto::from)
+            .build()
     }
 
     @GET

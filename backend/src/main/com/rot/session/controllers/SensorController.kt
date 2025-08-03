@@ -1,8 +1,8 @@
 package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.RetrieveMeasurementDto
-import com.rot.session.dtos.RetrieveSensorDto
+import com.rot.session.dtos.MeasurementDto
+import com.rot.session.dtos.SensorDto
 import com.rot.session.models.Measurement
 import com.rot.session.models.Sensor
 import io.quarkus.security.Authenticated
@@ -29,8 +29,8 @@ class SensorController {
     ): Response {
         val query = Sensor.createQuery()
 
-        return ResultContent.of()
-            .withContent(Sensor.fetch(query, page, rpp).transform(RetrieveSensorDto::from))
+        return ResultContent.of(Sensor.fetch(query, page, rpp))
+            .transform(SensorDto::from)
             .build()
     }
 
@@ -44,8 +44,8 @@ class SensorController {
         val query = Measurement.createQuery()
             .where(Measurement.q.sensor().id.eq(sensor))
 
-        return ResultContent.of()
-            .withContent(Measurement.fetch(query, page, rpp).transform(RetrieveMeasurementDto::from))
+        return ResultContent.of(Measurement.fetch(query, page, rpp))
+            .transform(MeasurementDto::from)
             .build()
     }
 }

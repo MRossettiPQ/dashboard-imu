@@ -1,7 +1,7 @@
 package com.rot.session.services
 
 import com.rot.core.exceptions.ApplicationException
-import com.rot.session.dtos.RetrieveMeasurementDto
+import com.rot.session.dtos.MeasurementDto
 import com.rot.session.enums.PositionEnum
 import com.rot.session.models.Measurement
 import com.rot.session.models.Movement
@@ -19,13 +19,13 @@ class SciLabServices {
         return Duration.between(time1, time2).abs() <= tolerance
     }
 
-    fun averageMeasurements(measurements: List<Measurement>): RetrieveMeasurementDto {
+    fun averageMeasurements(measurements: List<Measurement>): MeasurementDto {
         fun averageOf(selector: (Measurement) -> BigDecimal?): BigDecimal? {
             val values = measurements.mapNotNull(selector)
             return if (values.isNotEmpty()) values.reduce { acc, bd -> acc + bd } / BigDecimal(values.size) else null
         }
 
-        return RetrieveMeasurementDto().apply {
+        return MeasurementDto().apply {
             capturedAt = measurements.firstOrNull()?.capturedAt
             sensorName = measurements.firstOrNull()?.sensorName
             readOrder = measurements.firstOrNull()?.readOrder
@@ -57,7 +57,7 @@ class SciLabServices {
         }
     }
 
-    fun calculateVariabilityCenter(movement: Movement): List<Pair<RetrieveMeasurementDto, RetrieveMeasurementDto>> {
+    fun calculateVariabilityCenter(movement: Movement): List<Pair<MeasurementDto, MeasurementDto>> {
         Log.info("Starting variability center calculation")
 
         if (movement.sensors.isEmpty()) {

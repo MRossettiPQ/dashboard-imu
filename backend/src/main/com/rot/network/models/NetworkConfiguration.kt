@@ -45,13 +45,11 @@ class NetworkConfiguration : BaseEntity<NetworkConfiguration>() {
     @get:Transient
     val decryptedPassword: String?
         get() = password?.let {
-            val key = EncryptUtils.loadPrivateKey("/META-INF/resources/encrypt/private.key")
-            EncryptUtils.decryptWithPrivateKey(password!!, key)
+            EncryptUtils.decryptWithPrivateKey(it)
         }
 
     fun encryptAndSetPassword(password: String) {
-        val key = EncryptUtils.loadPublicKey("/META-INF/resources/encrypt/public.key")
-        this.password = EncryptUtils.encryptWithPublicKey(password, key)
+        this.password = EncryptUtils.encryptWithPublicKey(password)
     }
 
     fun checkSameSsid() {

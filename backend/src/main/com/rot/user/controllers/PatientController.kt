@@ -1,6 +1,5 @@
 package com.rot.user.controllers
 
-import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.ResultContent
 import com.rot.user.dtos.PatientDto
 import com.rot.user.enums.UserRoleString
@@ -32,26 +31,24 @@ class PatientController {
 
     @GET
     @Path("/")
-    fun list(@DefaultValue("1") @RestQuery page: Int, @DefaultValue("10") @RestQuery rpp: Int): Response {
+    fun list(
+        @DefaultValue("1") @RestQuery page: Int,
+        @DefaultValue("10") @RestQuery rpp: Int
+    ): Response {
         val query = Patient.createQuery()
 
-        return ResultContent.of()
-            .withContent(Patient.fetch(query, page, rpp).transform(PatientDto::from))
+        return ResultContent.of(Patient.fetch(query, page, rpp))
+            .transform(PatientDto::from)
             .build()
     }
 
     @POST
     @Path("/")
     fun save(body: PatientDto): Response {
-        var entity = Patient.fromDto(body)
-        val user = entity.user ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
-        entity.user = user.save()
+        val entity = Patient.fromDto(body)
         entity.active = true
-        entity.validate()
-
-        entity = entity.save()
-        return ResultContent.of()
-            .withContent(entity.toDto())
+        return ResultContent.of(entity.save())
+            .transform(PatientDto::from)
             .build()
     }
 

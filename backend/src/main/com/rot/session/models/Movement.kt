@@ -35,11 +35,6 @@ class Movement : BaseEntity<Movement>() {
     @JoinColumn(name = "procedure_id", nullable = false)
     var procedure: Procedure? = null
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "type_id", nullable = false)
-    var type: MovementType? = null
-
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "movement", cascade = [CascadeType.ALL])
     var sensors = mutableSetOf<Sensor>()
 }

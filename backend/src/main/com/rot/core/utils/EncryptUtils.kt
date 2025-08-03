@@ -1,5 +1,6 @@
 package com.rot.core.utils
 
+import io.smallrye.jwt.util.KeyUtils
 import java.io.InputStream
 import java.security.KeyFactory
 import java.security.PrivateKey
@@ -16,6 +17,14 @@ object EncryptUtils {
     private const val RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding"
     private const val ITERATIONS = 120_000
     private const val KEY_LENGTH = 256
+
+    private val privateKey: PrivateKey by lazy {
+        KeyUtils.readPrivateKey("/META-INF/resources/encrypt/private.pem")
+    }
+
+    private val publicKey: PublicKey by lazy {
+        KeyUtils.readPublicKey("/META-INF/resources/encrypt/public.pem")
+    }
 
     private fun generateByteArraySalt(): ByteArray {
         val random = SecureRandom()
@@ -38,14 +47,14 @@ object EncryptUtils {
         return Base64.getEncoder().encodeToString(hash)
     }
 
-    fun encryptWithPublicKey(text: String, publicKey: PublicKey): String {
+    fun encryptWithPublicKey(text: String): String {
         val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, publicKey)
         val encryptedBytes = cipher.doFinal(text.toByteArray())
         return Base64.getEncoder().encodeToString(encryptedBytes)
     }
 
-    fun decryptWithPrivateKey(encryptedText: String, privateKey: PrivateKey): String {
+    fun decryptWithPrivateKey(encryptedText: String): String {
         val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, privateKey)
         val decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText))

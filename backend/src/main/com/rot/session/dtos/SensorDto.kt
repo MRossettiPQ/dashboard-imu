@@ -1,12 +1,14 @@
 package com.rot.session.dtos
 
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.rot.core.jaxrs.Pagination
 import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.PositionEnum
 import com.rot.session.enums.SensorType
 import com.rot.session.models.Sensor
 import java.util.*
 
-open class BaseSensorDto {
+open class SensorDto {
     var id: UUID? = null
     var ip: String? = null
     var macAddress: String? = null
@@ -14,23 +16,17 @@ open class BaseSensorDto {
     var position: PositionEnum? = null
     var type: SensorType = SensorType.GYROSCOPE
     var observation: String? = null
-    var movement: RetrieveMovementDto? = null
-}
 
-class RetrieveSensorDto: BaseSensorDto() {
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    var measurements = mutableSetOf<MeasurementDto>()
+
     companion object {
-        fun from(sensor: Sensor): RetrieveSensorDto {
-            return JsonUtils.MAPPER.convertValue(sensor, RetrieveSensorDto::class.java)
+        fun from(sensor: Sensor): SensorDto {
+            return JsonUtils.MAPPER.convertValue(sensor, SensorDto::class.java)
         }
-    }
-}
 
-class CreateSensorDto: BaseSensorDto() {
-    var measurements = mutableSetOf<CreateMeasurementDto>()
-
-    companion object {
-        fun from(sensor: Sensor): CreateSensorDto {
-            return JsonUtils.MAPPER.convertValue(sensor, CreateSensorDto::class.java)
+        fun from(pagination: Pagination<Sensor>): Pagination<SensorDto> {
+            return pagination.transform { from(it) }
         }
     }
 }

@@ -34,8 +34,4 @@ class MovementType : BaseEntity<MovementType>() {
 
     @Column(name = "description", nullable = false)
     var description: MovementEnum? = null
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "type", cascade = [CascadeType.ALL])
-    var movements = mutableSetOf<Movement>()
-
 }

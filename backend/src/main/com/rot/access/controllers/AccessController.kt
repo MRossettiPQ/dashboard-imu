@@ -55,9 +55,13 @@ class AccessController(
         user.encryptAndSetPassword(body.password)
         user.validate()
         user = user.save()
-        user.generateToken(applicationConfig.security().issuer(), applicationConfig.security().subject())
-
-        return ResultContent.of().withContent(UserDto.from(user, true)).build()
+        user.generateToken(
+            issuer = applicationConfig.security().issuer(),
+            subject = applicationConfig.security().subject()
+        )
+        return ResultContent.of(user)
+            .transform { UserDto.from(it, true) }
+            .build()
     }
 
     @POST
@@ -93,8 +97,13 @@ class AccessController(
             throw ApplicationException("Passwords do not match", Response.Status.UNAUTHORIZED)
         }
 
-        user.generateToken(applicationConfig.security().issuer(), applicationConfig.security().subject())
-        return ResultContent.of().withContent(UserDto.from(user, true)).build()
+        user.generateToken(
+            issuer = applicationConfig.security().issuer(),
+            subject = applicationConfig.security().subject()
+        )
+        return ResultContent.of(user)
+            .transform { UserDto.from(it, true) }
+            .build()
     }
 
     @GET
@@ -121,7 +130,9 @@ class AccessController(
     fun context(): Response {
         val user = ApplicationContext.user
             ?: throw ApplicationException("User not authenticated", Response.Status.FORBIDDEN)
-        return ResultContent.of().withContent(UserDto.from(user)).build()
+        return ResultContent.of(user)
+            .transform(UserDto::from)
+            .build()
     }
 
 }

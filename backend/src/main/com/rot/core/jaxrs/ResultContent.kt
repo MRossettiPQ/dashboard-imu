@@ -66,6 +66,15 @@ class ResultContent<T> {
         return this
     }
 
+    fun <R> transform(fn: (T) -> R): ResultContent<R> {
+        val newResult = ResultContent<R>()
+        newResult.statusCode = statusCode
+        newResult.data.code = data.code
+        newResult.data.message = data.message
+        newResult.headers= headers
+        return ResultContent<R>().withContent(fn(data.content!!))
+    }
+
     fun build(): Response {
         val builder = Response.status(statusCode)
             .type(type)

@@ -2,14 +2,12 @@ package com.rot.user.models
 
 import com.querydsl.core.annotations.Config
 import com.rot.access.dtos.AccessDto
-import com.rot.core.config.ApplicationConfig
 import com.rot.core.exceptions.ApplicationException
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.core.utils.EncryptUtils
 import com.rot.core.utils.JwtType
 import com.rot.core.utils.JwtUtils
-import com.rot.user.dtos.UserDto
 import com.rot.user.enums.UserRole
 import jakarta.persistence.*
 import jakarta.validation.constraints.Email
@@ -86,18 +84,17 @@ class User : BaseEntity<User>() {
     @Column(name = "role", nullable = false)
     var role: UserRole = UserRole.PHYSIOTHERAPIST
 
-    fun toDto(): UserDto {
-        return UserDto.from(this)
-    }
-
     @Transient
     var access: AccessDto? = null
 
-    fun generateToken(issuer: String, subject: String): AccessDto {
-        val durationAccess = Duration.ofHours(12)
-        val durationRefresh = Duration.ofDays(4)
-        val accessTokenExpiresAt = LocalDateTime.now().plusHours(12)
-        val refreshTokenExpiresAt = LocalDateTime.now().plusDays(4)
+    fun generateToken(
+        issuer: String,
+        subject: String,
+        durationAccess: Duration = Duration.ofHours(12),
+        durationRefresh: Duration = Duration.ofHours(4),
+    ): AccessDto {
+        val accessTokenExpiresAt = LocalDateTime.now().plus(durationAccess)
+        val refreshTokenExpiresAt = LocalDateTime.now().plus(durationRefresh)
 
         access = AccessDto()
         access?.accessTokenExpiresAt = accessTokenExpiresAt
