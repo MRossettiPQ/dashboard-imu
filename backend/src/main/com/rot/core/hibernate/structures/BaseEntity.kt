@@ -6,7 +6,7 @@ import com.querydsl.jpa.impl.JPAQuery
 import com.rot.core.context.ApplicationContext
 import com.rot.core.exceptions.ApplicationException
 import com.rot.core.hibernate.findIdField
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import io.quarkus.hibernate.orm.panache.Panache
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanionBase
@@ -62,7 +62,7 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
         return JsonUtils.MAPPER.updateValue(entity, dtoClass)
     }
 
-    fun <T> fetch(query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): Pagination<T> {
+    fun <T> fetch(query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): PaginationDto<T> {
         Objects.requireNonNull(query)
         var count: Long = -1
 
@@ -78,7 +78,7 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
             hasMore = true
         }
 
-        return Pagination<T>().apply {
+        return PaginationDto<T>().apply {
             this.page = page
             this.rpp = rpp
             this.hasMore = hasMore

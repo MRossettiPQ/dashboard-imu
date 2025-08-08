@@ -3,7 +3,7 @@ package com.rot.user.dtos
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.rot.access.dtos.AccessDto
 import com.rot.core.jaxrs.ContentDto
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.user.enums.UserRole
 import com.rot.user.models.User
@@ -30,11 +30,14 @@ class UserDto {
 
             return dto
         }
-        fun from(pagination: Pagination<User>) : Pagination<UserDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<User>) : PaginationDto<UserDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }
 
 @Schema(description = "Resposta com dados do usuário")
 class UserResponse : ContentDto<UserDto>()
+
+@Schema(description = "Resposta com usuários paginados")
+class UserPaginationResponse : PaginationDto<UserDto>()

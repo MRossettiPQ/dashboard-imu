@@ -1,6 +1,6 @@
 package com.rot.session.dtos
 
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.models.Measurement
 import java.math.BigDecimal
@@ -37,8 +37,8 @@ open class MeasurementDto {
         fun from(measurement: Measurement) : MeasurementDto {
             return JsonUtils.MAPPER.convertValue(measurement, MeasurementDto::class.java)
         }
-        fun from(pagination: Pagination<Measurement>): Pagination<MeasurementDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<Measurement>): PaginationDto<MeasurementDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }

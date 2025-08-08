@@ -1,6 +1,6 @@
 package com.rot.network.dtos
 
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.network.models.NetworkConfiguration
 import jakarta.validation.constraints.NotEmpty
@@ -26,8 +26,8 @@ class NetworkConfigurationDto {
         fun from(entity: NetworkConfiguration, decryptPassword: Boolean = false): NetworkConfigurationDto {
             return JsonUtils.MAPPER.convertValue(entity, NetworkConfigurationDto::class.java)
         }
-        fun from(pagination: Pagination<NetworkConfiguration>) : Pagination<NetworkConfigurationDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<NetworkConfiguration>) : PaginationDto<NetworkConfigurationDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }

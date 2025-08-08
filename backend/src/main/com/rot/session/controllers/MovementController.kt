@@ -27,7 +27,7 @@ class MovementController(
     fun calculateVariability(@RestPath("uuid") uuid: UUID): Response? {
         val movement = Movement.findOrThrowById(uuid)
         val result = sciLabServices.calculateVariabilityCenter(movement)
-        return ResultContent.of().withContent(result).build()
+        return ResultContent.of(result).build()
     }
 
     @GET

@@ -1,7 +1,7 @@
 package com.rot.session.dtos
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.PositionEnum
 import com.rot.session.enums.SensorType
@@ -25,8 +25,8 @@ open class SensorDto {
             return JsonUtils.MAPPER.convertValue(sensor, SensorDto::class.java)
         }
 
-        fun from(pagination: Pagination<Sensor>): Pagination<SensorDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<Sensor>): PaginationDto<SensorDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }

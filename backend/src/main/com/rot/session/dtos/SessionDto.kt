@@ -1,10 +1,11 @@
 package com.rot.session.dtos
 
 import com.rot.core.jaxrs.ContentDto
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.SessionType
 import com.rot.session.models.Session
+import com.rot.user.dtos.PatientDto
 import com.rot.user.dtos.UserDto
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
@@ -24,11 +25,14 @@ open class SessionDto {
             return JsonUtils.MAPPER.convertValue(entity, SessionDto::class.java)
         }
 
-        fun from(pagination: Pagination<Session>): Pagination<SessionDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<Session>): PaginationDto<SessionDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }
 
 @Schema(description = "Resposta com dados da sessão realizada")
 class SessionResponse : ContentDto<SessionDto>()
+
+@Schema(description = "Resposta com dados da sessão realizada")
+class SessionPaginationResponse : PaginationDto<SessionDto>()

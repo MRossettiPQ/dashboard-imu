@@ -1,7 +1,7 @@
 package com.rot.user.dtos
 
 import com.rot.core.jaxrs.ContentDto
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.user.models.Patient
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -25,11 +25,14 @@ open class PatientDto {
             dto.user = UserDto.from(entity.user!!)
             return dto
         }
-        fun from(pagination: Pagination<Patient>) : Pagination<PatientDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<Patient>) : PaginationDto<PatientDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }
 
 @Schema(description = "Resposta com dados do paciente")
 class PatientResponse : ContentDto<PatientDto>()
+
+@Schema(description = "Resposta com dados do paciente")
+class PatientPaginationResponse : PaginationDto<PatientDto>()

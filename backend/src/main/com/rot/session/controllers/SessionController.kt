@@ -1,8 +1,8 @@
 package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.SessionDto
-import com.rot.session.dtos.SessionResponse
+import com.rot.session.dtos.*
+import com.rot.session.models.Procedure
 import com.rot.session.models.Session
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -91,7 +91,7 @@ class SessionController {
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = SessionResponse::class),
+                schema = Schema(implementation = SessionPaginationResponse::class),
             )
         ]
     )

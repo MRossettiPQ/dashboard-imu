@@ -1,7 +1,7 @@
 package com.rot.session.dtos
 
 import com.rot.core.jaxrs.ContentDto
-import com.rot.core.jaxrs.Pagination
+import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.models.Movement
 import org.eclipse.microprofile.openapi.annotations.media.Schema
@@ -19,8 +19,8 @@ class MovementDto {
         fun from(entity: Movement): MovementDto {
             return JsonUtils.MAPPER.convertValue(entity, MovementDto::class.java)
         }
-        fun from(pagination: Pagination<Movement>): Pagination<MovementDto> {
-            return pagination.transform { from(it) }
+        fun from(paginationDto: PaginationDto<Movement>): PaginationDto<MovementDto> {
+            return paginationDto.transform { from(it) }
         }
     }
 }

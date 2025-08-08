@@ -114,7 +114,7 @@ open class ContentDto<T> {
 }
 
 @Schema(description = "Resposta paginada da API")
-class Pagination<T> {
+open class PaginationDto<T> {
     @Schema(description = "Página atual")
     var page: Int = 1
     @Schema(description = "Registros por página")
@@ -128,8 +128,8 @@ class Pagination<T> {
     @Schema(description = "Informações adicionais")
     var extra: MutableMap<String, Any?> = mutableMapOf()
 
-    fun <R> transform(fn: (T) -> R): Pagination<R> {
-        val transformed = Pagination<R>()
+    fun <R> transform(fn: (T) -> R): PaginationDto<R> {
+        val transformed = PaginationDto<R>()
         transformed.page = page
         transformed.rpp = rpp
         transformed.hasMore = hasMore
@@ -139,7 +139,7 @@ class Pagination<T> {
         return transformed
     }
 
-    fun addExtraData(key: String, value: Any?): Pagination<T> {
+    fun addExtraData(key: String, value: Any?): PaginationDto<T> {
         this.extra[key] = value
         return this
     }
