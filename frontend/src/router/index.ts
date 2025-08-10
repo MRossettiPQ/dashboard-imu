@@ -5,7 +5,8 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from 'vue-router';
-import { routes, routeBeforeGuard } from './routes';
+import 'reflect-metadata'; // <== IMPORTANTE para class-transformer funcionar
+import { routeBeforeGuard, routes } from './routes';
 
 /*
  * If not building with SSR mode, you can

@@ -2,6 +2,7 @@ package com.rot.core.config
 
 import io.smallrye.config.ConfigMapping
 import io.smallrye.config.WithName
+import java.util.Optional
 
 @ConfigMapping(
     prefix = "application",
@@ -39,6 +40,35 @@ interface ApplicationConfig {
 
     @WithName("mdns")
     fun mdns(): MdnsConfig
+
+    @WithName("smtp")
+    fun smtp(): Optional<SmtpConfig>
+
+    interface SmtpConfig {
+        @WithName("host")
+        fun host(): String
+
+        @WithName("user")
+        fun user(): String
+
+        @WithName("password")
+        fun password(): String
+
+        @WithName("port")
+        fun port(): Int
+
+        @WithName("tls")
+        fun tls(): Boolean
+
+        @WithName("ssl")
+        fun ssl(): Boolean
+
+        @WithName("from")
+        fun from(): String
+
+        @WithName("default-to")
+        fun defaultTo(): String
+    }
 
     interface MdnsConfig {
         @WithName("name")

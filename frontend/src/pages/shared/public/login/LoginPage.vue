@@ -29,7 +29,8 @@ async function login(): Promise<void> {
 
     await formUtils.validate(mainForm.value);
 
-    const { data } = await accessService.login({ form: form.value });
+    const { data, status } = await accessService.login({ form: form.value });
+    console.log(data, status);
     if (data?.content?.access) {
       await store.save(data.content.access);
       await router.push({ name: 'shared.home' });

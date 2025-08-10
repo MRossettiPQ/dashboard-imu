@@ -34,5 +34,5 @@ open class PatientDto {
 @Schema(description = "Resposta com dados do paciente")
 class PatientResponse : ContentDto<PatientDto>()
 
-@Schema(description = "Resposta com dados do paciente")
+@Schema(description = "Resposta paginadas com dados do paciente")
 class PatientPaginationResponse : PaginationDto<PatientDto>()

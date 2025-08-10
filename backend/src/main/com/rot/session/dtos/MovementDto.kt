@@ -28,3 +28,6 @@ class MovementDto {
 
 @Schema(description = "Resposta com dados do movimento realizado")
 class MovementResponse : ContentDto<MovementDto>()
+
+@Schema(description = "Resposta com dados do paciente")
+class MovementPaginationResponse : PaginationDto<MovementDto>()

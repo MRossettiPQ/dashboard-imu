@@ -29,12 +29,12 @@ class PatientController {
     @GET
     @Path("/{uuid}")
     @Operation(
-        summary = "Resgatar um paciente",
-        description = "Resgatar um paciente com base no seu UUID"
+        summary = "Retrieve a patient",
+        description = "Retrieve a patient by their UUID"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Resgatar o paciente cadastrado",
+        description = "A registered patient",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -42,10 +42,8 @@ class PatientController {
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun get(@RestPath("uuid") uuid: UUID): Response {
         val entity = Patient.findOrThrowById(uuid)
         return ResultContent.of(entity)
@@ -56,12 +54,12 @@ class PatientController {
     @GET
     @Path("/")
     @Operation(
-        summary = "Resgatar pacientes paginados",
-        description = "Resgatar pacientes paginados"
+        summary = "Retrieve patients",
+        description = "Retrieve a paginated list of patients"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Resgatar pacientes paginados",
+        description = "Paginated list of patients",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -69,10 +67,8 @@ class PatientController {
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun list(
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int
@@ -87,12 +83,12 @@ class PatientController {
     @POST
     @Path("/")
     @Operation(
-        summary = "Salvar paciente",
-        description = "Salvar um novo paciente ou atualizar um existente"
+        summary = "Save patient",
+        description = "Save a new patient or update an existing one"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Paciente salvo com sucesso",
+        description = "Patient saved successfully",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -100,15 +96,16 @@ class PatientController {
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun save(body: PatientDto): Response {
         val entity = Patient.fromDto(body)
+        val isNewBean = entity.isNewBean
         entity.active = true
         return ResultContent.of(entity.save())
+            .withStatusCode(if(isNewBean) Response.Status.CREATED else Response.Status.OK)
             .transform(PatientDto::from)
+            .withMessage("Patient saved successfully")
             .build()
     }
 

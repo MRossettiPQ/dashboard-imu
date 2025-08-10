@@ -31,12 +31,12 @@ class UserController {
     @GET
     @Path("/{uuid}")
     @Operation(
-        summary = "Resgatar usuário",
-        description = "Resgatar usuário"
+        summary = "Retrieve user",
+        description = "Retrieve a user by UUID"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Resgatar o usuário registrado",
+        description = "Returns the registered user",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -44,10 +44,8 @@ class UserController {
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun get(@RestPath("uuid") uuid: UUID): Response {
         val entity = User.findOrThrowById(uuid)
         return ResultContent.of(entity)
@@ -58,12 +56,12 @@ class UserController {
     @GET
     @Path("/")
     @Operation(
-        summary = "Salvar usuário",
-        description = "Salvar usuário"
+        summary = "Retrieve users",
+        description = "Retrieve a paginated list of users"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Usuário registrado com sucesso",
+        description = "Paginated list of users",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -71,17 +69,15 @@ class UserController {
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun list(
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int
     ): Response {
         val query = User.createQuery()
 
-        return ResultContent.of(User.fetch(query, page, rpp))
+        return ResultContent.of(User::class.java, query, page, rpp)
             .transform(UserDto::from)
             .build()
     }
@@ -89,12 +85,12 @@ class UserController {
     @POST
     @Path("/")
     @Operation(
-        summary = "Salvar usuário",
-        description = "Salvar usuário"
+        summary = "Update user",
+        description = "Update user data"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Usuário registrado com sucesso",
+        description = "User updated successfully",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -102,10 +98,8 @@ class UserController {
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun save(body: UserDto): Response {
         val entity = User.fromDto(body)
         val user = ApplicationContext.user
@@ -114,9 +108,10 @@ class UserController {
             throw ApplicationException("User not authorized", Response.Status.FORBIDDEN)
         }
 
-        return ResultContent.of(entity)
-            .withStatusCode(if(entity.isNewBean) Response.Status.CREATED else Response.Status.OK)
+        return ResultContent.of(entity.save())
+            .withStatusCode(Response.Status.OK)
             .transform(UserDto::from)
+            .withMessage("User updated successfully")
             .build()
     }
 

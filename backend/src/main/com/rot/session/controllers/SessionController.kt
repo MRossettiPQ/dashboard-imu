@@ -30,12 +30,12 @@ class SessionController {
     @Transactional
     @Path("/register")
     @Operation(
-        summary = "Registrar nova sessão de medição",
-        description = "Cria um nova sessão de medição e retorna seus dados"
+        summary = "Register a new measurement session",
+        description = "Creates a new measurement session and returns its data"
     )
     @APIResponse(
         responseCode = "201",
-        description = "Sessão registrada com sucesso",
+        description = "Session successfully registered",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -43,13 +43,14 @@ class SessionController {
             )
         ]
     )
-    @APIResponse(responseCode = "400", description = "Dados inválidos para registro")
-    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    @APIResponse(responseCode = "400", description = "Invalid data for registration")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun save(@Valid body: SessionDto): Response {
         val session = Session.fromDto(body)
+        val isNewBean = session.isNewBean
 
         return ResultContent.of(session.save())
-            .withStatusCode(if(session.isNewBean) Response.Status.CREATED else Response.Status.OK)
+            .withStatusCode(if (isNewBean) Response.Status.CREATED else Response.Status.OK)
             .transform(SessionDto::from)
             .build()
     }
@@ -57,12 +58,12 @@ class SessionController {
     @GET
     @Path("/{uuid}")
     @Operation(
-        summary = "Resgatar sessão de medição",
-        description = "Resgatar sessão de medição e retorna seus dados"
+        summary = "Retrieve measurement session",
+        description = "Retrieve a measurement session and return its data"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Sessão de medição encontrada com sucesso",
+        description = "Measurement session found successfully",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -70,10 +71,10 @@ class SessionController {
             )
         ]
     )
-    @APIResponse(responseCode = "404", description = "Sessão de medição não encontrada")
-    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    @APIResponse(responseCode = "404", description = "Measurement session not found")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun retrieve(@RestPath("uuid") uuid: UUID): Response {
-        val session = Session.findOrThrowById(uuid, message = "Sessão de medição não encontrada")
+        val session = Session.findOrThrowById(uuid, message = "Measurement session not found")
         return ResultContent.of(session)
             .transform(SessionDto::from)
             .build()
@@ -82,12 +83,12 @@ class SessionController {
     @GET
     @Path("/")
     @Operation(
-        summary = "Paginação das sessões de medições realizadas",
-        description = "Listar sessões de medições realizadas e retorna seus dados"
+        summary = "Pagination of performed measurement sessions",
+        description = "List performed measurement sessions and return their data"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Paginação das sessões de medições realizadas",
+        description = "Pagination of performed measurement sessions",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -95,7 +96,7 @@ class SessionController {
             )
         ]
     )
-    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun list(
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,

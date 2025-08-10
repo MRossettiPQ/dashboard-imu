@@ -1,8 +1,11 @@
 package com.rot.session.dtos
 
+import com.rot.core.jaxrs.ContentDto
 import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.models.Measurement
+import com.rot.user.dtos.PatientDto
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
@@ -42,3 +45,9 @@ open class MeasurementDto {
         }
     }
 }
+
+@Schema(description = "Resposta com dados do paciente")
+class MeasurementResponse : ContentDto<MeasurementDto>()
+
+@Schema(description = "Resposta com dados do paciente")
+class MeasurementPaginationResponse : PaginationDto<MeasurementDto>()

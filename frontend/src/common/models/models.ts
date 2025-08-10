@@ -1,10 +1,22 @@
 import type { Component } from 'vue';
-import type dayjs from 'dayjs';
+import { Transform, Type } from 'class-transformer';
+import dayjs from 'dayjs';
 import type { QBtnProps, QTableColumn } from 'quasar';
+import {
+  type AxiosResponse as AxiosResponseOriginal,
+  AxiosResponseHeaders,
+  InternalAxiosRequestConfig,
+  RawAxiosResponseHeaders,
+} from 'axios';
+import { instanceToPlain } from 'class-transformer';
 
 export type PropsOf<T extends Component> = T extends new (...args: unknown[]) => { $props: infer P }
   ? P
   : never;
+
+export function jsonConverter<T>(instance: T): Record<string, unknown> {
+  return instanceToPlain(instance);
+}
 
 export interface BtnProps<T> extends Omit<Partial<QBtnProps>, 'onClick'> {
   onClick?: (
@@ -24,15 +36,24 @@ export interface TableColumn<T> extends QTableColumn {
   props?: BtnProps<T> | undefined;
 }
 
-export interface LoginRequestDto {
-  username: string;
-  password: string;
+export class AxiosResponse<T, D = unknown> implements AxiosResponseOriginal<T, D> {
+  data!: T;
+  status!: number;
+  statusText!: string;
+  headers!: RawAxiosResponseHeaders | AxiosResponseHeaders;
+  config!: InternalAxiosRequestConfig<D>;
+  request!: unknown;
 }
 
-export interface RegisterDto {
-  username: string;
-  name: string;
-  email: string;
+export class LoginRequestDto {
+  username!: string;
+  password!: string;
+}
+
+export class RegisterDto {
+  username!: string;
+  name!: string;
+  email!: string;
   password?: string;
   passwordConfirm?: string;
 }
@@ -49,58 +70,81 @@ export enum SessionType {
   GOLD = 'GOLD',
 }
 
-export interface Patient {
+export class Patient {
   id?: string;
+
+  @Transform(({ value }) => (value ? dayjs(value) : undefined), { toClassOnly: true })
   birthday?: dayjs.Dayjs | undefined;
+
   cpf?: string;
   phone?: string;
   stature?: number;
+
+  @Type(() => User)
   user?: User;
 }
 
-export interface Session {
+export class Session {
   id?: string;
   type?: SessionType;
+
+  @Transform(({ value }) => (value ? dayjs(value) : undefined), { toClassOnly: true })
   date?: dayjs.Dayjs;
 }
 
-export interface User {
+export class User {
   id?: string;
-  username: string;
-  name: string;
-  email: string;
+  username!: string;
+  name!: string;
+  email!: string;
   password?: string;
-  role: UserRole;
+  role!: UserRole;
+
+  @Type(() => AccessDto)
   access?: AccessDto;
 }
 
-export interface AccessDto {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAt: dayjs.Dayjs;
-  refreshTokenExpiresAt: dayjs.Dayjs;
+export class AccessDto {
+  accessToken!: string;
+  refreshToken!: string;
+
+  @Transform(({ value }) => dayjs(value), { toClassOnly: true })
+  accessTokenExpiresAt!: dayjs.Dayjs;
+
+  @Transform(({ value }) => dayjs(value), { toClassOnly: true })
+  refreshTokenExpiresAt!: dayjs.Dayjs;
 }
 
-export interface BasicResponse<T> {
-  date: dayjs.Dayjs | null;
-  code: number;
-  message: string | null;
-  content: T | null;
+export class BasicResponse<T> {
+  @Transform(({ value }) => (value ? dayjs(value) : null), { toClassOnly: true })
+  date!: dayjs.Dayjs | null;
+
+  code!: number;
+  httpCode!: number;
+  message!: string | null;
+
+  content!: T | null;
 }
 
-export interface Pagination<T> {
-  list: T[];
-  count: number;
-  pageCount: number;
-  page: number;
-  rpp: number;
+export class Pagination<T> {
+  list!: T[];
+  count!: number;
+  pageCount!: number;
+  page!: number;
+  rpp!: number;
 }
 
-export interface AuthStore {
-  loading: boolean;
-  user: User | null;
-  accessTokenExpiresAt: dayjs.Dayjs | null;
-  accessToken: string | null;
-  refreshTokenExpiresAt: dayjs.Dayjs | null;
-  refreshToken: string | null;
+export class AuthStore {
+  loading!: boolean;
+  user!: User | null;
+
+  @Transform(({ value }) => (value ? dayjs(value) : null), { toClassOnly: true })
+  accessTokenExpiresAt!: dayjs.Dayjs | null;
+
+  accessToken!: string | null;
+
+  @Transform(({ value }) => (value ? dayjs(value) : null), { toClassOnly: true })
+  refreshTokenExpiresAt!: dayjs.Dayjs | null;
+
+  refreshToken!: string | null;
 }

@@ -1,14 +1,18 @@
 package com.rot.core.jaxrs
 
-
+import com.querydsl.jpa.JPQLQuery
+import com.rot.core.exceptions.ApplicationException
+import com.rot.core.hibernate.structures.BaseCompanion
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.full.companionObjectInstance
 
 class ResultContent<T> {
     private var statusCode: Int = 200
+    private var internalCode: Int = 0
     private var data: ContentDto<T> = ContentDto()
     private var type: String = MediaType.APPLICATION_JSON
     private var headers: MutableMap<String, Any> = mutableMapOf()
@@ -18,6 +22,7 @@ class ResultContent<T> {
         val content = data.content ?: return data
 
         return ContentDto<Any>().apply {
+            this.httpCode = data.httpCode
             this.code = data.code
             this.message = data.message
             this.content = content
@@ -41,12 +46,18 @@ class ResultContent<T> {
 
     fun withStatusCode(code: Response.Status): ResultContent<T> {
         statusCode = code.statusCode
-        data.code = code.statusCode
+        data.httpCode = code.statusCode
         return this
     }
 
     fun withStatusCode(code: Int): ResultContent<T> {
         statusCode = code
+        data.httpCode = code
+        return this
+    }
+
+    fun withInternalCode(code: Int): ResultContent<T> {
+        internalCode = code
         data.code = code
         return this
     }
@@ -69,9 +80,9 @@ class ResultContent<T> {
     fun <R> transform(fn: (T) -> R): ResultContent<R> {
         val newResult = ResultContent<R>()
         newResult.statusCode = statusCode
-        newResult.data.code = data.code
+        newResult.data.httpCode = data.httpCode
         newResult.data.message = data.message
-        newResult.headers= headers
+        newResult.headers = headers
         return ResultContent<R>().withContent(fn(data.content!!))
     }
 
@@ -95,37 +106,56 @@ class ResultContent<T> {
         fun <T> of(content: T): ResultContent<T> {
             return ResultContent<T>().withContent(content)
         }
+
+        fun <T> of(entityClass: Class<*>, query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): ResultContent<PaginationDto<T>> {
+            val companion = entityClass.kotlin.companionObjectInstance
+                ?: throw ApplicationException("Entity ${entityClass.simpleName} não possui companion object")
+
+            require(companion is BaseCompanion<*, *, *>) {
+                "Companion de ${entityClass.simpleName} não implementa BaseCompanion"
+            }
+
+            return of(companion.fetch(query, page, rpp, fetchCount))
+        }
     }
 }
 
-@Schema(description = "Resposta genérica da API")
+@Schema(description = "Generic API response")
 open class ContentDto<T> {
-    @Schema(description = "Horário da resposta")
-    private var date: LocalDateTime = LocalDateTime.now()
+    @Schema(description = "Response timestamp")
+    var date: LocalDateTime = LocalDateTime.now()
 
-    @Schema(description = "Código HTTP da resposta")
-    var code: Int = 200
+    @Schema(description = "HTTP status code of the response")
+    var httpCode: Int = 200
 
-    @Schema(description = "Mensagem da resposta (opcional)")
+    @Schema(description = "Internal response code")
+    var code: Int = 0
+
+    @Schema(description = "Optional response message")
     var message: String? = null
 
-    @Schema(description = "Conteúdo da resposta")
+    @Schema(description = "Response payload")
     var content: T? = null
 }
 
-@Schema(description = "Resposta paginada da API")
+@Schema(description = "Paginated API response")
 open class PaginationDto<T> {
-    @Schema(description = "Página atual")
+    @Schema(description = "Current page")
     var page: Int = 1
-    @Schema(description = "Registros por página")
+
+    @Schema(description = "Records per page")
     var rpp: Int = 10
-    @Schema(description = "Total de registros")
+
+    @Schema(description = "Total number of records")
     var count: Long = 0
-    @Schema(description = "Se há mais páginas")
+
+    @Schema(description = "Indicates whether there are more pages")
     var hasMore: Boolean = true
-    @Schema(description = "Lista de resultados")
+
+    @Schema(description = "List of results")
     var list: MutableList<T> = mutableListOf()
-    @Schema(description = "Informações adicionais")
+
+    @Schema(description = "Additional information")
     var extra: MutableMap<String, Any?> = mutableMapOf()
 
     fun <R> transform(fn: (T) -> R): PaginationDto<R> {
@@ -143,5 +173,4 @@ open class PaginationDto<T> {
         this.extra[key] = value
         return this
     }
-
 }

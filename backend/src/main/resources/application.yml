@@ -26,6 +26,15 @@ application:
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
     name: ${MDNS_NAME:dashboard}
+  smtp:
+    host: smtp.gmail.com
+    user: ${SMTP_USER:email@gmail.com}
+    password: ${SMTP_PASSWORD:1}
+    port: 587
+    tls: true
+    ssl: true
+    from: ${SMTP_USER:email@gmail.com}
+    default-to: seuemail@gmail.com
 
 smallrye:
   jwt:

@@ -34,12 +34,12 @@ class AccessController(
     @Transactional
     @Path("/register")
     @Operation(
-        summary = "Registrar novo usuário",
-        description = "Cria um novo usuário no sistema e retorna seus dados"
+        summary = "Register a new user",
+        description = "Creates a new user in the system and returns their data"
     )
     @APIResponse(
         responseCode = "201",
-        description = "Usuário registrado com sucesso",
+        description = "User successfully registered",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -47,8 +47,10 @@ class AccessController(
             )
         ]
     )
-    @APIResponse(responseCode = "400", description = "Dados inválidos para registro")
-    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    @APIResponse(responseCode = "401", description = "Incorrect password")
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "404", description = "User not found")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun register(@Valid body: RegisterDto): Response {
         var user = User.fromDto(body)
         user.active = true
@@ -61,6 +63,8 @@ class AccessController(
         )
         return ResultContent.of(user)
             .transform { UserDto.from(it, true) }
+            .withStatusCode(Response.Status.CREATED)
+            .withMessage("User registered successfully")
             .build()
     }
 
@@ -68,12 +72,12 @@ class AccessController(
     @Transactional
     @Path("/login")
     @Operation(
-        summary = "Login do usuário",
-        description = "Autentica um usuário e retorna os dados"
+        summary = "User login",
+        description = "Authenticates a user and returns their data"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Usuário autenticado",
+        description = "User successfully authenticated",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -81,14 +85,10 @@ class AccessController(
             )
         ]
     )
-    @APIResponse(
-        responseCode = "404",
-        description = "Usuário não encontrado"
-    )
-    @APIResponse(
-        responseCode = "401",
-        description = "Senha incorreta"
-    )
+    @APIResponse(responseCode = "401", description = "Incorrect password")
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "404", description = "User not found")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun login(@Valid body: LoginDto): Response {
         val user = User.findByUsername(body.username)
 
@@ -110,12 +110,12 @@ class AccessController(
     @Authenticated
     @Path("/context")
     @Operation(
-        summary = "Contexto do usuário",
-        description = "Retorna os dados do usuário autenticado"
+        summary = "Authenticated user context",
+        description = "Returns the data of the currently authenticated user"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Usuário autenticado",
+        description = "User authenticated",
         content = [
             Content(
                 mediaType = MediaType.APPLICATION_JSON,
@@ -123,10 +123,10 @@ class AccessController(
             )
         ]
     )
-    @APIResponse(
-        responseCode = "403",
-        description = "Usuário não autenticado"
-    )
+    @APIResponse(responseCode = "401", description = "Invalid authentication")
+    @APIResponse(responseCode = "403", description = "User not authenticated")
+    @APIResponse(responseCode = "404", description = "User not found")
+    @APIResponse(responseCode = "500", description = "Internal server error")
     fun context(): Response {
         val user = ApplicationContext.user
             ?: throw ApplicationException("User not authenticated", Response.Status.FORBIDDEN)

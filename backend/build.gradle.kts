@@ -14,6 +14,7 @@ val sqliteVersion: String by project
 val jSerialCommVersion: String by project
 val oshiVersion: String by project
 val jnaVersion: String by project
+val kotlinVersion: String by project
 
 apply(from = "pem.gradle.kts")
 //apply(from = "vue.gradle.kts")
@@ -73,6 +74,7 @@ dependencies {
     implementation("org.reflections:reflections:$reflectionsVersion")
     implementation("io.quarkiverse.hibernatetypes:quarkus-hibernate-types:$quarkusHibernateTypes")
     implementation("io.quarkiverse.jdbc:quarkus-jdbc-sqlite:$sqliteVersion")
+    implementation("io.quarkus:quarkus-mailer")
 
     // === QUERYDSL ===
     kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
