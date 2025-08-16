@@ -3,10 +3,10 @@ application:
   environment: development
   database:
     host: localhost
-    name: dashboard
+    name: dashboard-imu
     username: postgres
     password: 1
-    port: 5432
+    port: 5434
   frontend:
     url: http://localhost:8000
   backend:

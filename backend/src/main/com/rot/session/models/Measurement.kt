@@ -3,7 +3,6 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.session.enums.*
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
@@ -15,6 +14,9 @@ import java.util.*
 @Entity
 @Table(
     name = "measurements",
+    indexes = [
+        Index(name = "idx_measurement_sensor", columnList = "sensor_id"),
+    ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
 class Measurement : BaseEntity<Measurement>() {

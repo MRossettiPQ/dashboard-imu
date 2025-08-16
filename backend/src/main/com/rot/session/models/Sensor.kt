@@ -15,6 +15,9 @@ import java.util.*
     name = "sensors",
     indexes = [
         Index(name = "idx_sensor_type", columnList = "type"),
+        Index(name = "idx_sensor_position", columnList = "position"),
+        Index(name = "idx_sensor_movement", columnList = "movement_id"),
+        Index(name = "idx_sensor_sensorname", columnList = "sensor_name"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

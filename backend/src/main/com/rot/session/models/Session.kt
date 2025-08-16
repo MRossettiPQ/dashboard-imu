@@ -3,7 +3,6 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.session.enums.ProcedureType
 import com.rot.session.enums.SessionType
 import com.rot.user.models.User
 import jakarta.persistence.*
@@ -17,6 +16,8 @@ import java.util.*
     name = "sessions",
     indexes = [
         Index(name = "idx_session_type", columnList = "type"),
+        Index(name = "idx_session_patient", columnList = "patient_id"),
+        Index(name = "idx_session_physiotherapist", columnList = "physiotherapist_id"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

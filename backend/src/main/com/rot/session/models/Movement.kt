@@ -12,7 +12,7 @@ import java.util.*
 @Table(
     name = "movements",
     indexes = [
-        Index(name = "idx_movement_type", columnList = "type"),
+        Index(name = "idx_movement_procedure", columnList = "procedure_id"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

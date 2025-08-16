@@ -10,22 +10,17 @@ val moquetteVersion: String by project
 val jacksonVersion: String by project
 val jmdnsVersion: String by project
 val mdnsVersion: String by project
-val sqliteVersion: String by project
-val jSerialCommVersion: String by project
-val oshiVersion: String by project
-val jnaVersion: String by project
-val kotlinVersion: String by project
 
 apply(from = "pem.gradle.kts")
 //apply(from = "vue.gradle.kts")
 
 plugins {
-    val kotlinVersion = "2.2.0"
-    kotlin("jvm") version kotlinVersion
-    kotlin("kapt") version kotlinVersion
-    kotlin("plugin.allopen") version kotlinVersion
-    kotlin("plugin.serialization") version kotlinVersion
-    kotlin("plugin.jpa") version kotlinVersion
+    val kotlinVersion = "2.0.21"
+    id("org.jetbrains.kotlin.jvm") version kotlinVersion
+    id("org.jetbrains.kotlin.kapt") version kotlinVersion
+    id("org.jetbrains.kotlin.plugin.allopen") version kotlinVersion
+    id("org.jetbrains.kotlin.plugin.serialization") version kotlinVersion
+    id("org.jetbrains.kotlin.plugin.jpa") version kotlinVersion
     id("io.quarkus")
     id("idea")
 }
@@ -73,7 +68,6 @@ dependencies {
     implementation("io.quarkus:quarkus-flyway")
     implementation("org.reflections:reflections:$reflectionsVersion")
     implementation("io.quarkiverse.hibernatetypes:quarkus-hibernate-types:$quarkusHibernateTypes")
-    implementation("io.quarkiverse.jdbc:quarkus-jdbc-sqlite:$sqliteVersion")
     implementation("io.quarkus:quarkus-mailer")
 
     // === QUERYDSL ===

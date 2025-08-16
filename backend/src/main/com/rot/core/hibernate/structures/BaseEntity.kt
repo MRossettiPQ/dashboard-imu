@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response
 import java.io.Serializable
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.math.max
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.isAccessible
 
@@ -59,6 +60,9 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
             ?.call(dto)
 
         val entity: T = findOrCreateInstance(dtoIdValue)
+        println(entity)
+        println(dtoClass)
+        println(dtoIdValue)
         return JsonUtils.MAPPER.updateValue(entity, dtoClass)
     }
 
@@ -70,8 +74,12 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
             count = query.fetchCount()
         }
 
-        query.offset(((page!! - 1) * rpp!!).toLong()).limit((rpp + 1).toLong())
-        val list = query.fetch()
+        val offset = max(page!!, 1) - 1
+        val list = query
+            .offset((offset * rpp!!).toLong())
+            .limit((rpp + 1).toLong())
+            .fetch()
+
         var hasMore = false
         if (list.size > rpp) {
             list.removeAt(list.size - 1)

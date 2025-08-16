@@ -77,6 +77,10 @@ quarkus:
     access-log:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %bbytes %Dms'
+  cache:
+    caffeine:
+      permission-cache:
+        expire-after-write: 60M
   hibernate-orm:
     log:
       sql: false

@@ -27,8 +27,7 @@ class DevelopmentController(
         metadata["environment"] = config.environment()
         metadata["dateTime"] = LocalDateTime.now()
 
-        return ResultContent.of()
-            .withContent(metadata)
+        return ResultContent.of(metadata)
             .withMessage("Ping server test successful")
             .build()
     }
