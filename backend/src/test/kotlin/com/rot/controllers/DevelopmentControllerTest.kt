@@ -1,4 +1,4 @@
-package com.oais.app.controllers
+package com.rot.controllers
 
 import com.rot.core.config.ApplicationConfig
 import io.quarkus.test.junit.QuarkusTest

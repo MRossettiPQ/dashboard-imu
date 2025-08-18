@@ -41,6 +41,7 @@ smallrye:
     sign:
       key:
         location: classpath:security/private.pem
+
 mp:
   jwt:
     verify:
@@ -53,9 +54,6 @@ quarkus:
     name: ${application.mdns.name}
   mdns:
     enabled: true
-  native:
-    resources:
-      includes: public.pem
   package:
     jar:
       type: fast-jar
@@ -66,7 +64,6 @@ quarkus:
   analytics:
     disabled: true
   http:
-    #    host: ${application.backend.host}
     port: ${application.backend.port}
     cors:
       ~: true
@@ -92,16 +89,17 @@ quarkus:
     implicit-naming-strategy: com.rot.core.hibernate.implementation.ImplicitNamingStrategyImpl
     second-level-caching-enabled: false
   datasource:
+    db-kind: postgresql
+    db-version: 16.3
     username: ${application.database.username}
     password: ${application.database.password}
-    db-kind: postgresql
     devservices:
       enabled: false
     jdbc:
+      leak-detection-interval: 8000
       idle-removal-interval: 50M
       max-lifetime: 50M
       max-size: 500
-      leak-detection-interval: 8000
       url: jdbc:postgresql://${application.database.host}:${application.database.port}/${application.database.name}?autoReconnect=true&useSSL=false
   flyway:
     migrate-at-start: true
@@ -111,4 +109,4 @@ quarkus:
   smallrye-jwt:
     enabled: true
   config:
-    locations: application.dev.yml,application.yml
+    locations: application-dev.yml,application.yml

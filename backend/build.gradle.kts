@@ -16,11 +16,11 @@ apply(from = "pem.gradle.kts")
 
 plugins {
     val kotlinVersion = "2.0.21"
-    id("org.jetbrains.kotlin.jvm") version kotlinVersion
-    id("org.jetbrains.kotlin.kapt") version kotlinVersion
-    id("org.jetbrains.kotlin.plugin.allopen") version kotlinVersion
-    id("org.jetbrains.kotlin.plugin.serialization") version kotlinVersion
-    id("org.jetbrains.kotlin.plugin.jpa") version kotlinVersion
+    kotlin("jvm") version kotlinVersion
+    kotlin("kapt") version kotlinVersion
+    kotlin("plugin.allopen") version kotlinVersion
+    kotlin("plugin.serialization") version kotlinVersion
+    kotlin("plugin.jpa") version kotlinVersion
     id("io.quarkus")
     id("idea")
 }
@@ -36,6 +36,7 @@ dependencies {
     implementation(enforcedPlatform("$quarkusPlatformGroupId:quarkus-blaze-persistence-bom:$quarkusPlatformVersion"))
 
     // === KOTLIN ===
+    implementation(kotlin("reflect"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("io.quarkus:quarkus-kotlin")
 
@@ -145,5 +146,4 @@ kotlin {
     }
 }
 
-//System.setProperty("quarkus.config.locations", "application.yml,application.base.yml")
 System.setProperty("quarkus.analytics.disabled", "true")

@@ -60,10 +60,7 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
             ?.call(dto)
 
         val entity: T = findOrCreateInstance(dtoIdValue)
-        println(entity)
-        println(dtoClass)
-        println(dtoIdValue)
-        return JsonUtils.MAPPER.updateValue(entity, dtoClass)
+        return JsonUtils.MAPPER.updateValue(entity, dto)
     }
 
     fun <T> fetch(query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): PaginationDto<T> {
