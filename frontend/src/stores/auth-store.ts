@@ -123,8 +123,8 @@ export const useAuthStore = defineStore('auth', {
     async save(data: AccessDto, rememberMe: boolean = false) {
       this.accessToken = data.accessToken;
       this.refreshToken = data.refreshToken;
-      this.accessTokenExpiresAt = trimDate(String(data.accessTokenExpiresAt));
-      this.refreshTokenExpiresAt = trimDate(String(data.refreshTokenExpiresAt));
+      this.accessTokenExpiresAt = data.accessTokenExpiresAt;
+      this.refreshTokenExpiresAt = data.refreshTokenExpiresAt;
 
       if (this.accessTokenExpiresAt == null || this.refreshTokenExpiresAt == null) return;
 

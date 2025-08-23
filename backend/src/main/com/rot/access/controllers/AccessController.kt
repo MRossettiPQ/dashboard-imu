@@ -108,6 +108,7 @@ class AccessController(
 
     @GET
     @Authenticated
+    @Transactional
     @Path("/context")
     @Operation(
         summary = "Authenticated user context",

@@ -9,6 +9,7 @@ import { useRoute } from 'vue-router';
 import { sessionService } from 'src/common/services/session/session-service';
 import { patientService } from 'src/common/services/patient/patient-service';
 import dayjs from 'dayjs';
+import CustomDate from 'components/CustomDate/CustomDate.vue';
 
 const route = useRoute();
 const loading = ref(false);
@@ -54,13 +55,6 @@ onMounted(async () => {
   }
 });
 
-const birthdayString = computed({
-  get: () => form.value.birthday?.format('YYYY-MM-DD') ?? '',
-  set: (val: string) => {
-    form.value.birthday = val ? dayjs(val) : undefined;
-  },
-});
-
 function open() {
   console.log('open');
   console.log(uuid.value);
@@ -78,9 +72,14 @@ function search() {
 </script>
 
 <template>
-  <custom-page>
-    <div class="u-w-100 u-h-100 flex u-gap-18">
-      <q-card class="col column u-w-100 u-gap-12 u-p-12 u-ph-16" style="min-width: 300px">
+  <custom-page id="patient-page">
+    <div class="u-w-100 u-h-100 flex u-gap-18 u-pb-12">
+      <q-card
+        flat
+        bordered
+        class="col column u-w-100 u-gap-12 u-p-12 u-ph-16"
+        style="min-width: 300px"
+      >
         <q-input v-model="form.cpf" dense label="CPF" outlined :rules="[$rules.notBlank]" />
         <q-input v-model="form.phone" dense label="Telefone" outlined :rules="[$rules.notBlank]" />
         <q-input
@@ -91,14 +90,18 @@ function search() {
           outlined
           :rules="[$rules.notBlank]"
         />
-        <q-input
-          v-model="birthdayString"
+        <custom-date
+          label="Data de nascimento"
+          v-model="form.birthday"
           type="date"
-          dense
-          label="Username"
           outlined
+          dense
           :rules="[$rules.notBlank]"
-        />
+        >
+          <div class="row items-center justify-end">
+            <q-btn v-close-popup label="Fechar" color="primary" flat />
+          </div>
+        </custom-date>
         <q-input
           v-if="form.user"
           v-model.trim="form.user.username"
@@ -107,7 +110,6 @@ function search() {
           outlined
           :rules="[$rules.notBlank]"
         />
-
         <q-input
           v-if="form.user"
           v-model.trim="form.user.name"
@@ -116,7 +118,6 @@ function search() {
           outlined
           :rules="[$rules.notBlank]"
         />
-
         <q-input
           v-if="form.user"
           v-model.trim="form.user.email"
@@ -126,7 +127,6 @@ function search() {
           outlined
           :rules="[$rules.email]"
         />
-
         <q-input
           v-if="form.user"
           v-model.trim="form.user.password"
@@ -141,7 +141,9 @@ function search() {
         class="col u-h-100 u-w-100"
         :service="pagination"
         :columns="columns"
-        style="min-width: 300px"
+        style="min-width: 300px; min-height: 480px"
+        flat
+        bordered
       >
         <template #top>
           <div class="flex justify-between u-gap-8 u-w-100 no-wrap">
@@ -174,3 +176,5 @@ function search() {
     </div>
   </custom-page>
 </template>
+
+<style scoped lang="scss"></style>

@@ -140,7 +140,7 @@ export const routeBeforeGuard = async (
   const store = useAuthStore();
   await store.isAuthenticatedOrLoadContext();
 
-  console.log(store.isAuthenticated, to.meta.private);
+  // console.log(store.isAuthenticated, to.meta.private);
   if (!store.isAuthenticated && to.meta.private) {
     return next({ name: 'public.login' });
   }

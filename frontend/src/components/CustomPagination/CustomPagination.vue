@@ -26,7 +26,6 @@ const paginationInfo = computed({
   set: (val) => emit('update:params', val),
 });
 const props = defineProps<Props<T, R>>();
-console.log(props.columns);
 </script>
 
 <template>

@@ -8,6 +8,7 @@ import com.rot.user.enums.UserRoleString
 import com.rot.user.models.Patient
 import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.transaction.Transactional
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
@@ -96,11 +97,20 @@ class PatientController {
             )
         ]
     )
+    @Transactional
     @APIResponse(responseCode = "403", description = "User not authenticated")
     @APIResponse(responseCode = "500", description = "Internal server error")
     fun save(body: PatientDto): Response {
         val entity = Patient.fromDto(body)
         val isNewBean = entity.isNewBean
+
+        val user = entity.user
+        if(user != null && isNewBean) {
+            user.encryptAndSetPassword("12344321")
+            entity.user = user.save()
+        }
+
+        entity.validate()
         entity.active = true
         return ResultContent.of(entity.save())
             .withStatusCode(if(isNewBean) Response.Status.CREATED else Response.Status.OK)

@@ -5,6 +5,7 @@ import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import jakarta.persistence.*
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 
@@ -38,7 +39,7 @@ class Patient : BaseEntity<Patient>() {
     var phone: String? = null
 
     @Column(name = "birthday")
-    var birthday: LocalDateTime? = null
+    var birthday: LocalDate? = null
 
     @Column(name = "stature")
     var stature: BigDecimal? = null

@@ -1,12 +1,13 @@
 import api from 'src/common/services/http-client';
-import type { BasicResponse, Pagination, Patient } from 'src/common/models/models';
-import { AxiosResponse } from 'src/common/models/models';
-import { plainToInstance } from 'class-transformer';
+import { SessionResponse } from 'src/common/models/models';
+import { SessionPaginationResponse } from 'src/common/models/models';
+import type { Pagination, AxiosResponse, BasicResponse, Patient } from 'src/common/models/models';
+import { convertResponse } from 'src/common/models/models';
 
 export const sessionService = {
   get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<BasicResponse<Patient>>> => {
-    const response = await api.get<BasicResponse<Patient>>(`/api/patients/${uuid}`);
-    return plainToInstance(AxiosResponse<BasicResponse<Patient>>, response);
+    const response = await api.get<BasicResponse<Patient>>(`/api/sessions/${uuid}`);
+    return convertResponse(response, SessionResponse);
   },
   list: async ({
     rpp,
@@ -15,12 +16,12 @@ export const sessionService = {
     rpp: number;
     page: number;
   }): Promise<AxiosResponse<BasicResponse<Pagination<Patient>>>> => {
-    const response = await api.get<BasicResponse<Pagination<Patient>>>('/api/patients', {
+    const response = await api.get<BasicResponse<Pagination<Patient>>>('/api/sessions', {
       params: {
         rpp,
         page,
       },
     });
-    return plainToInstance(AxiosResponse<BasicResponse<Pagination<Patient>>>, response);
+    return convertResponse(response, SessionPaginationResponse);
   },
 };

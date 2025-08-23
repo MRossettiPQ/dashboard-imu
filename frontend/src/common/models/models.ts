@@ -1,5 +1,11 @@
 import type { Component } from 'vue';
-import { Transform, Type } from 'class-transformer';
+import {
+  ClassConstructor,
+  instanceToPlain,
+  plainToInstance,
+  Transform,
+  Type,
+} from 'class-transformer';
 import dayjs from 'dayjs';
 import type { QBtnProps, QTableColumn } from 'quasar';
 import {
@@ -8,7 +14,6 @@ import {
   InternalAxiosRequestConfig,
   RawAxiosResponseHeaders,
 } from 'axios';
-import { instanceToPlain } from 'class-transformer';
 
 export type PropsOf<T extends Component> = T extends new (...args: unknown[]) => { $props: infer P }
   ? P
@@ -16,6 +21,15 @@ export type PropsOf<T extends Component> = T extends new (...args: unknown[]) =>
 
 export function jsonConverter<T>(instance: T): Record<string, unknown> {
   return instanceToPlain(instance);
+}
+
+export function convertResponse<T>(
+  response: unknown,
+  clazz: ClassConstructor<T>,
+): AxiosResponse<T> {
+  const responseInstance = plainToInstance(AxiosResponse<T>, response);
+  responseInstance.data = plainToInstance(clazz, responseInstance.data);
+  return responseInstance;
 }
 
 export interface BtnProps<T> extends Omit<Partial<QBtnProps>, 'onClick'> {
@@ -73,7 +87,10 @@ export enum SessionType {
 export class Patient {
   id?: string;
 
-  @Transform(({ value }) => (value ? dayjs(value) : undefined), { toClassOnly: true })
+  @Transform(({ value }) => (value ? dayjs(value) : undefined))
+  createdAt?: dayjs.Dayjs | undefined;
+
+  @Transform(({ value }) => (value ? dayjs(value) : undefined))
   birthday?: dayjs.Dayjs | undefined;
 
   cpf?: string;
@@ -147,4 +164,49 @@ export class AuthStore {
   refreshTokenExpiresAt!: dayjs.Dayjs | null;
 
   refreshToken!: string | null;
+}
+
+export class UserPagination extends Pagination<User> {
+  @Type(() => User)
+  declare list: User[];
+}
+
+export class UserResponse extends BasicResponse<User> {
+  @Type(() => User)
+  declare content: User | null;
+}
+
+export class UserPaginationResponse extends BasicResponse<UserPagination> {
+  @Type(() => UserPagination)
+  declare content: UserPagination | null;
+}
+
+export class PatientPagination extends Pagination<Patient> {
+  @Type(() => Patient)
+  declare list: Patient[];
+}
+
+export class PatientResponse extends BasicResponse<Patient> {
+  @Type(() => Patient)
+  declare content: Patient | null;
+}
+
+export class PatientPaginationResponse extends BasicResponse<PatientPagination> {
+  @Type(() => PatientPagination)
+  declare content: PatientPagination | null;
+}
+
+export class SessionPagination extends Pagination<Session> {
+  @Type(() => Session)
+  declare list: Session[];
+}
+
+export class SessionResponse extends BasicResponse<Session> {
+  @Type(() => Session)
+  declare content: Session | null;
+}
+
+export class SessionPaginationResponse extends BasicResponse<SessionPagination> {
+  @Type(() => SessionPagination)
+  declare content: SessionPagination | null;
 }

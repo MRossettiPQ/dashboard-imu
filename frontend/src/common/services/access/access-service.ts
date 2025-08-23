@@ -1,8 +1,13 @@
 import api from 'src/common/services/http-client';
-import type { BasicResponse, LoginRequestDto, RegisterDto, User } from 'src/common/models/models';
-import { AxiosResponse, jsonConverter } from 'src/common/models/models';
+import type {
+  AxiosResponse,
+  BasicResponse,
+  LoginRequestDto,
+  RegisterDto,
+  User,
+} from 'src/common/models/models';
+import { convertResponse, jsonConverter, UserResponse } from 'src/common/models/models';
 import type { GenericAbortSignal } from 'axios';
-import { plainToInstance } from 'class-transformer';
 
 export const accessService = {
   async login({
@@ -14,7 +19,8 @@ export const accessService = {
     const response = await api.post<BasicResponse<User>>('/api/access/login', {
       ...form,
     });
-    return plainToInstance(AxiosResponse<BasicResponse<User>>, response);
+
+    return convertResponse(response, UserResponse);
   },
   async register({
     form,
@@ -25,7 +31,7 @@ export const accessService = {
     const response = await api.post<BasicResponse<User>>('/api/access/register', {
       ...jsonConverter(form),
     });
-    return plainToInstance(AxiosResponse<BasicResponse<User>>, response);
+    return convertResponse(response, UserResponse);
   },
   async refreshToken(refreshToken: string): Promise<AxiosResponse<BasicResponse<User>>> {
     const response = await api.post<BasicResponse<User>>('/api/access/register', {
@@ -33,10 +39,10 @@ export const accessService = {
         refreshToken,
       },
     });
-    return plainToInstance(AxiosResponse<BasicResponse<User>>, response);
+    return convertResponse(response, UserResponse);
   },
   async context(): Promise<AxiosResponse<BasicResponse<User>>> {
     const response = await api.get<BasicResponse<User>>('/api/access/context');
-    return plainToInstance(AxiosResponse<BasicResponse<User>>, response);
+    return convertResponse(response, UserResponse);
   },
 };

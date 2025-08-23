@@ -31,7 +31,7 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
     }
 
     fun findOrThrowById(uuid: Id, message: String? = "${entityClass.simpleName} not found"): T {
-        return findOrThrowById(uuid, message = message!!)
+        return findOrThrowById(uuid, LockModeType.NONE, message)
     }
 
     fun findOrThrowById(uuid: Id, lockModeType: LockModeType? = LockModeType.NONE, message: String? = "${entityClass.simpleName} not found"): T {

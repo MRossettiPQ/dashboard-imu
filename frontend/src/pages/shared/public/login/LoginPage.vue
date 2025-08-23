@@ -13,8 +13,8 @@ const router = useRouter();
 const mainForm = ref<QForm | null>(null);
 const loading = ref(false);
 const form = ref<LoginRequestDto>({
-  username: '',
-  password: '',
+  username: 'mrossettipq',
+  password: '12344321',
 });
 
 async function login(): Promise<void> {
@@ -31,6 +31,7 @@ async function login(): Promise<void> {
 
     const { data, status } = await accessService.login({ form: form.value });
     console.log(data, status);
+    console.log(typeof data, status);
     if (data?.content?.access) {
       await store.save(data.content.access);
       await router.push({ name: 'shared.home' });
