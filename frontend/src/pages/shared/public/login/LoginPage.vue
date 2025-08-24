@@ -2,11 +2,11 @@
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { ref } from 'vue';
 import type { QForm } from 'quasar';
-import type { LoginRequestDto } from 'src/common/models/models';
 import { accessService } from 'src/common/services/access/access-service';
 import { formUtils } from 'src/common/utils/FormUtils';
 import { useAuthStore } from 'stores/auth-store';
 import { useRouter } from 'vue-router';
+import type { LoginRequestDto } from 'src/common/models/access/LoginRequestDto';
 
 const store = useAuthStore();
 const router = useRouter();
@@ -29,9 +29,7 @@ async function login(): Promise<void> {
 
     await formUtils.validate(mainForm.value);
 
-    const { data, status } = await accessService.login({ form: form.value });
-    console.log(data, status);
-    console.log(typeof data, status);
+    const { data } = await accessService.login({ form: form.value });
     if (data?.content?.access) {
       await store.save(data.content.access);
       await router.push({ name: 'shared.home' });

@@ -1,11 +1,13 @@
 import { Cookies } from 'quasar';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import type { AccessDto, AuthStore, UserRole } from 'src/common/models/models';
+import type { UserRole } from 'src/common/models/user/User';
+import type { AuthStore } from 'src/common/models/store/AuthStore';
 import { useRouter } from 'vue-router';
 import { accessService } from 'src/common/services/access/access-service';
 import { CookieType, getCookieConfiguration } from 'src/common/utils/cookieUtils';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
+import type { AccessDto } from 'src/common/models/access/AccessDto';
 
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 

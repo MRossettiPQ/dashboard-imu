@@ -23,6 +23,9 @@ importers:
       dotenv:
         specifier: ^16.5.0
         version: 16.6.1
+      json2typescript:
+        specifier: ^1.6.1
+        version: 1.6.1
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -41,6 +44,9 @@ importers:
       three:
         specifier: ^0.176.0
         version: 0.176.0
+      ts-serializable:
+        specifier: ^4.2.1
+        version: 4.2.1(reflect-metadata@0.2.2)
       vue:
         specifier: ^3.4.18
         version: 3.5.18(typescript@5.5.4)
@@ -2735,6 +2741,9 @@ packages:
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
 
+  json2typescript@1.6.1:
+    resolution: {integrity: sha512-2zSZMfOF/3ygGuzv5d/BBdxKOjNJKPolce/07HuX/xGHjBEi53ux36IuBr7ZM8kLACcD97XmH23snugJDrMOZA==}
+
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
@@ -3851,6 +3860,11 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  ts-serializable@4.2.1:
+    resolution: {integrity: sha512-xDOyuk6Wtfht3uchERiar/GstBLm/cbWZrX7yGe5rU0YkNmJ2y5z14YPJHgRHsKHmiPuXdnwVVMD3TN2aZW4Vw==}
+    peerDependencies:
+      reflect-metadata: '>=0.1.0'
 
   tsconfck@2.1.2:
     resolution: {integrity: sha512-ghqN1b0puy3MhhviwO2kGF8SeMDNhEbnKxjK7h6+fvY9JAxqvXi8y5NAHSQv687OVboS2uZIByzGd45/YxrRHg==}
@@ -7479,6 +7493,8 @@ snapshots:
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
+  json2typescript@1.6.1: {}
+
   json5@2.2.3: {}
 
   jsonc-parser@2.2.1: {}
@@ -8636,6 +8652,10 @@ snapshots:
   ts-essentials@9.4.2(typescript@5.5.4):
     optionalDependencies:
       typescript: 5.5.4
+
+  ts-serializable@4.2.1(reflect-metadata@0.2.2):
+    dependencies:
+      reflect-metadata: 0.2.2
 
   tsconfck@2.1.2(typescript@5.9.2):
     optionalDependencies:

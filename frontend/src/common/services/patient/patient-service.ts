@@ -1,13 +1,13 @@
 import api from 'src/common/services/http-client';
-import { PatientPaginationResponse } from 'src/common/models/models';
-import { PatientResponse } from 'src/common/models/models';
-import type { Patient, AxiosResponse, BasicResponse, Pagination } from 'src/common/models/models';
+import type { Pagination, AxiosResponse } from 'src/common/models/models';
+import { BasicResponse } from 'src/common/models/models';
 import { convertResponse } from 'src/common/models/models';
+import type { Patient } from 'src/common/models/patient/Patient';
 
 export const patientService = {
   get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<BasicResponse<Patient>>> => {
     const response = await api.get<BasicResponse<Patient>>(`/api/patients/${uuid}`);
-    return convertResponse(response, PatientResponse);
+    return convertResponse(response, BasicResponse<Patient>);
   },
   list: async ({
     rpp,
@@ -22,6 +22,6 @@ export const patientService = {
         page,
       },
     });
-    return convertResponse(response, PatientPaginationResponse);
+    return convertResponse(response, BasicResponse<Pagination<Patient>>);
   },
 };

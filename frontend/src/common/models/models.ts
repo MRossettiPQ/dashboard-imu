@@ -5,7 +5,9 @@ import {
   plainToInstance,
   Transform,
   Type,
+  TypeHelpOptions,
 } from 'class-transformer';
+import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import type { QBtnProps, QTableColumn } from 'quasar';
 import {
@@ -28,7 +30,10 @@ export function convertResponse<T>(
   clazz: ClassConstructor<T>,
 ): AxiosResponse<T> {
   const responseInstance = plainToInstance(AxiosResponse<T>, response);
+
+  console.log('RESPONSE INSTANCE', responseInstance);
   responseInstance.data = plainToInstance(clazz, responseInstance.data);
+  console.log('DATA INSTANCE', responseInstance.data);
   return responseInstance;
 }
 
@@ -37,8 +42,7 @@ export interface BtnProps<T> extends Omit<Partial<QBtnProps>, 'onClick'> {
     evt: Event,
     row?: T,
     go?: (opts?: {
-      // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-      to?: string | unknown;
+      to?: string;
       replace?: boolean;
       returnRouterError?: boolean;
     }) => Promise<unknown>,
@@ -50,163 +54,80 @@ export interface TableColumn<T> extends QTableColumn {
   props?: BtnProps<T> | undefined;
 }
 
+export function transformDate({ value }: { value: string }) {
+  return value ? dayjs(value) : undefined;
+}
+
+type Constructor<T> = new (...args: unknown[]) => T;
+
+export class BaseModel {
+  id?: string;
+
+  @Transform(transformDate, { toClassOnly: true })
+  createdAt?: Dayjs | undefined;
+
+  @Transform(transformDate, { toClassOnly: true })
+  updatedAt?: Dayjs | undefined;
+}
+
 export class AxiosResponse<T, D = unknown> implements AxiosResponseOriginal<T, D> {
+  @Type((options?: TypeHelpOptions) => {
+    const ctor = (options?.newObject as AxiosResponse<T, D>).type ?? Object;
+    console.log('CTOR AXIOS: ', ctor);
+    return ctor;
+  })
   data!: T;
   status!: number;
   statusText!: string;
   headers!: RawAxiosResponseHeaders | AxiosResponseHeaders;
   config!: InternalAxiosRequestConfig<D>;
   request!: unknown;
-}
 
-export class LoginRequestDto {
-  username!: string;
-  password!: string;
-}
+  private readonly type?: Constructor<T>;
 
-export class RegisterDto {
-  username!: string;
-  name!: string;
-  email!: string;
-  password?: string;
-  passwordConfirm?: string;
-}
-
-export enum UserRole {
-  ADMINISTRATOR = 'ADMINISTRATOR',
-  PHYSIOTHERAPIST = 'PHYSIOTHERAPIST',
-  PATIENT = 'PATIENT',
-}
-
-export enum SessionType {
-  REAL = 'REAL',
-  DEMO = 'DEMO',
-  GOLD = 'GOLD',
-}
-
-export class Patient {
-  id?: string;
-
-  @Transform(({ value }) => (value ? dayjs(value) : undefined))
-  createdAt?: dayjs.Dayjs | undefined;
-
-  @Transform(({ value }) => (value ? dayjs(value) : undefined))
-  birthday?: dayjs.Dayjs | undefined;
-
-  cpf?: string;
-  phone?: string;
-  stature?: number;
-
-  @Type(() => User)
-  user?: User;
-}
-
-export class Session {
-  id?: string;
-  type?: SessionType;
-
-  @Transform(({ value }) => (value ? dayjs(value) : undefined), { toClassOnly: true })
-  date?: dayjs.Dayjs;
-}
-
-export class User {
-  id?: string;
-  username!: string;
-  name!: string;
-  email!: string;
-  password?: string;
-  role!: UserRole;
-
-  @Type(() => AccessDto)
-  access?: AccessDto;
-}
-
-export class AccessDto {
-  accessToken!: string;
-  refreshToken!: string;
-
-  @Transform(({ value }) => dayjs(value), { toClassOnly: true })
-  accessTokenExpiresAt!: dayjs.Dayjs;
-
-  @Transform(({ value }) => dayjs(value), { toClassOnly: true })
-  refreshTokenExpiresAt!: dayjs.Dayjs;
+  constructor(type?: Constructor<T>) {
+    if (type) this.type = type;
+  }
 }
 
 export class BasicResponse<T> {
-  @Transform(({ value }) => (value ? dayjs(value) : null), { toClassOnly: true })
-  date!: dayjs.Dayjs | null;
+  @Transform(transformDate, { toClassOnly: true })
+  date!: Dayjs | null;
 
   code!: number;
   httpCode!: number;
   message!: string | null;
 
+  @Type((options?: TypeHelpOptions) => {
+    const ctor = (options?.newObject as BasicResponse<T>).type ?? Object;
+    console.log('CTOR BASIC: ', ctor);
+    return ctor;
+  })
   content!: T | null;
+
+  private readonly type?: Constructor<T>;
+
+  constructor(type?: Constructor<T>) {
+    if (type) this.type = type;
+  }
 }
 
 export class Pagination<T> {
+  @Type((options?: TypeHelpOptions) => {
+    const ctor = (options?.newObject as Pagination<T>).type ?? Object;
+    console.log('CTOR PAGINATION: ', ctor);
+    return ctor;
+  })
   list!: T[];
+
   count!: number;
   pageCount!: number;
   page!: number;
   rpp!: number;
-}
 
-export class AuthStore {
-  loading!: boolean;
-  user!: User | null;
+  private readonly type?: Constructor<T>;
 
-  @Transform(({ value }) => (value ? dayjs(value) : null), { toClassOnly: true })
-  accessTokenExpiresAt!: dayjs.Dayjs | null;
-
-  accessToken!: string | null;
-
-  @Transform(({ value }) => (value ? dayjs(value) : null), { toClassOnly: true })
-  refreshTokenExpiresAt!: dayjs.Dayjs | null;
-
-  refreshToken!: string | null;
-}
-
-export class UserPagination extends Pagination<User> {
-  @Type(() => User)
-  declare list: User[];
-}
-
-export class UserResponse extends BasicResponse<User> {
-  @Type(() => User)
-  declare content: User | null;
-}
-
-export class UserPaginationResponse extends BasicResponse<UserPagination> {
-  @Type(() => UserPagination)
-  declare content: UserPagination | null;
-}
-
-export class PatientPagination extends Pagination<Patient> {
-  @Type(() => Patient)
-  declare list: Patient[];
-}
-
-export class PatientResponse extends BasicResponse<Patient> {
-  @Type(() => Patient)
-  declare content: Patient | null;
-}
-
-export class PatientPaginationResponse extends BasicResponse<PatientPagination> {
-  @Type(() => PatientPagination)
-  declare content: PatientPagination | null;
-}
-
-export class SessionPagination extends Pagination<Session> {
-  @Type(() => Session)
-  declare list: Session[];
-}
-
-export class SessionResponse extends BasicResponse<Session> {
-  @Type(() => Session)
-  declare content: Session | null;
-}
-
-export class SessionPaginationResponse extends BasicResponse<SessionPagination> {
-  @Type(() => SessionPagination)
-  declare content: SessionPagination | null;
+  constructor(type?: Constructor<T>) {
+    if (type) this.type = type;
+  }
 }

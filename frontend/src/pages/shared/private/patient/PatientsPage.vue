@@ -4,8 +4,10 @@ import PaginationUtils from 'src/common/utils/PaginationUtils';
 import { patientService } from 'src/common/services/patient/patient-service';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import CustomPagination from 'components/CustomPagination/CustomPagination.vue';
-import type { Patient, TableColumn, User } from 'src/common/models/models';
+import type { TableColumn } from 'src/common/models/models';
 import { useRouter } from 'vue-router';
+import type { Patient } from 'src/common/models/patient/Patient';
+import type { User } from 'src/common/models/user/User';
 
 const router = useRouter();
 const loading = ref(false);
@@ -70,6 +72,7 @@ async function search() {
   try {
     loading.value = true;
     await pagination.value.search();
+    console.log(pagination.value.items);
   } catch (error) {
     console.error(error);
   } finally {

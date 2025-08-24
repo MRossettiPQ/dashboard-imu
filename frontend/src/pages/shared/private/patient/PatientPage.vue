@@ -3,13 +3,15 @@ import { computed, onMounted, ref } from 'vue';
 import PaginationUtils from 'src/common/utils/PaginationUtils';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import CustomPagination from 'components/CustomPagination/CustomPagination.vue';
-import type { Patient, Session, TableColumn } from 'src/common/models/models';
-import { UserRole } from 'src/common/models/models';
+import type { TableColumn } from 'src/common/models/models';
 import { useRoute } from 'vue-router';
 import { sessionService } from 'src/common/services/session/session-service';
 import { patientService } from 'src/common/services/patient/patient-service';
 import dayjs from 'dayjs';
 import CustomDate from 'components/CustomDate/CustomDate.vue';
+import { UserRole } from 'src/common/models/user/User';
+import type { Patient } from 'src/common/models/patient/Patient';
+import type { Session } from 'src/common/models/session/Session';
 
 const route = useRoute();
 const loading = ref(false);

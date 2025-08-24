@@ -2,7 +2,7 @@
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import type { QForm } from 'quasar';
 import { ref } from 'vue';
-import type { RegisterDto } from 'src/common/models/models';
+import type { RegisterRequestDto } from 'src/common/models/access/RegisterRequestDto';
 import { accessService } from 'src/common/services/access/access-service';
 import { formUtils } from 'src/common/utils/FormUtils';
 import { useAuthStore } from 'stores/auth-store';
@@ -12,7 +12,7 @@ const store = useAuthStore();
 const router = useRouter();
 const mainForm = ref<QForm | null>(null);
 const loading = ref(false);
-const form = ref<RegisterDto>({
+const form = ref<RegisterRequestDto>({
   name: '',
   email: '',
   username: '',

@@ -1,13 +1,12 @@
 import api from 'src/common/services/http-client';
-import { SessionResponse } from 'src/common/models/models';
-import { SessionPaginationResponse } from 'src/common/models/models';
-import type { Pagination, AxiosResponse, BasicResponse, Patient } from 'src/common/models/models';
-import { convertResponse } from 'src/common/models/models';
+import type { Pagination, AxiosResponse } from 'src/common/models/models';
+import { BasicResponse, convertResponse } from 'src/common/models/models';
+import type { Session } from 'src/common/models/session/Session';
 
 export const sessionService = {
-  get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<BasicResponse<Patient>>> => {
-    const response = await api.get<BasicResponse<Patient>>(`/api/sessions/${uuid}`);
-    return convertResponse(response, SessionResponse);
+  get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<BasicResponse<Session>>> => {
+    const response = await api.get(`/api/sessions/${uuid}`);
+    return convertResponse(response, BasicResponse<Session>);
   },
   list: async ({
     rpp,
@@ -15,13 +14,13 @@ export const sessionService = {
   }: {
     rpp: number;
     page: number;
-  }): Promise<AxiosResponse<BasicResponse<Pagination<Patient>>>> => {
-    const response = await api.get<BasicResponse<Pagination<Patient>>>('/api/sessions', {
+  }): Promise<AxiosResponse<BasicResponse<Pagination<Session>>>> => {
+    const response = await api.get('/api/sessions', {
       params: {
         rpp,
         page,
       },
     });
-    return convertResponse(response, SessionPaginationResponse);
+    return convertResponse(response, BasicResponse<Pagination<Session>>);
   },
 };

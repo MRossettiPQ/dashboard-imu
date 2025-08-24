@@ -1,12 +1,11 @@
 import api from 'src/common/services/http-client';
-import type { AxiosResponse, BasicResponse } from 'src/common/models/models';
-import { UserResponse } from 'src/common/models/models';
-import type { User } from 'src/common/models/models';
-import { convertResponse } from 'src/common/models/models';
+import type { AxiosResponse } from 'src/common/models/models';
+import { BasicResponse, convertResponse } from 'src/common/models/models';
+import type { User } from 'src/common/models/user/User';
 
 export const userService = {
   async get(): Promise<AxiosResponse<BasicResponse<User>>> {
-    const response = await api.post<BasicResponse<User>>('users');
-    return convertResponse(response, UserResponse);
+    const response = await api.post('users');
+    return convertResponse(response, BasicResponse<User>);
   },
 };

@@ -1,13 +1,10 @@
 import api from 'src/common/services/http-client';
-import type {
-  AxiosResponse,
-  BasicResponse,
-  LoginRequestDto,
-  RegisterDto,
-  User,
-} from 'src/common/models/models';
-import { convertResponse, jsonConverter, UserResponse } from 'src/common/models/models';
+import type { RegisterRequestDto } from 'src/common/models/access/RegisterRequestDto';
+import type { LoginRequestDto } from 'src/common/models/access/LoginRequestDto';
+import type { AxiosResponse } from 'src/common/models/models';
+import { BasicResponse, convertResponse, jsonConverter } from 'src/common/models/models';
 import type { GenericAbortSignal } from 'axios';
+import type { User } from 'src/common/models/user/User';
 
 export const accessService = {
   async login({
@@ -16,33 +13,30 @@ export const accessService = {
     form: LoginRequestDto;
     signal?: GenericAbortSignal;
   }): Promise<AxiosResponse<BasicResponse<User>>> {
-    const response = await api.post<BasicResponse<User>>('/api/access/login', {
-      ...form,
-    });
-
-    return convertResponse(response, UserResponse);
+    const response = await api.post('/api/access/login', form);
+    return convertResponse(response, BasicResponse<User>);
   },
   async register({
     form,
   }: {
-    form: RegisterDto;
+    form: RegisterRequestDto;
     signal?: GenericAbortSignal;
   }): Promise<AxiosResponse<BasicResponse<User>>> {
-    const response = await api.post<BasicResponse<User>>('/api/access/register', {
+    const response = await api.post('/api/access/register', {
       ...jsonConverter(form),
     });
-    return convertResponse(response, UserResponse);
+    return convertResponse(response, BasicResponse<User>);
   },
   async refreshToken(refreshToken: string): Promise<AxiosResponse<BasicResponse<User>>> {
-    const response = await api.post<BasicResponse<User>>('/api/access/register', {
+    const response = await api.post('/api/access/register', {
       data: {
         refreshToken,
       },
     });
-    return convertResponse(response, UserResponse);
+    return convertResponse(response, BasicResponse<User>);
   },
   async context(): Promise<AxiosResponse<BasicResponse<User>>> {
-    const response = await api.get<BasicResponse<User>>('/api/access/context');
-    return convertResponse(response, UserResponse);
+    const response = await api.get('/api/access/context');
+    return convertResponse(response, BasicResponse<User>);
   },
 };
