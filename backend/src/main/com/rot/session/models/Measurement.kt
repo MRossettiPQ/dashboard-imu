@@ -23,6 +23,12 @@ class Measurement : BaseEntity<Measurement>() {
     companion object : BaseCompanion<Measurement, UUID, QMeasurement> {
         override val entityClass: Class<Measurement> = Measurement::class.java
         override val q: QMeasurement = QMeasurement.measurement
+
+        fun findAllBySensorId(sensorId: UUID): MutableList<Measurement> {
+            return createQuery()
+                .where(q.sensor().id.eq(sensorId))
+                .fetch()
+        }
     }
 
     @Id
@@ -121,5 +127,4 @@ class Measurement : BaseEntity<Measurement>() {
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "sensor_id", nullable = false)
     var sensor: Sensor? = null
-
 }

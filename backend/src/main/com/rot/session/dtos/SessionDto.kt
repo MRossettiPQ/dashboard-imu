@@ -5,7 +5,6 @@ import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.SessionType
 import com.rot.session.models.Session
-import com.rot.user.dtos.PatientDto
 import com.rot.user.dtos.UserDto
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.LocalDateTime
