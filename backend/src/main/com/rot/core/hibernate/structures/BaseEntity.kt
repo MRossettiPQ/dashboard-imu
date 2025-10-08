@@ -17,6 +17,8 @@ import jakarta.validation.Validation
 import jakarta.ws.rs.core.Response
 import java.io.Serializable
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.*
 import kotlin.math.max
 import kotlin.reflect.full.declaredMemberProperties
@@ -39,7 +41,7 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
             ?: throw ApplicationException(message!!, Response.Status.NOT_FOUND)
     }
 
-    private fun findOrCreateInstance(dtoIdValue: Any?): T {
+    fun findOrCreateInstance(dtoIdValue: Any?): T {
         if (dtoIdValue == null) return entityClass.getDeclaredConstructor().newInstance()
         return (try {
             Panache.getEntityManager().find(entityClass, dtoIdValue)
@@ -99,14 +101,14 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
     private val simpleName: String
         get() = javaClass.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
 
-    @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    var createdAt: LocalDateTime? = null
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    var createdAt: OffsetDateTime? = OffsetDateTime.now(ZoneOffset.UTC)
 
     @Column(name = "created_by")
     var createdBy: String? = null
 
-    @Column(name = "updated_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    var updatedAt: LocalDateTime? = null
+    @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    var updatedAt: OffsetDateTime? = null
 
     @Column(name = "updated_by")
     var updatedBy: String? = null
@@ -124,7 +126,7 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
     private fun audit() {
         val context = ApplicationContext.context
         if (isNewBean) {
-            createdAt = LocalDateTime.now()
+            createdAt = OffsetDateTime.now(ZoneOffset.UTC)
         }
 
         if (isNewBean && context != null) {
@@ -135,7 +137,7 @@ abstract class BaseEntity<T> : PanacheEntityBase, Serializable {
             updatedBy = context.id.toString()
         }
 
-        updatedAt = LocalDateTime.now()
+        updatedAt = OffsetDateTime.now(ZoneOffset.UTC)
     }
 
     @Transient

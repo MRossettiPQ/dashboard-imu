@@ -49,6 +49,12 @@ const privateRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: 'patient/new',
+    name: 'private.patient.new',
+    component: () => import('pages/shared/private/patient/PatientPage.vue'),
+    meta: { private: true },
+  },
+  {
     path: 'patient/:uuid([0-9a-fA-F-]{36})',
     name: 'private.patient',
     component: () => import('pages/shared/private/patient/PatientPage.vue'),
@@ -57,8 +63,16 @@ const privateRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: 'session',
+    path: 'session/:uuid([0-9a-fA-F-]{36})',
     name: 'private.session',
+    component: () => import('pages/shared/private/session/SessionPage.vue'),
+    meta: {
+      private: true,
+    },
+  },
+  {
+    path: 'session/view/:uuid([0-9a-fA-F-]{36})',
+    name: 'private.session.view',
     component: () => import('pages/shared/private/session/SessionPage.vue'),
     meta: {
       private: true,

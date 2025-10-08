@@ -1,8 +1,12 @@
 package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.*
-import com.rot.session.models.Procedure
+import com.rot.session.dtos.MovementTypeDto
+import com.rot.session.dtos.MovementTypeDto.Companion.from
+import com.rot.session.dtos.SessionDto
+import com.rot.session.dtos.SessionResponse
+import com.rot.session.enums.ProcedureType
+import com.rot.session.models.MovementType
 import com.rot.session.models.Session
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -16,7 +20,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestPath
-import org.jboss.resteasy.reactive.RestQuery
 import java.util.*
 
 @Authenticated
@@ -25,6 +28,30 @@ import java.util.*
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 class SessionController {
+
+    @GET
+    @Transactional
+    @Path("/metadata")
+    @Operation(
+        summary = "Metadata for movements",
+        description = "Metadata for movements"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Metadata for movements"
+    )
+    @APIResponse(responseCode = "500", description = "Internal server error")
+    fun metadata(): Response? {
+        val movementTypes = MovementType
+            .createQuery()
+            .fetch()
+
+        val metadata: MutableMap<String, Any?> = mutableMapOf()
+        metadata["movementTypes"] = movementTypes.map(MovementTypeDto::from)
+        metadata["procedureTypes"] = ProcedureType.entries
+
+        return ResultContent.of(metadata).build()
+    }
 
     @POST
     @Transactional
@@ -76,34 +103,6 @@ class SessionController {
     fun retrieve(@RestPath("uuid") uuid: UUID): Response {
         val session = Session.findOrThrowById(uuid, message = "Measurement session not found")
         return ResultContent.of(session)
-            .transform(SessionDto::from)
-            .build()
-    }
-
-    @GET
-    @Path("/")
-    @Operation(
-        summary = "Pagination of performed measurement sessions",
-        description = "List performed measurement sessions and return their data"
-    )
-    @APIResponse(
-        responseCode = "200",
-        description = "Pagination of performed measurement sessions",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = SessionPaginationResponse::class),
-            )
-        ]
-    )
-    @APIResponse(responseCode = "500", description = "Internal server error")
-    fun list(
-        @DefaultValue("1") @RestQuery page: Int,
-        @DefaultValue("10") @RestQuery rpp: Int,
-    ): Response {
-        val query = Session.createQuery()
-
-        return ResultContent.of(Session.fetch(query, page, rpp))
             .transform(SessionDto::from)
             .build()
     }

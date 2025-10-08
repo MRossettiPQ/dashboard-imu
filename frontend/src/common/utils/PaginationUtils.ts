@@ -117,7 +117,7 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
     return this.error;
   }
 
-  async search() {
+  async search(): Promise<void> {
     const signal = this.controller.signal;
     try {
       this.loading = true;

@@ -1,12 +1,14 @@
 package com.rot.session.models
 
 import com.querydsl.core.annotations.Config
+import com.rot.core.exceptions.ApplicationException
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.session.enums.*
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.ws.rs.core.Response
 import java.util.*
 
 
@@ -33,18 +35,8 @@ class Sensor : BaseEntity<Sensor>() {
 
     @NotNull
     @NotEmpty
-    @Column(name = "mac_address")
-    var macAddress: String? = null
-
-    @NotNull
-    @NotEmpty
     @Column(name = "ip")
     var ip: String? = null
-
-    @NotNull
-    @NotEmpty
-    @Column(name = "sensor_name")
-    var sensorName: String? = null
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -64,6 +56,11 @@ class Sensor : BaseEntity<Sensor>() {
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "movement_id", nullable = false)
     var movement: Movement? = null
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @JoinColumn(name = "sensor_info_id", nullable = false)
+    var sensorInfo: SensorInfo? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "sensor", cascade = [CascadeType.ALL])
     var measurements = mutableSetOf<Measurement>()

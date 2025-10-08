@@ -20,15 +20,6 @@ object JsonUtils {
     // Instância do ObjectMapper configurado
     val MAPPER = createMapper()
 
-    fun isValidJson(json: String): Boolean {
-        return try {
-            MAPPER.readTree(json)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     /**
      * Cria e configura o ObjectMapper com módulos e configurações para tratamento de JSON
      */
@@ -58,6 +49,15 @@ object JsonUtils {
         mapper.registerModule(reflectionModule)
 
         return mapper
+    }
+
+    fun isValidJson(json: String): Boolean {
+        return try {
+            MAPPER.readTree(json)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /**

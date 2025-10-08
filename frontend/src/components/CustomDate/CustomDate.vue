@@ -65,7 +65,7 @@ const qDateProps = computed((): DateProps => {
 </script>
 
 <template>
-  <q-input class="hide-native-date-icon" v-model="dateString" v-bind="inputProps">
+  <q-input class="hide-native-date-icon" v-model="dateString" v-bind="inputProps" unmasked-value>
     <template v-slot:append>
       <q-icon name="event" class="cursor-pointer">
         <q-popup-proxy cover transition-show="scale" transition-hide="scale">

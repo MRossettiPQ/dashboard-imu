@@ -1,12 +1,12 @@
 import api from 'src/common/services/http-client';
-import type { Pagination, AxiosResponse } from 'src/common/models/models';
-import { BasicResponse, convertResponse } from 'src/common/models/models';
-import type { Session } from 'src/common/models/session/Session';
+import type { AxiosResponse } from 'src/common/models/models';
+import { convertResponse } from 'src/common/models/models';
+import { SessionBasicResponse, SessionPaginationResponse } from 'src/common/models/session/Session';
 
 export const sessionService = {
-  get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<BasicResponse<Session>>> => {
+  get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<SessionBasicResponse>> => {
     const response = await api.get(`/api/sessions/${uuid}`);
-    return convertResponse(response, BasicResponse<Session>);
+    return convertResponse(response, SessionBasicResponse);
   },
   list: async ({
     rpp,
@@ -14,13 +14,13 @@ export const sessionService = {
   }: {
     rpp: number;
     page: number;
-  }): Promise<AxiosResponse<BasicResponse<Pagination<Session>>>> => {
+  }): Promise<AxiosResponse<SessionPaginationResponse>> => {
     const response = await api.get('/api/sessions', {
       params: {
         rpp,
         page,
       },
     });
-    return convertResponse(response, BasicResponse<Pagination<Session>>);
+    return convertResponse(response, SessionPaginationResponse);
   },
 };

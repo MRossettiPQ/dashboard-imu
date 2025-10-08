@@ -1,14 +1,14 @@
 import { Transform } from 'class-transformer';
 import { Dayjs } from 'dayjs';
-import { transformDate } from 'src/common/models/models';
+import { transformerDateTime } from 'src/common/models/models';
 
 export class AccessDto {
   accessToken!: string;
   refreshToken!: string;
 
-  @Transform(transformDate, { toClassOnly: true })
+  @Transform(transformerDateTime)
   accessTokenExpiresAt!: Dayjs;
 
-  @Transform(transformDate, { toClassOnly: true })
+  @Transform(transformerDateTime)
   refreshTokenExpiresAt!: Dayjs;
 }

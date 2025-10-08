@@ -1,0 +1,15 @@
+INSERT INTO movement_types (type, description)
+VALUES ('SIMPLE', ''),
+       ('FLEXION', ''),
+       ('EXTENSION', ''),
+       ('ADDUCTION', ''),
+       ('ABDUCTION', ''),
+       ('INTERNAL_ROTATION', ''),
+       ('EXTERNAL_ROTATION', ''),
+       ('PRONATION', ''),
+       ('SUPINATION', ''),
+       ('THUMB_INTERNAL_FLEXION', ''),
+       ('THUMB_INTERNAL_EXTENSION', ''),
+       ('INTERNAL_EXTENSION_FINGERS', ''),
+       ('ULNAR_ADDUCTION', ''),
+       ('RADIAL_ADDUCTION', '') ON CONFLICT (type) DO NOTHING;

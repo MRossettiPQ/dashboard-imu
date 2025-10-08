@@ -1,6 +1,7 @@
 package com.rot.session.enums
 
 enum class MovementEnum(val description: String) {
+    SIMPLE("Simple"),
     FLEXION("Flexion"),
     EXTENSION("Extension"),
     ADDUCTION("Adduction"),

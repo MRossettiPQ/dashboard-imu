@@ -1,6 +1,7 @@
 package com.rot.user.dtos
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.rot.access.dtos.AccessDto
 import com.rot.core.jaxrs.ContentDto
 import com.rot.core.jaxrs.PaginationDto
@@ -19,6 +20,8 @@ class UserDto {
     var role: UserRole = UserRole.PHYSIOTHERAPIST
     @JsonInclude(JsonInclude.Include.NON_NULL)
     var access: AccessDto? = null
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    var password: String? = null
 
     companion object {
         fun from(entity: User, token: Boolean = false): UserDto {

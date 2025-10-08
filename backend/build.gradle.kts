@@ -92,7 +92,6 @@ dependencies {
     implementation("io.quarkus:quarkus-smallrye-context-propagation")
 
     // === WEBSOCKET / SOCKET.IO ===
-    implementation("io.quarkus:quarkus-websockets")
     implementation("com.corundumstudio.socketio:netty-socketio:$socketIoVersion")
 
     // === MQTT ===

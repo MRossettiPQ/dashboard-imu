@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 
 
@@ -36,8 +37,8 @@ class Measurement : BaseEntity<Measurement>() {
     override var id: UUID? = null
 
     @NotEmpty
-    @Column(name = "captured_at", nullable = false, updatable = false)
-    var capturedAt: LocalDateTime? = null
+    @Column(name = "captured_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    var capturedAt: OffsetDateTime? = null
 
     @NotEmpty
     @Column(name = "sensor_name", nullable = false, updatable = false)

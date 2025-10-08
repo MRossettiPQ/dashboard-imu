@@ -67,6 +67,9 @@ onMounted(async () => {
 async function open(_evt: Event, row?: Patient) {
   await router.push({ name: 'private.patient', params: { uuid: row?.id } });
 }
+async function newPatient() {
+  await router.push({ name: 'private.patient.new' });
+}
 
 async function search() {
   try {
@@ -94,7 +97,7 @@ async function search() {
             icon="add"
             unelevated
             outline
-            @click="(e) => open(e, undefined)"
+            @click="newPatient"
           />
           <q-input
             v-model="pagination.params.term"

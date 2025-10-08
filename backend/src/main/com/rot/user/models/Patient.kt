@@ -38,13 +38,17 @@ class Patient : BaseEntity<Patient>() {
     @Column(name = "phone")
     var phone: String? = null
 
+
+    @Column(name = "cellphone")
+    var cellphone: String? = null
+
     @Column(name = "birthday")
     var birthday: LocalDate? = null
 
     @Column(name = "stature")
     var stature: BigDecimal? = null
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     var user: User? = null
 

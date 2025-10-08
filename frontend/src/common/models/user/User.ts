@@ -5,7 +5,7 @@ import { AccessDto } from 'src/common/models/access/AccessDto';
 export enum UserRole {
   ADMINISTRATOR = 'ADMINISTRATOR',
   PHYSIOTHERAPIST = 'PHYSIOTHERAPIST',
-  PATIENT = 'PATIENT',
+  USER = 'USER',
 }
 
 export class User extends BaseModel {

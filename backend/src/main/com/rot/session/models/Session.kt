@@ -8,6 +8,8 @@ import com.rot.user.models.User
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 
@@ -33,8 +35,8 @@ class Session : BaseEntity<Session>() {
     override var id: UUID? = null
 
     @NotNull
-    @Column(name = "date", nullable = false, updatable = false)
-    var date: LocalDateTime = LocalDateTime.now()
+    @Column(name = "date", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    var date: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
 
     @NotNull
     @Enumerated(EnumType.STRING)

@@ -4,16 +4,16 @@ import com.rot.core.jaxrs.ContentDto
 import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
 import com.rot.session.models.Measurement
-import com.rot.user.dtos.PatientDto
+import com.rot.socket.dtos.SessionSensorDto
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 
 
 open class MeasurementDto {
     var id: UUID? = null
-    var capturedAt: LocalDateTime? = null
+    var capturedAt: OffsetDateTime? = null
     var sensorName: String? = null
     var readOrder: Int? = null
     var accelMssX: BigDecimal? = null
@@ -35,6 +35,20 @@ open class MeasurementDto {
     var quaternionY: BigDecimal? = null
     var quaternionZ: BigDecimal? = null
     var quaternionW: BigDecimal? = null
+
+    override fun equals(other: Any?): Boolean {
+        if (other === this) return true
+        if (other !is MeasurementDto) return false
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id?.hashCode() ?: System.identityHashCode(this)
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName + "[id: $id]"
+    }
 
     companion object {
         fun from(measurement: Measurement) : MeasurementDto {

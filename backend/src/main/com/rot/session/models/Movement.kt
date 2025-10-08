@@ -3,6 +3,7 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
+import com.rot.session.enums.MovementEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.util.*
@@ -29,6 +30,16 @@ class Movement : BaseEntity<Movement>() {
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "observation", columnDefinition = "TEXT")
     var observation: String? = null
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, unique = true)
+    var type: MovementEnum? = null
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "movement_type_id", nullable = false)
+    var movementType: MovementType? = null
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])

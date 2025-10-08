@@ -3,10 +3,9 @@ package com.rot.session.controllers
 import com.rot.core.jaxrs.ResultContent
 import com.rot.session.dtos.MeasurementDto
 import com.rot.session.dtos.MeasurementPaginationResponse
-import com.rot.session.dtos.MovementDto
-import com.rot.session.dtos.MovementPaginationResponse
 import com.rot.session.models.Measurement
 import com.rot.session.models.Movement
+import com.rot.session.models.Sensor
 import com.rot.session.services.SciLabServices
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -49,34 +48,6 @@ class MovementController(
     }
 
     @GET
-    @Path("/")
-    @Operation(
-        summary = "Paginated list of recorded measurement sessions",
-        description = "Retrieve a paginated list of recorded measurement sessions and return their data"
-    )
-    @APIResponse(
-        responseCode = "200",
-        description = "Paginated list of recorded measurement sessions",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = MovementPaginationResponse::class),
-            )
-        ]
-    )
-    @APIResponse(responseCode = "500", description = "Internal server error")
-    fun list(
-        @DefaultValue("1") @RestQuery page: Int,
-        @DefaultValue("10") @RestQuery rpp: Int,
-    ): Response {
-        val query = Movement.createQuery()
-
-        return ResultContent.of(Movement.fetch(query, page, rpp))
-            .transform(MovementDto::from)
-            .build()
-    }
-
-    @GET
     @Path("/{movement}/sensors/{sensor}/measurements")
     @Operation(
         summary = "Paginated list of measurements for a specific movement and sensor",
@@ -100,8 +71,12 @@ class MovementController(
         @DefaultValue("10") @RestQuery rpp: Int,
     ): Response {
         val query = Measurement.createQuery()
-            .where(Measurement.q.sensor().id.eq(sensor))
-            .where(Measurement.q.sensor().measurements.any().id.eq(movement))
+            .leftJoin(Sensor.q)
+            .on(Measurement.q.sensor().id.eq(Sensor.q.id))
+            .leftJoin(Movement.q)
+            .on(Sensor.q.movement().id.eq(Movement.q.id))
+            .where(Sensor.q.id.eq(sensor))
+            .where(Movement.q.id.eq(movement))
 
         return ResultContent.of(Measurement.fetch(query, page, rpp))
             .transform(MeasurementDto::from)

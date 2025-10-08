@@ -11,7 +11,6 @@ import java.util.*
 open class ProcedureDto {
     var id: UUID? = null
     var type: ProcedureType? = null
-    var movements = mutableSetOf<MovementDto>()
 
     companion object {
         fun from(entity: Procedure): ProcedureDto {

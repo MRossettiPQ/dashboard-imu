@@ -1,11 +1,10 @@
-import type { Component } from 'vue';
 import {
   ClassConstructor,
   instanceToPlain,
+  plainToClassFromExist,
   plainToInstance,
   Transform,
-  Type,
-  TypeHelpOptions,
+  TransformFnParams,
 } from 'class-transformer';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
@@ -16,10 +15,11 @@ import {
   InternalAxiosRequestConfig,
   RawAxiosResponseHeaders,
 } from 'axios';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
-export type PropsOf<T extends Component> = T extends new (...args: unknown[]) => { $props: infer P }
-  ? P
-  : never;
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export function jsonConverter<T>(instance: T): Record<string, unknown> {
   return instanceToPlain(instance);
@@ -30,10 +30,8 @@ export function convertResponse<T>(
   clazz: ClassConstructor<T>,
 ): AxiosResponse<T> {
   const responseInstance = plainToInstance(AxiosResponse<T>, response);
-
-  console.log('RESPONSE INSTANCE', responseInstance);
-  responseInstance.data = plainToInstance(clazz, responseInstance.data);
-  console.log('DATA INSTANCE', responseInstance.data);
+  const data = instanceToPlain(responseInstance.data);
+  responseInstance.data = plainToClassFromExist<T, unknown>(new clazz(), data);
   return responseInstance;
 }
 
@@ -54,80 +52,76 @@ export interface TableColumn<T> extends QTableColumn {
   props?: BtnProps<T> | undefined;
 }
 
-export function transformDate({ value }: { value: string }) {
-  return value ? dayjs(value) : undefined;
-}
+const LOCAL_TZ = dayjs.tz.guess();
 
-type Constructor<T> = new (...args: unknown[]) => T;
+export function transformerDateTime({ value, type }: TransformFnParams) {
+  const typeNum = Number(type);
+
+  if (typeNum === 0) {
+    // toClassOnly
+    if (!value) return undefined;
+    return dayjs(value).isValid() ? dayjs.tz(value, LOCAL_TZ) : undefined;
+  }
+
+  if (typeNum === 1) {
+    // toPlainOnly
+    if (!value) return null;
+    return dayjs(value).tz(LOCAL_TZ).format('YYYY-MM-DD HH:mm:ssZ');
+  }
+
+  return value;
+}
+export function transformerDate({ value, type }: TransformFnParams) {
+  const typeNum = Number(type);
+
+  if (typeNum === 0) {
+    // toClassOnly
+    if (!value) return undefined;
+    return dayjs(value).isValid() ? dayjs(value).tz(LOCAL_TZ).startOf('day') : undefined;
+  }
+
+  if (typeNum === 1) {
+    // toPlainOnly
+    if (!value) return null;
+    return dayjs(value).tz(LOCAL_TZ).format('YYYY-MM-DD');
+  }
+
+  return value;
+}
 
 export class BaseModel {
   id?: string;
 
-  @Transform(transformDate, { toClassOnly: true })
+  @Transform(transformerDateTime)
   createdAt?: Dayjs | undefined;
 
-  @Transform(transformDate, { toClassOnly: true })
+  @Transform(transformerDateTime)
   updatedAt?: Dayjs | undefined;
 }
 
 export class AxiosResponse<T, D = unknown> implements AxiosResponseOriginal<T, D> {
-  @Type((options?: TypeHelpOptions) => {
-    const ctor = (options?.newObject as AxiosResponse<T, D>).type ?? Object;
-    console.log('CTOR AXIOS: ', ctor);
-    return ctor;
-  })
-  data!: T;
   status!: number;
   statusText!: string;
   headers!: RawAxiosResponseHeaders | AxiosResponseHeaders;
   config!: InternalAxiosRequestConfig<D>;
   request!: unknown;
-
-  private readonly type?: Constructor<T>;
-
-  constructor(type?: Constructor<T>) {
-    if (type) this.type = type;
-  }
+  data!: T;
 }
 
 export class BasicResponse<T> {
-  @Transform(transformDate, { toClassOnly: true })
+  @Transform(transformerDateTime)
   date!: Dayjs | null;
 
   code!: number;
   httpCode!: number;
   message!: string | null;
-
-  @Type((options?: TypeHelpOptions) => {
-    const ctor = (options?.newObject as BasicResponse<T>).type ?? Object;
-    console.log('CTOR BASIC: ', ctor);
-    return ctor;
-  })
   content!: T | null;
-
-  private readonly type?: Constructor<T>;
-
-  constructor(type?: Constructor<T>) {
-    if (type) this.type = type;
-  }
 }
 
 export class Pagination<T> {
-  @Type((options?: TypeHelpOptions) => {
-    const ctor = (options?.newObject as Pagination<T>).type ?? Object;
-    console.log('CTOR PAGINATION: ', ctor);
-    return ctor;
-  })
-  list!: T[];
-
   count!: number;
   pageCount!: number;
   page!: number;
   rpp!: number;
-
-  private readonly type?: Constructor<T>;
-
-  constructor(type?: Constructor<T>) {
-    if (type) this.type = type;
-  }
+  list!: T[];
 }

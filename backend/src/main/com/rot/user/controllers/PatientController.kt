@@ -1,9 +1,14 @@
 package com.rot.user.controllers
 
 import com.rot.core.jaxrs.ResultContent
+import com.rot.session.dtos.SessionDto
+import com.rot.session.dtos.SessionDto.Companion.from
+import com.rot.session.dtos.SessionPaginationResponse
+import com.rot.session.models.Session
 import com.rot.user.dtos.PatientDto
 import com.rot.user.dtos.PatientPaginationResponse
 import com.rot.user.dtos.PatientResponse
+import com.rot.user.enums.UserRole
 import com.rot.user.enums.UserRoleString
 import com.rot.user.models.Patient
 import jakarta.annotation.security.RolesAllowed
@@ -45,7 +50,7 @@ class PatientController {
     )
     @APIResponse(responseCode = "403", description = "User not authenticated")
     @APIResponse(responseCode = "500", description = "Internal server error")
-    fun get(@RestPath("uuid") uuid: UUID): Response {
+    fun retrieve(@RestPath("uuid") uuid: UUID): Response {
         val entity = Patient.findOrThrowById(uuid)
         return ResultContent.of(entity)
             .transform(PatientDto::from)
@@ -81,6 +86,36 @@ class PatientController {
             .build()
     }
 
+    @GET
+    @Path("/{uuid}/sessions/")
+    @Operation(
+        summary = "Pagination of performed measurement sessions",
+        description = "List performed measurement sessions and return their data"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Pagination of performed measurement sessions",
+        content = [
+            Content(
+                mediaType = MediaType.APPLICATION_JSON,
+                schema = Schema(implementation = SessionPaginationResponse::class),
+            )
+        ]
+    )
+    @APIResponse(responseCode = "500", description = "Internal server error")
+    fun listSessions(
+        @RestPath("uuid") uuid: UUID,
+        @DefaultValue("1") @RestQuery page: Int,
+        @DefaultValue("10") @RestQuery rpp: Int,
+    ): Response {
+        val query = Session.createQuery()
+            .where(Session.q.patient().id.eq(uuid))
+
+        return ResultContent.of(Session.fetch(query, page, rpp))
+            .transform(SessionDto::from)
+            .build()
+    }
+
     @POST
     @Path("/")
     @Operation(
@@ -106,7 +141,8 @@ class PatientController {
 
         val user = entity.user
         if(user != null && isNewBean) {
-            user.encryptAndSetPassword("12344321")
+            user.encryptAndSetPassword(body.user?.password!!)
+            user.role = UserRole.USER
             entity.user = user.save()
         }
 

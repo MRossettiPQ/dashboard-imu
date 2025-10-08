@@ -16,6 +16,8 @@ import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.core.Response
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.*
 import kotlin.jvm.Transient
 
@@ -42,6 +44,14 @@ class User : BaseEntity<User>() {
         fun findByUsername(username: String): User {
             return createQuery()
                 .where(q.username.eq(username))
+                .fetchFirst() ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
+        }
+
+        fun findByPatientId(patientId: UUID): User {
+            return createQuery()
+                .leftJoin(Patient.q)
+                .on(Patient.q.user.id.eq(q.id))
+                .where(Patient.q.id.eq(patientId))
                 .fetchFirst() ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
         }
     }
@@ -93,8 +103,8 @@ class User : BaseEntity<User>() {
         durationAccess: Duration = Duration.ofHours(12),
         durationRefresh: Duration = Duration.ofHours(4),
     ): AccessDto {
-        val accessTokenExpiresAt = LocalDateTime.now().plus(durationAccess)
-        val refreshTokenExpiresAt = LocalDateTime.now().plus(durationRefresh)
+        val accessTokenExpiresAt = OffsetDateTime.now(ZoneOffset.UTC).plus(durationAccess)
+        val refreshTokenExpiresAt = OffsetDateTime.now(ZoneOffset.UTC).plus(durationRefresh)
 
         access = AccessDto()
         access?.accessTokenExpiresAt = accessTokenExpiresAt

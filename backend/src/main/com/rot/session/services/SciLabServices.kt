@@ -10,12 +10,13 @@ import jakarta.enterprise.context.ApplicationScoped
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 
 @ApplicationScoped
 class SciLabServices {
 
-    fun checkTolerance(time1: LocalDateTime, time2: LocalDateTime, tolerance: Duration): Boolean {
+    fun checkTolerance(time1: OffsetDateTime, time2: OffsetDateTime, tolerance: Duration): Boolean {
         return Duration.between(time1, time2).abs() <= tolerance
     }
 
@@ -79,7 +80,7 @@ class SciLabServices {
         Log.info("Sensor TWO: ${sensor2.sensorName}, total measurements: ${sensor2.measurements.size}")
 
         val tolerance = Duration.ofMillis(50)
-        val syncList = mutableMapOf<LocalDateTime, Pair<List<Measurement>, List<Measurement>>>()
+        val syncList = mutableMapOf<OffsetDateTime, Pair<List<Measurement>, List<Measurement>>>()
         for ((time1, group1) in measurement1) {
             // Tenta encontrar algum timestamp em measurement2 dentro da tolerância
             val group2 = measurement2.entries
