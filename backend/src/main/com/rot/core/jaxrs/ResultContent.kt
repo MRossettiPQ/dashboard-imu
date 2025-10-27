@@ -15,7 +15,7 @@ class ResultContent<T> {
     private var internalCode: Int = 0
     private var data: ContentDto<T> = ContentDto()
     private var type: String = MediaType.APPLICATION_JSON
-    private var headers: MutableMap<String, Any> = mutableMapOf()
+    private var headers: MutableMap<String, Any?> = mutableMapOf()
     private var fields: List<KMutableProperty1<out T, *>> = emptyList()
 
     private fun filterSelectedFields(): Any {
@@ -72,7 +72,7 @@ class ResultContent<T> {
         return this
     }
 
-    fun withHeader(key: String, value: Any): ResultContent<T> {
+    fun withHeader(key: String, value: Any?): ResultContent<T> {
         headers[key] = value
         return this
     }

@@ -103,6 +103,9 @@ interface ApplicationConfig {
 
         @WithName("host")
         fun host(): String
+
+        @WithName("base-url")
+        fun baseUrl(): String
     }
 
     interface FrontendConfig {

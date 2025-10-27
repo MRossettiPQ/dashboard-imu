@@ -3,7 +3,7 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.session.enums.ProcedureType
+import com.rot.session.enums.ProcedureEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.util.*
@@ -33,10 +33,13 @@ class Procedure : BaseEntity<Procedure>() {
     @JoinColumn(name = "session_id", nullable = false)
     var session: Session? = null
 
+    @Column(name = "description")
+    var description: String? = null
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    var type: ProcedureType? = null
+    var type: ProcedureEnum? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "procedure", cascade = [CascadeType.ALL])
     var movements = mutableSetOf<Movement>()

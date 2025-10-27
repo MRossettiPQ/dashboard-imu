@@ -3,15 +3,17 @@ package com.rot.socket.dtos
 import com.rot.session.dtos.MeasurementDto
 import com.rot.session.enums.MovementEnum
 import com.rot.session.enums.PositionEnum
-import com.rot.session.enums.ProcedureType
+import com.rot.session.enums.ProcedureEnum
 import com.rot.session.enums.SensorType
 import com.rot.socket.enums.MessageType
+import com.rot.socket.enums.OriginType
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
 
 open class MessageDto<T>(var type: MessageType = MessageType.DEFAULT, var content: T? = null) {
     val date: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
+    val origin: OriginType = OriginType.UNKNOWN
 }
 
 // Client -> Server
@@ -27,7 +29,7 @@ class SaveSessionDto {
     var patientId: UUID? = null
     var observation: String? = null
 
-    var procedure: ProcedureType = ProcedureType.SIMPLE
+    var procedure: ProcedureEnum = ProcedureEnum.SIMPLE
 
     var movementType: MovementEnum = MovementEnum.SIMPLE
     var movementObservation: String? = null

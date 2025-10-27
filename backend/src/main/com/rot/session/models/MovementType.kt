@@ -8,6 +8,10 @@ import com.rot.session.enums.MovementEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.core.Response
+import org.hibernate.annotations.ColumnTransformer
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
+import java.math.BigDecimal
 import java.util.*
 
 
@@ -29,7 +33,6 @@ class MovementType : BaseEntity<MovementType>() {
                 .where(q.type.eq(type))
                 .fetchFirst() ?: throw ApplicationException("MovementType not found", Response.Status.NOT_FOUND)
         }
-
     }
 
     @Id
@@ -38,9 +41,29 @@ class MovementType : BaseEntity<MovementType>() {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, unique = true)
+    @Column(name = "type", nullable = false)
     var type: MovementEnum? = null
 
     @Column(name = "description", nullable = false)
-    var description: MovementEnum? = null
+    var description: String? = null
+
+    @Column(name = "image_name")
+    var imageName: String? = null
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procedure_type_id", nullable = false)
+    var procedureType: ProcedureType? = null
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Basic(fetch = FetchType.LAZY)
+    @ColumnTransformer(write = "?::jsonb")
+    @Column(name = "angle_rule", columnDefinition = "jsonb")
+    var angleRule: AngleRule? = null
+
+}
+
+class AngleRule {
+    var min: BigDecimal? = null
+    var max: BigDecimal? = null
 }

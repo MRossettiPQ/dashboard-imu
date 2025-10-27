@@ -9,11 +9,11 @@ String protocol = "http";
 
 inline void getWifiExternal() {
     const IPAddress apIP(192, 168, 4, 1);
-    String url = protocol + "://" + apIP.toString() + "/api/wifi";
+    const String url = protocol + "://" + apIP.toString() + "/api/wifi";
 
     HTTPClient http;
     http.begin(url);
-    int httpResponseCode = http.GET();
+    const int httpResponseCode = http.GET();
     if (httpResponseCode > 0) {
         String payload = http.getString();
         JsonDocument doc;

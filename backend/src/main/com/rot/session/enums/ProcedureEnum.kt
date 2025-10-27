@@ -1,6 +1,6 @@
 package com.rot.session.enums
 
-enum class ProcedureType(val description: String) {
+enum class ProcedureEnum(val description: String) {
     SIMPLE("Simple"),
     SHOULDER("Shoulder"),
     ELBOW("Elbow"),

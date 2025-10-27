@@ -76,8 +76,8 @@ class SciLabServices {
             .sortedBy { it.readOrder }
             .groupBy { it.capturedAt!! }
 
-        Log.info("Sensor ONE: ${sensor1.sensorName}, total measurements: ${sensor1.measurements.size}")
-        Log.info("Sensor TWO: ${sensor2.sensorName}, total measurements: ${sensor2.measurements.size}")
+        Log.info("Sensor ONE: ${sensor1.sensorInfo?.sensorName}, total measurements: ${sensor1.measurements.size}")
+        Log.info("Sensor TWO: ${sensor2.sensorInfo?.sensorName}, total measurements: ${sensor2.measurements.size}")
 
         val tolerance = Duration.ofMillis(50)
         val syncList = mutableMapOf<OffsetDateTime, Pair<List<Measurement>, List<Measurement>>>()

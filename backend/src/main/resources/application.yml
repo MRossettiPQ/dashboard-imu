@@ -13,6 +13,7 @@ application:
     host: ${BACKEND_HOST:0.0.0.0}
     port: ${BACKEND_PORT:8000}
     protocol: ${BACKEND_PROTOCOL:http}
+    base-url: ${application.backend.host}:${application.backend.port}
   security:
     issuer: ${SECURITY_ISSUER:dashboard-imu}
     token: ${SECURITY_TOKEN:1}

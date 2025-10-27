@@ -10,6 +10,7 @@ val moquetteVersion: String by project
 val jacksonVersion: String by project
 val jmdnsVersion: String by project
 val mdnsVersion: String by project
+val commonsIo: String by project
 
 apply(from = "pem.gradle.kts")
 //apply(from = "vue.gradle.kts")
@@ -100,6 +101,8 @@ dependencies {
     // === MDNS ===
     implementation("org.jmdns:jmdns:$jmdnsVersion")
     implementation("io.quarkiverse.mdns:quarkus-mdns:$mdnsVersion")
+
+    implementation("commons-io:commons-io:$commonsIo")
 
     // === TESTING ===
     testImplementation("io.quarkus:quarkus-jacoco")

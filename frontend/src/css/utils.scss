@@ -77,6 +77,14 @@
   }
 }
 
+.u-w-min-0 {
+  min-width: 0;
+}
+
+.u-h-min-0 {
+  min-height: 0;
+}
+
 .u-w-auto {
   width: auto;
 }
@@ -149,6 +157,38 @@
 
 .u-overflow--auto {
   overflow: auto;
+}
+
+.u-overflow-y--auto {
+  overflow-y: auto;
+}
+
+.u-overflow-x--auto {
+  overflow-x: auto;
+}
+
+.u-overflow-y--hidden {
+  overflow-y: hidden;
+}
+
+.u-overflow-x--hidden {
+  overflow-x: hidden;
+}
+
+.u-overflow-y--visible {
+  overflow-y: visible;
+}
+
+.u-overflow-x--visible {
+  overflow-x: visible;
+}
+
+.u-overflow-y--scroll {
+  overflow-y: scroll;
+}
+
+.u-overflow-x--scroll {
+  overflow-x: scroll;
 }
 
 // Grid

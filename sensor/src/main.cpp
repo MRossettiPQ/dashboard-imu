@@ -42,7 +42,7 @@ void stack() {
         }
 
         buffer["origin"] = "SENSOR";
-        buffer["type"] = "MEASUREMENT_LIST";
+        buffer["type"] = "SENSOR_SERVER_MEASUREMENT";
         const JsonObject measurement = SensorUtils::read();
         measurement_count_total++;
         measurement_count++;
@@ -58,9 +58,15 @@ void stack() {
             sendBuffer();
         }
     }
+
+    if (INT_MAX == measurement_count_total) {
+        measurement_count_total = 0;
+        sendBuffer();
+    }
 }
 
-[[noreturn]] void Task1code([[maybe_unused]] const TaskParams* parameter) {
+[[noreturn]] void Task1code(void* parameter) {
+    auto const* params = static_cast<TaskParams*>(parameter);
     Logger::info("Task1code", "Running on core %d", xPortGetCoreID());
     for (;;) {
         const unsigned long current_millis = millis();
@@ -77,6 +83,8 @@ void stack() {
                 case CommandType::RESTART:
                     restart();
                     break;
+                case CommandType::CALIBRATE:
+                    break;
                 default:
                     Logger::info("Task1code", "Nothing");
                     break;
@@ -87,7 +95,8 @@ void stack() {
     }
 }
 
-[[noreturn]] void Task2code([[maybe_unused]] const TaskParams* parameter) {
+[[noreturn]] void Task2code(void* parameter) {
+    auto const* params = static_cast<TaskParams*>(parameter);
     Logger::info("Task2code", "Running on core %d", xPortGetCoreID());
     for (;;) {
         const unsigned long current_millis = millis();

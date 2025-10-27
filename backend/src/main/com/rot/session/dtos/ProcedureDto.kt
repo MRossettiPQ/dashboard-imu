@@ -3,14 +3,14 @@ package com.rot.session.dtos
 import com.rot.core.jaxrs.ContentDto
 import com.rot.core.jaxrs.PaginationDto
 import com.rot.core.utils.JsonUtils
-import com.rot.session.enums.ProcedureType
+import com.rot.session.enums.ProcedureEnum
 import com.rot.session.models.Procedure
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.util.*
 
 open class ProcedureDto {
     var id: UUID? = null
-    var type: ProcedureType? = null
+    var type: ProcedureEnum? = null
 
     companion object {
         fun from(entity: Procedure): ProcedureDto {

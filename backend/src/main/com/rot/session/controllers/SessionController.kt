@@ -2,11 +2,12 @@ package com.rot.session.controllers
 
 import com.rot.core.jaxrs.ResultContent
 import com.rot.session.dtos.MovementTypeDto
-import com.rot.session.dtos.MovementTypeDto.Companion.from
+import com.rot.session.dtos.ProcedureTypeDto
 import com.rot.session.dtos.SessionDto
 import com.rot.session.dtos.SessionResponse
-import com.rot.session.enums.ProcedureType
+import com.rot.session.enums.ProcedureEnum
 import com.rot.session.models.MovementType
+import com.rot.session.models.ProcedureType
 import com.rot.session.models.Session
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -42,13 +43,12 @@ class SessionController {
     )
     @APIResponse(responseCode = "500", description = "Internal server error")
     fun metadata(): Response? {
-        val movementTypes = MovementType
+        val procedureTypes = ProcedureType
             .createQuery()
             .fetch()
 
         val metadata: MutableMap<String, Any?> = mutableMapOf()
-        metadata["movementTypes"] = movementTypes.map(MovementTypeDto::from)
-        metadata["procedureTypes"] = ProcedureType.entries
+        metadata["procedureTypes"] = procedureTypes.map(ProcedureTypeDto::from)
 
         return ResultContent.of(metadata).build()
     }

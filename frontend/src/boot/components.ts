@@ -1,5 +1,7 @@
 import { boot } from 'quasar/wrappers';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
+import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
+import ErrorDiv from 'components/ErrorDiv/ErrorDiv.vue';
 
 export default boot(({ app }): void => {
   console.log('[INIT] - Loading components');
@@ -15,4 +17,6 @@ export default boot(({ app }): void => {
 
   // app.use(Vue3Lottie);
   app.component('CustomPage', CustomPage);
+  app.component('LoadDiv', LoadDiv);
+  app.component('ErrorDiv', ErrorDiv);
 });

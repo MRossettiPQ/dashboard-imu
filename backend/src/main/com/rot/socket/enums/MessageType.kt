@@ -27,6 +27,13 @@ object SocketEvents {
     const val WELCOME = "WELCOME"
 }
 
+enum class OriginType(val description: String) {
+    BACKEND("backend"),
+    FRONTEND("frontend"),
+    SENSOR("sensor"),
+    UNKNOWN("unknown");
+}
+
 enum class MessageType(val description: String) {
     DEFAULT("Default"),
 

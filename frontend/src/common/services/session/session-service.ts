@@ -1,12 +1,20 @@
 import api from 'src/common/services/http-client';
 import type { AxiosResponse } from 'src/common/models/models';
 import { convertResponse } from 'src/common/models/models';
-import { SessionBasicResponse, SessionPaginationResponse } from 'src/common/models/session/Session';
+import {
+  SessionBasicResponse,
+  SessionMetadataResponse,
+  SessionPaginationResponse,
+} from 'src/common/models/session/Session';
 
 export const sessionService = {
   get: async ({ uuid }: { uuid: string }): Promise<AxiosResponse<SessionBasicResponse>> => {
     const response = await api.get(`/api/sessions/${uuid}`);
     return convertResponse(response, SessionBasicResponse);
+  },
+  metadata: async (): Promise<AxiosResponse<SessionMetadataResponse>> => {
+    const response = await api.get(`/api/sessions/metadata`);
+    return convertResponse(response, SessionMetadataResponse);
   },
   list: async ({
     rpp,

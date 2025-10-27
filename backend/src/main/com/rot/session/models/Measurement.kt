@@ -85,6 +85,18 @@ class Measurement : BaseEntity<Measurement>() {
     var gyroRadsZ: BigDecimal? = null
 
     @NotNull
+    @Column(name = "mag_bias_x", nullable = false, updatable = false)
+    var magBiasX: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "mag_bias_y", nullable = false, updatable = false)
+    var magBiasY: BigDecimal? = null
+
+    @NotNull
+    @Column(name = "mag_bias_z", nullable = false, updatable = false)
+    var magBiasZ: BigDecimal? = null
+
+    @NotNull
     @Column(name = "roll", nullable = false, updatable = false)
     var roll: BigDecimal? = null
 

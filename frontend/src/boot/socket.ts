@@ -11,12 +11,13 @@ declare module 'vue' {
   }
 }
 
-const socketEvents = {
-  WELCOME: 'WELCOME',
-  LEAVE_ROOM: 'LEAVE_ROOM',
-  SENSOR_LIST: 'SENSOR_LIST',
-  MEASUREMENTS: 'MEASUREMENTS',
-};
+enum SocketEvents {
+  DEFAULT = 'DEFAULT',
+  WELCOME = 'WELCOME',
+  LEAVE_ROOM = 'LEAVE_ROOM',
+  SERVER_CLIENT_SENSOR_LIST = 'SERVER_CLIENT_SENSOR_LIST',
+  SERVER_CLIENT_MEASUREMENT = 'SERVER_CLIENT_MEASUREMENT',
+}
 
 const wss = process.env.SOCKET_API;
 const opts: Partial<ManagerOptions & SocketOptions> = {
@@ -40,4 +41,4 @@ export default defineBoot(({ app }) => {
   app.config.globalProperties.$socket = socket;
 });
 
-export { socket, socketEvents };
+export { socket, SocketEvents };

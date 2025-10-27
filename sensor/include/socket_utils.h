@@ -3,7 +3,7 @@
 #include "logger.h"
 #include "config.h"
 
-void socketIOEvent(socketIOmessageType_t type, uint8_t* payload, size_t length) {
+inline void socketIOEvent(socketIOmessageType_t type, uint8_t* payload, size_t length) {
     switch(type) {
         case sIOtype_DISCONNECT:
             Logger::info("Socket", "Disconnected!");

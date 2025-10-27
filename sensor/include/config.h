@@ -25,8 +25,8 @@ String server_ip = "192.168.0.1";
 #define LED_READY 2
 
 // Configuração da rede AP
-String ap_ssid = "";
-String ap_password = "";
+String ap_ssid = "ROTador";
+String ap_password = "zotac460";
 String ap_ip = "";
 
 String sta_ssid = "DASHBOARD_NETWORK_AP";
@@ -75,7 +75,7 @@ void scannerMpu();
 
 
 // LOOP READ
-enum class CommandType { NONE, START, STOP, RESTART };
+enum class CommandType { NONE, START, STOP, RESTART, CALIBRATE };
 
 constexpr unsigned long delay_interval = 8;
 long previous_millis = 0;
@@ -101,6 +101,11 @@ inline CommandType getCommandTypeFromJson(const char* type_str) {
     if (strcmp(type_str, "RESTART") == 0) {
         return CommandType::RESTART;
     }
+
+    if (strcmp(type_str, "CALIBRATE") == 0) {
+        return CommandType::CALIBRATE;
+    }
+
     return CommandType::NONE;
 }
 
