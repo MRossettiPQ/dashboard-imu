@@ -3,15 +3,15 @@ import { transformerDateTime } from 'src/common/models/models';
 import dayjs from 'dayjs';
 import { SocketEvents } from 'boot/socket';
 
-export class RemoveSensorDto {
+export class CalibrateSensorDto {
   sensor?: string;
 }
 
-export class MessageRemoveSensorDto {
+export class MessageCalibrateSensorDto {
   @Transform(transformerDateTime)
   date?: dayjs.Dayjs | undefined;
 
-  type?: SocketEvents | undefined = SocketEvents.CLIENT_SERVER_REMOVE_SENSOR;
+  type?: SocketEvents | undefined = SocketEvents.CLIENT_SERVER_CALIBRATE;
 
-  declare content: RemoveSensorDto;
+  declare content: CalibrateSensorDto;
 }

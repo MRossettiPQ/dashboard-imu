@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { SessionStore } from 'pages/shared/private/session/utils/SessionStore';
 import { computed } from 'vue';
+import type { Session } from 'src/common/models/session/Session';
 
 interface Props {
-  session: SessionStore;
+  session: Session;
   rightDrawer: boolean;
+  addSample: () => void;
 }
 
 const props = defineProps<Props>();
@@ -32,7 +33,7 @@ const rightDrawer = computed({
         class="row icon-primary"
         label="Medições"
         icon="add"
-        @click="session.addSample()"
+        @click="addSample()"
       />
       <p>Procedimentos</p>
       <div v-for="(procedure, index) in session.procedures" :key="index">

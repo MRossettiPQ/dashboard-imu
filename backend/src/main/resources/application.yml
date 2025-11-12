@@ -76,6 +76,13 @@ quarkus:
     access-log:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %bbytes %Dms'
+  log:
+    console:
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"
+      charset: UTF-8
+    file:
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"
+      charset: UTF-8
   cache:
     caffeine:
       permission-cache:

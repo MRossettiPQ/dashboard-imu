@@ -1,20 +1,48 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { SessionStore } from 'pages/shared/private/session/utils/SessionStore';
+import type { Session } from 'src/common/models/session/Session';
 
 interface Props {
-  session: SessionStore;
+  next: () => void;
+  prev: () => void;
+  session: Session;
+  inProgress: boolean;
+  loadingSave: boolean;
+  actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
 }
 
 const props = defineProps<Props>();
-
 const disablePrevButton = computed(() => {
-  switch (props.session.actualStepValue) {
+  if (!props.session) return true;
+
+  switch (props.actualStepName) {
     case 'first-step':
       return true;
     case 'third-step':
-      return props.session.inProgress;
+      return props.inProgress;
     case 'second-step':
+    default:
+      return false;
+  }
+});
+
+const disableNextButton = computed(() => {
+  if (!props.session) return true;
+
+  switch (props.actualStepName) {
+    case 'first-step':
+      if (props.session.procedures.length < 1) return true;
+      return props.session.procedures.some((p) => p.movements.length < 1);
+    case 'second-step':
+      return false;
+    // return (
+    //   this.syncedConnection?.numberOfValidConnection < this.syncedSession?.minSensor ||
+    //   this.syncedConnection?.numberOfValidConnection > this.syncedSession?.minSensor ||
+    //   this.checkPositionBlank
+    // );
+    case 'third-step':
+      return false;
+    // return this.syncedConnection?.blockSave || this.blockIfMovementsMeasurementsEmpty;
     default:
       return false;
   }
@@ -23,19 +51,18 @@ const disablePrevButton = computed(() => {
 
 <template>
   <q-card flat bordered class="w-100 row navigation-footer">
-    <q-btn class="row" dense round color="primary" icon="arrow_back_ios_new" />
+    <q-btn
+      class="row"
+      dense
+      round
+      :disable="disablePrevButton"
+      color="primary"
+      icon="arrow_back_ios_new"
+      @click="prev"
+    />
 
-    <q-btn-group v-if="session?.actualStepValue === 'third-step'" rounded flat>
-      <q-btn
-        dense
-        color="primary"
-        size="md"
-        unelevated
-        :disable="disablePrevButton"
-        round
-        icon="play_arrow"
-        @click="session.start"
-      />
+    <q-btn-group v-if="actualStepName === 'third-step'" rounded flat>
+      <q-btn dense color="primary" size="md" unelevated round icon="play_arrow" />
       <q-btn dense color="primary" size="md" round icon="alarm" unelevated>
         <q-menu fit>
           <q-list style="min-width: 100px">
@@ -69,7 +96,16 @@ const disablePrevButton = computed(() => {
       </q-btn>
     </q-btn-group>
 
-    <q-btn class="row" dense round color="primary" @click="session.next" />
+    <q-btn
+      class="row"
+      dense
+      round
+      color="primary"
+      :loading="loadingSave"
+      :disable="disableNextButton"
+      :icon="actualStepName !== 'third-step' ? 'arrow_forward_ios' : 'save'"
+      @click="next"
+    />
   </q-card>
 </template>
 

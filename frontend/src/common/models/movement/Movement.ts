@@ -2,7 +2,7 @@ import { BaseModel } from 'src/common/models/models';
 import { Sensor } from 'src/common/models/sensor/Sensor';
 import { Type } from 'class-transformer';
 
-enum MovementEnum {
+export enum MovementEnum {
   SIMPLE = 'Simple',
   FLEXION = 'Flexion',
   EXTENSION = 'Extension',

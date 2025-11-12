@@ -10,5 +10,5 @@ export class MessageSensorListDto {
 
   type?: SocketEvents | undefined;
 
-  sensors: SessionSensorDto[] = [];
+  content: SessionSensorDto[] = [];
 }

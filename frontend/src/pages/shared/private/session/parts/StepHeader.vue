@@ -1,41 +1,134 @@
 <script setup lang="ts">
-import type { SessionStore } from 'pages/shared/private/session/utils/SessionStore';
 import { computed } from 'vue';
+import type { Movement, MovementEnum } from 'src/common/models/movement/Movement';
+import type { Session } from 'src/common/models/session/Session';
+import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
 
+type ViewMode = 'grid' | 'unified' | 'table' | 'summary';
 interface Props {
-  session: SessionStore;
   rightDrawer: boolean;
+  session: Session;
+  sensorList: SessionSensorDto[];
+  selectedSensors: Set<SessionSensorDto>;
+  selectedMovement?: Movement | undefined;
+  actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
+  actualStepLabel: string;
+  actualStepOrder: number;
+  actualMovementLabel?: MovementEnum | undefined;
+  addSample: (sensorN: number) => void;
+  requestedSensorList: boolean;
+  requestSensorList: () => Promise<void>;
+  viewType: ViewMode;
 }
 const props = defineProps<Props>();
-const emit = defineEmits<(e: 'update:rightDrawer', val: boolean) => void>();
+const emit = defineEmits<{
+  (e: 'update:rightDrawer', val: boolean): void;
+  (e: 'update:viewType', val: ViewMode): void;
+}>();
 
 const rightDrawer = computed({
   get: () => props.rightDrawer,
-  set: (val) => emit('update:rightDrawer', val),
+  set: (val: boolean) => emit('update:rightDrawer', val),
 });
-const showActualMovement = computed(() => props.session.actualStepName == 'third-step');
+
+const actualView = computed({
+  get: () => props.viewType ?? 'grid',
+  set: (val: ViewMode) => emit('update:viewType', val),
+});
+const showActualMovement = computed(() => props.actualStepName == 'third-step');
+const viewIcon = computed(() => {
+  switch (actualView.value) {
+    case 'grid':
+      return 'grid_view';
+    case 'unified':
+      return 'layers';
+    case 'table':
+      return 'table_chart';
+    case 'summary':
+      return 'summarize';
+    default:
+      return 'view_module';
+  }
+});
 </script>
 
 <template>
   <q-card flat bordered class="w-100 row navigation-header">
-    <p>Step header</p>
     <div class="row no-wrap">
-      <span class="f-bold f-medium">{{ session.actualStepLabel }}</span>
-      <span v-if="showActualMovement" class="f-bold f-medium">
-        : {{ session.actualMovementLabel }}
-      </span>
+      <b class="f-bold f-medium">{{ actualStepLabel }}</b>
+      <span v-if="showActualMovement" class="f-bold f-medium"> : {{ actualMovementLabel }} </span>
     </div>
 
-    <q-btn
-      v-if="session.actualStepOrder === 0"
-      round
+    <div class="row gap-12">
+      <q-btn
+        class="row icon-primary"
+        round
+        dense
+        unelevated
+        :loading="requestedSensorList"
+        :icon="requestedSensorList ? '' : 'refresh'"
+        @click="requestSensorList()"
+      />
+      <q-btn
+        class="row disconnected"
+        round
+        unelevated
+        disable
+        :class="{ connected: 'connected' }"
+        dense
+        :icon="selectedSensors.entries.length ? 'sensors' : 'sensors_off'"
+      />
+      <q-btn
+        round
+        dense
+        unelevated
+        size="md"
+        class="row icon-primary"
+        icon="settings"
+        @click="rightDrawer = !rightDrawer"
+      />
+      <q-btn
+        rounded
+        dense
+        unelevated
+        size="md"
+        label="Add medições"
+        class="row icon-primary"
+        icon="settings"
+        @click="() => addSample(2)"
+      />
+    </div>
+
+    <q-btn-dropdown
       dense
+      rounded
       unelevated
       size="md"
       class="row icon-primary"
-      icon="settings"
-      @click="rightDrawer = !rightDrawer"
-    />
+      :icon="viewIcon"
+      color="primary"
+      no-caps
+      label="View"
+    >
+      <q-list>
+        <q-item clickable v-ripple @click="actualView = 'grid'">
+          <q-item-section avatar><q-icon name="grid_view" /></q-item-section>
+          <q-item-section>Grid</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple @click="actualView = 'unified'">
+          <q-item-section avatar><q-icon name="layers" /></q-item-section>
+          <q-item-section>Unified</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple @click="actualView = 'table'">
+          <q-item-section avatar><q-icon name="table_chart" /></q-item-section>
+          <q-item-section>Table</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple @click="actualView = 'summary'">
+          <q-item-section avatar><q-icon name="summarize" /></q-item-section>
+          <q-item-section>Summary</q-item-section>
+        </q-item>
+      </q-list>
+    </q-btn-dropdown>
   </q-card>
 </template>
 

@@ -25,6 +25,10 @@ class RemoveSensorDto {
     lateinit var sensor: UUID
 }
 
+class CalibrateSensorDto {
+    lateinit var sensor: UUID
+}
+
 class SaveSessionDto {
     var patientId: UUID? = null
     var observation: String? = null
@@ -43,6 +47,10 @@ class StartCommandDto {
 
 class StopCommandDto {
     val command: MessageType = MessageType.SERVER_SENSOR_STOP
+}
+
+class CalibrateCommandDto {
+    val command: MessageType = MessageType.SERVER_SENSOR_CALIBRATE
 }
 
 class JoinedRoomDto {
@@ -92,10 +100,12 @@ class MessageSensorListDto : MessageDto<MutableList<SessionSensorDto>>(type = Me
 // Server -> Sensor
 class MessageStartCommandDto : MessageDto<StartCommandDto>(type = MessageType.SERVER_SENSOR_START)
 class MessageStopCommandDto : MessageDto<StopCommandDto>(type = MessageType.SERVER_SENSOR_STOP)
+class MessageCalibrateCommandDto : MessageDto<CalibrateCommandDto>(type = MessageType.SERVER_SENSOR_CALIBRATE)
 class MessageJoinedRoomDto : MessageDto<JoinedRoomDto>(type = MessageType.SERVER_SENSOR_JOINED_ROOM)
 class MessageRemovedRoomDto : MessageDto<RemovedRoomDto>(type = MessageType.SERVER_SENSOR_REMOVED_ROOM)
 
 // Client -> Server
 class MessageAddSensorDto : MessageDto<AddSensorDto>(type = MessageType.CLIENT_SERVER_ADD_SENSOR)
 class MessageRemoveSensorDto : MessageDto<RemoveSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR)
+class MessageCalibrateSensorDto : MessageDto<CalibrateSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR)
 class MessageSaveSessionDto : MessageDto<SaveSessionDto>(type = MessageType.CLIENT_SERVER_SAVE_SESSION)

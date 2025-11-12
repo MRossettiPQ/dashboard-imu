@@ -11,7 +11,7 @@ export class MessageAddSensorDto {
   @Transform(transformerDateTime)
   date?: dayjs.Dayjs | undefined;
 
-  type?: SocketEvents | undefined;
+  type?: SocketEvents | undefined = SocketEvents.CLIENT_SERVER_ADD_SENSOR;
 
   declare content: AddSensorDto;
 }

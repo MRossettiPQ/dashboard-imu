@@ -1,23 +1,22 @@
 <script setup lang="ts">
-import type { SessionStore } from 'pages/shared/private/session/utils/SessionStore';
 import { computed, ref, watch } from 'vue';
 import type { ProcedureType } from 'src/common/models/procedure/Procedure';
 import type { QTableColumn } from 'quasar';
 import type { MovementType } from 'src/common/models/movement/Movement';
 
 interface Props {
-  session: SessionStore;
+  procedureTypes: ProcedureType[];
+  addProcedure: (procedureType: ProcedureType | undefined, movementTypes: MovementType[]) => void;
 }
 
+const emit = defineEmits<(e: 'update:procedureTypes', val: ProcedureType[]) => void>();
+const props = defineProps<Props>();
+const procedureTypes = computed({
+  get: () => props.procedureTypes,
+  set: (val) => emit('update:procedureTypes', val),
+});
 const selectedProcedure = ref<ProcedureType | undefined>();
 const selectedMovements = ref<MovementType[]>([]);
-const props = defineProps<Props>();
-const emit = defineEmits<(e: 'update:session', val: SessionStore) => void>();
-const session = computed({
-  get: () => props.session,
-  set: (val) => emit('update:session', val),
-});
-
 // Reset selected movements quando o procedimento muda
 watch(selectedProcedure, () => {
   selectedMovements.value = [];
@@ -58,20 +57,25 @@ const columns: QTableColumn[] = [
     headerStyle: 'width: 50px;',
   },
 ];
+
+function onSelectProcedure() {
+  selectedMovements.value = [];
+}
 </script>
 
 <template>
   <div class="column u-gap-12 h-100 u-h-min-0" style="height: 100%">
-    <q-card flat bordered class="column w-100 u-gap-8 u-p-8" v-if="session?.procedureTypes">
+    <q-card flat bordered class="column w-100 u-gap-8 u-p-8" v-if="procedureTypes">
       <q-select
         v-model="selectedProcedure"
-        :options="session.procedureTypes"
+        :options="procedureTypes"
         emit-value
         dense
         filled
         label="Procedimento"
         option-label="description"
         option-value="value"
+        @select="onSelectProcedure"
       />
 
       <q-btn
@@ -81,8 +85,8 @@ const columns: QTableColumn[] = [
         color="primary"
         dense
         icon="las la-plus"
-        :label="`Adicionar ${selectedMovements.length} movimento(s)`"
-        @click="session.addProcedure(selectedProcedure, selectedMovements)"
+        :label="`Adicionar procedimento e ${selectedMovements.length} movimento(s)`"
+        @click="() => addProcedure(selectedProcedure, selectedMovements)"
       />
 
       <q-banner
@@ -107,6 +111,7 @@ const columns: QTableColumn[] = [
       row-key="id"
       hide-pagination
       :pagination="{ rowsPerPage: 0 }"
+      binary-state-sort
     >
       <template v-slot:body="props">
         <q-tr :props="props" @click="toggleMovementSelection(props.row)">

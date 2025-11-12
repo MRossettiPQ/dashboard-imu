@@ -4,7 +4,18 @@ import com.corundumstudio.socketio.AckRequest
 import com.corundumstudio.socketio.Configuration
 import com.corundumstudio.socketio.SocketIOClient
 import com.corundumstudio.socketio.SocketIOServer
+import com.corundumstudio.socketio.Transport
 import com.corundumstudio.socketio.protocol.JacksonJsonSupport
+import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JsonUtils
 import com.rot.core.utils.JwtUtils
@@ -14,19 +25,35 @@ import com.rot.socket.dtos.*
 import com.rot.socket.enums.MessageType
 import com.rot.socket.enums.UserSessionType
 import com.rot.user.models.User
+import io.netty.buffer.ByteBufInputStream
 import io.quarkus.logging.Log
 import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.event.Observes
 import jakarta.inject.Singleton
 import jakarta.transaction.Transactional
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class CustomJacksonJsonSupport : JacksonJsonSupport() {
     init {
         val field = JacksonJsonSupport::class.java.getDeclaredField("objectMapper")
         field.isAccessible = true
-        field[this] = JsonUtils.MAPPER
+
+        val javaTimeModule = JavaTimeModule()
+        javaTimeModule.addSerializer(LocalDateTime::class.java, LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))
+
+        this.objectMapper.registerModules(javaTimeModule, Jdk8Module())
+        this.objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)  // Usa o formato ISO-8601
+        this.objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, false)  // "" -> null
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)  // Ignora propriedades desconhecidas
+        this.objectMapper.dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+        val reflectionModule = KotlinModule.Builder()
+            .withReflectionCacheSize(512)
+            .build()
+        this.objectMapper.registerModule(reflectionModule)
     }
 }
 
@@ -50,6 +77,9 @@ class SocketService(
         config.isEnableCors = true
         config.origin = "*"
         config.jsonSupport = CustomJacksonJsonSupport()
+        config.setTransports(Transport.WEBSOCKET, Transport.POLLING)
+        config.maxFramePayloadLength = 1048576
+        config.maxHttpContentLength = 1048576
 
         server = SocketIOServer(config)
         server.addConnectListener(this::addConnectListener)
@@ -58,9 +88,11 @@ class SocketService(
         // Client -> Server
         server.addEventListener(MessageType.CLIENT_SERVER_STOP.description, String::class.java, this::clientServerCommandStop)
         server.addEventListener(MessageType.CLIENT_SERVER_START.description, String::class.java, this::clientServerCommandStart)
+        server.addEventListener(MessageType.CLIENT_SERVER_RESTART.description, String::class.java, this::clientServerCommandStart)
         server.addEventListener(MessageType.CLIENT_SERVER_SENSOR_LIST.description, String::class.java, this::clientServerSensorList)
         server.addEventListener(MessageType.CLIENT_SERVER_ADD_SENSOR.description, MessageAddSensorDto::class.java, this::clientServerAddSensor)
         server.addEventListener(MessageType.CLIENT_SERVER_REMOVE_SENSOR.description, MessageRemoveSensorDto::class.java, this::clientServerRemoveSensor)
+        server.addEventListener(MessageType.CLIENT_SERVER_CALIBRATE.description, MessageCalibrateSensorDto::class.java, this::clientServerCalibrate)
         server.addEventListener(MessageType.CLIENT_SERVER_SAVE_SESSION.description, MessageSaveSessionDto::class.java, this::clientServerSaveSession)
 
         // Sensor -> Server
@@ -125,13 +157,11 @@ class SocketService(
             sendSensorList(client)
         } else if (type == UserSessionType.SENSOR) {
             sessionContext.type = UserSessionType.SENSOR
-
-            broadcastSensorList()
         } else {
             Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usúario")
             return client.disconnect()
         }
-        sessions.put(sessionId, sessionContext)
+        sessions[sessionId] = sessionContext
 
         // Você pode emitir um evento de boas-vindas, se quiser
         Log.info("Novo cliente conectado! Sessão: $sessionId, IP: $remoteAddress")
@@ -141,8 +171,7 @@ class SocketService(
     fun addDisconnectListener(client: SocketIOClient) {
         Log.warn("Cliente desconectado: ${client.sessionId}")
         val sessionId = client.sessionId
-        val sessionContext = sessions[sessionId]
-        if (sessionContext == null) return
+        val sessionContext = sessions[sessionId] ?: return
 
         if (sessionContext.type == UserSessionType.USER) {
             // Remover sensores da sala desse usuário
@@ -261,10 +290,25 @@ class SocketService(
         }
     }
 
+    fun clientServerCalibrate(client: SocketIOClient, message: MessageCalibrateSensorDto, request: AckRequest) {
+        val session = sessions[client.sessionId]
+        val content = message.content
+        if (session == null || session.type != UserSessionType.USER || content == null) return
+
+        val sensorContext = sessions[content.sensor]
+        if (sensorContext != null) {
+            val sensorClient = server.getClient(content.sensor)
+            sensorClient.sendEvent(MessageType.SERVER_SENSOR_CALIBRATE.description, MessageCalibrateCommandDto())
+
+            Log.info("Cliente ${client.sessionId} solicitado calibração $message")
+            request.sendAckData("CALIBRATED_REQUESTED")
+        }
+    }
+
     fun clientServerAddSensor(client: SocketIOClient, message: MessageAddSensorDto, request: AckRequest) {
         val session = sessions[client.sessionId]
         val content = message.content
-        if (session == null || session.type != UserSessionType.USER || content == null || session.room != null) return
+        if (session == null || session.type != UserSessionType.USER || content == null) return
 
         val sensorContext = sessions[content.sensor] ?: return Log.warn("Sensor não encontrado")
         val sensorClient = server.getClient(content.sensor) ?: return Log.warn("Cliente do sensor não encontrado")
@@ -330,10 +374,12 @@ class SocketService(
 
         val sensor = userSession.sensors[sessionId] ?: return
         sensor.second.addAll(content)
+        val mac = sensor.first.mac
 
         val block = MessageClientMeasurementBlock()
         block.content = message.content
         userClient.sendEvent(MessageType.SERVER_CLIENT_MEASUREMENT.description, message)
+        userClient.sendEvent("${MessageType.SERVER_CLIENT_MEASUREMENT.description}:${mac}", message)
     }
 
     private fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSessionSensorDto, request: AckRequest) {
@@ -342,8 +388,7 @@ class SocketService(
         val content = message.content
         if (content == null || (session == null || session.type != UserSessionType.SENSOR)) return
 
-        val sensorIp = content.ip
-        if (sensorIp == null) return
+        val sensorIp = content.ip ?: return
 
         Log.info("Registered new sensor: $sensorIp")
         session.sensorId = sensorIp
@@ -358,10 +403,14 @@ class SocketService(
                 it.position = content.position
                 it.type = content.type
             }
+            broadcastSensorList()
             return request.sendAckData("UPDATED")
         }
 
+        content.clientId = client.sessionId
+
         sensors.add(content)
+        broadcastSensorList()
         return request.sendAckData("REGISTERED")
     }
 

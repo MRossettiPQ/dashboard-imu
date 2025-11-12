@@ -1,153 +1,202 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import type { ECharts } from 'echarts/core';
 import * as echarts from 'echarts/core';
 import _ from 'lodash';
 import type { Sensor } from 'src/common/models/sensor/Sensor';
 import type { Measurement } from 'src/common/models/measurement/Measurement';
 import { BlobDownloader } from 'src/common/utils/BlobUtils';
+import { LineChart } from 'echarts/charts';
+import {
+  TooltipComponent,
+  GridComponent,
+  ToolboxComponent,
+  DataZoomComponent,
+  LegendComponent,
+} from 'echarts/components';
+import { SVGRenderer } from 'echarts/renderers';
+import { LegacyGridContainLabel } from 'echarts/features';
 
 interface Props {
   sensors: Sensor[];
   allowedColumn: (keyof Measurement)[];
 }
 
-// reference -> https://echarts.apache.org/
-const defaultOptions = ref({
-  toolbox: {
-    feature: {
-      restore: {},
-      saveAsImage: {},
-      // dataView: { readOnly: true },
-      // magicType: { type: ['line', 'bar'] },
-    },
-  },
-  grid: {
-    left: '5%',
-    top: '7%',
-    right: '2%',
-  },
-  tooltip: {
-    trigger: 'axis',
-  },
-  yAxis: {
-    type: 'value',
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    axisLine: { onZero: true },
-  },
-  dataZoom: [
-    {
-      type: 'inside',
-      start: 0,
-      end: 10,
-    },
-    {
-      start: 0,
-      end: 10,
-    },
-  ],
-});
-const blob = ref(new BlobDownloader());
-const options = ref();
-const chartState = ref<ECharts | undefined>();
-const chartVisualizer = ref<HTMLElement | null>(null);
-const chartElement = ref<HTMLElement | null>(null);
+// 🧩 Props
 const props = defineProps<Props>();
-const count = computed(() => props.sensors.length);
-const sensors = computed(() => props.sensors);
 
-watch(count, () => {
-  if (chartState.value && count.value > 0) {
-    throttledSetOption();
-  }
-});
+// ⚙️ ECharts setup
+echarts.use([
+  LineChart,
+  TooltipComponent,
+  GridComponent,
+  LegacyGridContainLabel,
+  ToolboxComponent,
+  DataZoomComponent,
+  LegendComponent,
+  SVGRenderer,
+]);
 
-onMounted(() => {
+const chartElement = ref<HTMLElement | null>(null);
+const chartState = ref<ECharts>();
+const options = ref();
+const blob = ref(new BlobDownloader());
+const sensors = computed(() => props.sensors ?? []);
+
+const measurementCount = computed(() =>
+  sensors.value.reduce((sum, s) => sum + (s.measurements?.length ?? 0), 0),
+);
+
+const hasMeasurements = computed(() => measurementCount.value > 0);
+
+// ⚡ Atualiza o gráfico sempre que houver medições
+watch(
+  sensors,
+  async () => {
+    const count = sensors.value.reduce((sum, s) => sum + (s.measurements?.length ?? 0), 0);
+    if (count > 0) {
+      await nextTick();
+      throttledSetOption();
+    }
+  },
+  { deep: true },
+);
+
+onMounted(async () => {
+  await nextTick();
   chartState.value = echarts.init(chartElement.value, 'infographic', {
     renderer: 'svg',
   });
+  throttledSetOption();
 });
 
+// ⏳ Atualização com throttling (500ms)
 const throttledSetOption = _.throttle(setOption, 500);
 
+// 📊 Função para exportar SVG
 function exportSvg() {
   try {
     const svg = chartState.value?.renderToSVGString();
-    blob.value.download(svg, 'test', { type: 'image/svg+xml;' });
-    console.log(svg);
+    blob.value.download(svg, 'chart-export', { type: 'image/svg+xml;' });
   } catch (e) {
-    console.log(e);
+    console.error(e);
   }
 }
 
+// 🧠 Cria as opções do gráfico
 function setOption() {
+  if (!chartState.value || !hasMeasurements.value) return;
+
   const series = [];
+  const legendData = [];
+  let xAxisData: string[] = [];
+  let maxValue = 0; // ✅ valor máximo para yAxis
+  let minValue = 0; // ✅ valor máximo para yAxis
+
   for (const sensor of sensors.value) {
-    if (sensor.measurements.length === 0) {
-      continue;
+    if (!sensor.measurements || sensor.measurements.length === 0) continue;
+
+    if (xAxisData.length === 0) {
+      xAxisData = sensor.measurements.map((_, i) => i.toString());
     }
 
     for (const col of props.allowedColumn) {
       const data = _.map(sensor.measurements, col);
-      const serie = {
-        name: `${sensor.sensorName}-${col}`,
+      const numericData = _.map(sensor.measurements, col).map((val) => {
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') return Number.parseFloat(val) || 0;
+        if (val && 'valueOf' in val && typeof val.valueOf === 'function') return val.valueOf();
+        return 0;
+      });
+
+      const serieMax = Math.max(...numericData);
+      const serieMin = Math.min(...numericData);
+
+      // atualiza máximos e mínimos globais
+      if (serieMax > maxValue) maxValue = serieMax;
+      if (serieMin < minValue) minValue = serieMin;
+
+      const serieName = `${sensor.sensorName}-${col}`;
+      legendData.push(serieName);
+
+      series.push({
+        name: serieName,
         type: 'line',
-        symbol: 'none',
-        sampling: 'average',
-        itemStyle: {
-          color: `#${Number.parseInt(String(Math.random() * 0xffffff)).toString(16)}`,
-        },
         smooth: true,
+        symbol: 'none',
+        showSymbol: false,
+        sampling: 'average',
+        itemStyle: { color: `#${Math.floor(Math.random() * 0xffffff).toString(16)}` },
         data,
-      };
-      series.push(serie);
+      });
     }
   }
 
-  options.value = _.merge(options.value, defaultOptions.value, { series });
-  chartState.value?.setOption(options.value);
+  const newOptions = {
+    legend: { data: legendData, top: 0 },
+    tooltip: { trigger: 'axis' },
+    grid: { left: '5%', right: '3%', top: '10%', bottom: '10%', containLabel: true },
+    toolbox: { feature: { restore: {}, saveAsImage: {} } },
+    dataZoom: [
+      { type: 'inside', start: 0, end: 100 },
+      { start: 0, end: 100 },
+    ],
+    xAxis: { type: 'category', boundaryGap: false, data: xAxisData },
+    yAxis: {
+      type: 'value',
+      min: Math.floor(minValue * 0.9), // 10% abaixo do menor valor
+      max: Math.ceil(maxValue * 1.1), // deixa 10% de folga acima do valor máximo
+    },
+    series,
+  };
+
+  options.value = _.merge(options.value, newOptions);
+
+  chartState.value.clear();
+  chartState.value.setOption(options.value, true);
+  resize();
 }
 
+// 📐 Redimensiona ao mudar layout
 function resize() {
-  if (chartState.value && count.value > 0) {
-    chartState.value.resize();
-  }
+  chartState.value?.resize();
 }
 
-// Expor a função exportSvg para uso externo
 defineExpose({
   exportSvg,
 });
 </script>
 
 <template>
-  <div ref="chartVisualizer" class="h-100 w-100 p-relative overflow-auto">
-    <div v-show="count > 0" class="h-100 w-100 z-index-1 chart-container">
-      <div id="chartElement" ref="chartElement" class="h-100 w-100 chart" />
-      <q-resize-observer @resize="resize" />
+  <div ref="chartElement" id="chart-container" class="u-h-100 u-w-100 u-w-min-0 u-h-min-0">
+    <div v-if="measurementCount == 0" class="no-data-container">
+      <span class="text-weight-bold">Não há medições disponíveis</span>
     </div>
-    <div v-if="count == 0" class="p-absolute z-index-10 w-100 h-100 bg-white" style="top: 0">
-      <div class="column div-lottie bg-white">
-        <!--        <lottie-vue-player-->
-        <!--          class="lottie"-->
-        <!--          :src="'/lottie/chart-reports.json'"-->
-        <!--          :autoplay="true"-->
-        <!--          :loop="true"-->
-        <!--          :speed="1"-->
-        <!--        />-->
-        <span class="text-weight-bold"> Não há dados a serem exibidos </span>
-      </div>
-    </div>
+    <q-resize-observer @resize="resize" />
   </div>
 </template>
 
 <style scoped lang="scss">
-.chart-container {
-  transition:
-    width 1s ease-in-out,
-    height 1s ease-in-out;
+.no-data-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background: #fff;
+  color: #666;
+  font-weight: 600;
+}
+#chart-container {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  svg {
+    min-height: 0;
+    height: 100%;
+  }
 }
 </style>
