@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Movement, MovementEnum } from 'src/common/models/movement/Movement';
+import type { Movement } from 'src/common/models/movement/Movement';
 import type { Session } from 'src/common/models/session/Session';
 import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
 
@@ -14,8 +14,7 @@ interface Props {
   actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
   actualStepLabel: string;
   actualStepOrder: number;
-  actualMovementLabel?: MovementEnum | undefined;
-  addSample: (sensorN: number) => void;
+  actualMovementLabel?: string | undefined;
   requestedSensorList: boolean;
   requestSensorList: () => Promise<void>;
   viewType: ViewMode;
@@ -54,81 +53,79 @@ const viewIcon = computed(() => {
 
 <template>
   <q-card flat bordered class="w-100 row navigation-header">
-    <div class="row no-wrap">
-      <b class="f-bold f-medium">{{ actualStepLabel }}</b>
-      <span v-if="showActualMovement" class="f-bold f-medium"> : {{ actualMovementLabel }} </span>
+    <div class="row no-wrap column">
+      <b class="f-bold f-medium">{{ actualStepLabel }}{{ showActualMovement ? ': ' : '' }}</b>
+      <span v-if="showActualMovement" class="f-bold f-medium">{{ actualMovementLabel }} </span>
     </div>
 
-    <div class="row gap-12">
-      <q-btn
-        class="row icon-primary"
-        round
-        dense
-        unelevated
-        :loading="requestedSensorList"
-        :icon="requestedSensorList ? '' : 'refresh'"
-        @click="requestSensorList()"
-      />
-      <q-btn
-        class="row disconnected"
-        round
-        unelevated
-        disable
-        :class="{ connected: 'connected' }"
-        dense
-        :icon="selectedSensors.entries.length ? 'sensors' : 'sensors_off'"
-      />
-      <q-btn
-        round
-        dense
-        unelevated
-        size="md"
-        class="row icon-primary"
-        icon="settings"
-        @click="rightDrawer = !rightDrawer"
-      />
-      <q-btn
-        rounded
-        dense
-        unelevated
-        size="md"
-        label="Add medições"
-        class="row icon-primary"
-        icon="settings"
-        @click="() => addSample(2)"
-      />
-    </div>
+    <div class="row">
+      <q-btn-group flat rounded>
+        <q-btn
+          class="row icon-primary"
+          round
+          dense
+          unelevated
+          :loading="requestedSensorList"
+          :icon="requestedSensorList ? '' : 'refresh'"
+          @click="requestSensorList()"
+        >
+          <q-tooltip>Recarregar lista de sensores</q-tooltip>
+        </q-btn>
+        <q-btn
+          class="row"
+          round
+          :color="selectedSensors.size > 0 ? 'positive' : 'negative'"
+          dense
+          :icon="selectedSensors.size > 0 ? 'sensors' : 'sensors_off'"
+        >
+          <q-tooltip>
+            {{ selectedSensors.size > 0 ? 'Conectado em sensores' : 'Nenhum sensor conectado' }}
+          </q-tooltip>
+        </q-btn>
 
-    <q-btn-dropdown
-      dense
-      rounded
-      unelevated
-      size="md"
-      class="row icon-primary"
-      :icon="viewIcon"
-      color="primary"
-      no-caps
-      label="View"
-    >
-      <q-list>
-        <q-item clickable v-ripple @click="actualView = 'grid'">
-          <q-item-section avatar><q-icon name="grid_view" /></q-item-section>
-          <q-item-section>Grid</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple @click="actualView = 'unified'">
-          <q-item-section avatar><q-icon name="layers" /></q-item-section>
-          <q-item-section>Unified</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple @click="actualView = 'table'">
-          <q-item-section avatar><q-icon name="table_chart" /></q-item-section>
-          <q-item-section>Table</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple @click="actualView = 'summary'">
-          <q-item-section avatar><q-icon name="summarize" /></q-item-section>
-          <q-item-section>Summary</q-item-section>
-        </q-item>
-      </q-list>
-    </q-btn-dropdown>
+        <q-btn-dropdown
+          v-if="actualStepName === 'third-step'"
+          rounded
+          unelevated
+          size="md"
+          class="row icon-primary"
+          :icon="viewIcon"
+          color="primary"
+          no-caps
+          label="View"
+        >
+          <q-list>
+            <q-item clickable v-ripple @click="actualView = 'grid'">
+              <q-item-section avatar><q-icon name="grid_view" /></q-item-section>
+              <q-item-section>Grid</q-item-section>
+            </q-item>
+            <q-item clickable v-ripple @click="actualView = 'unified'">
+              <q-item-section avatar><q-icon name="layers" /></q-item-section>
+              <q-item-section>Unificado</q-item-section>
+            </q-item>
+            <q-item clickable v-ripple @click="actualView = 'table'">
+              <q-item-section avatar><q-icon name="table_chart" /></q-item-section>
+              <q-item-section>Tabela</q-item-section>
+            </q-item>
+            <q-item clickable v-ripple @click="actualView = 'summary'">
+              <q-item-section avatar><q-icon name="summarize" /></q-item-section>
+              <q-item-section>Sumário</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+        <q-btn
+          round
+          dense
+          unelevated
+          size="md"
+          class="row icon-primary"
+          icon="settings"
+          @click="rightDrawer = !rightDrawer"
+        >
+          <q-tooltip>Menu lateral direito</q-tooltip>
+        </q-btn>
+      </q-btn-group>
+    </div>
   </q-card>
 </template>
 

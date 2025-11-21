@@ -1,0 +1,99 @@
+
+// function addSample(sensorN: number = 2): void {
+//   const getRandomArbitrary = ({ min, max }: { min: number; max: number }): number =>
+//     Math.random() * (max - min) + min;
+//
+//   // Use a procedure from session or create a new one
+//   let procedure = props.session.procedures[props.session.procedures.length - 1];
+//   if (!procedure) {
+//     procedure = new Procedure();
+//     procedure.type = 'sample';
+//     props.session.procedures.push(procedure);
+//   }
+//
+//   // Use selected movement or create a new one
+//   let movement = props.selectedMovement;
+//   if (!movement) {
+//     movement = new Movement();
+//     movement.type = 'sample_movement';
+//     procedure.movements.push(movement);
+//   }
+//
+//   // Add sensors to movement if they don't exist
+//   if (movement.sensors.length === 0) {
+//     for (let i = 0; i < sensorN; i++) {
+//       const sensor = new Sensor();
+//       sensor.ip = `192.168.16.10${i}`;
+//       sensor.sensorName = `Sensor ${i}`;
+//       sensor.observation = `Sensor ${i} de exemplo`;
+//       sensor.type = SensorType.GYROSCOPE;
+//       sensor.position = i === 0 ? PositionEnum.ONE : PositionEnum.TWO;
+//       sensor.macAddress = `00:00:00:00:00:0${i}`;
+//       movement.sensors.push(sensor);
+//     }
+//   } else {
+//     // Add selected sensors to movement
+//     for (const selectedSensor of Array.from(props.selectedSensors)) {
+//       const sensorExists = movement.sensors.some((s) => s.macAddress === selectedSensor.macAddress);
+//       if (!sensorExists) {
+//         const sensor = new Sensor();
+//         sensor.ip = selectedSensor.ip;
+//         sensor.sensorName = selectedSensor.sensorName;
+//         sensor.observation = selectedSensor.observation;
+//         sensor.type = selectedSensor.type;
+//         sensor.position = selectedSensor.position;
+//         sensor.macAddress = selectedSensor.macAddress;
+//         movement.sensors.push(sensor);
+//       }
+//     }
+//   }
+//
+//   // Add sample measurements
+//   const now = dayjs();
+//   for (let iterator = 0; iterator < 365; iterator++) {
+//     for (const sensor of movement.sensors) {
+//       const number = sensor.measurements ? sensor.measurements.length : 0;
+//       const measurement = new Measurement();
+//       measurement.sensorName = sensor.sensorName;
+//       measurement.readOrder = number;
+//
+//       measurement.roll = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.pitch = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.yaw = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.eulerX = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.eulerY = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.eulerZ = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.gyroRadsX = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.gyroRadsY = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.gyroRadsZ = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.accelLinX = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.accelLinY = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.accelLinZ = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.accelMssX = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.accelMssY = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.accelMssZ = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.magBiasX = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.magBiasY = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.magBiasZ = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.quaternionX = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.quaternionY = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.quaternionZ = getRandomArbitrary({ min: 80, max: 90 });
+//       measurement.quaternionW = getRandomArbitrary({ min: 80, max: 90 });
+//
+//       measurement.capturedAt = now.add(number, 'ms');
+//
+//       if (!sensor.measurements) {
+//         sensor.measurements = [];
+//       }
+//       sensor.measurements.push(measurement);
+//     }
+//   }
+//
+//   console.log('Sample data added to movement:', movement);
+// }

@@ -90,13 +90,13 @@ export function transformerDate({ value, type }: TransformFnParams) {
 }
 
 export class BaseModel {
-  id?: string;
+  id?: string = undefined;
 
   @Transform(transformerDateTime)
-  createdAt?: Dayjs | undefined;
+  createdAt?: Dayjs | undefined = undefined;
 
   @Transform(transformerDateTime)
-  updatedAt?: Dayjs | undefined;
+  updatedAt?: Dayjs | undefined = undefined;
 }
 
 export class AxiosResponse<T, D = unknown> implements AxiosResponseOriginal<T, D> {

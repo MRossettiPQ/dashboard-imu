@@ -14,76 +14,88 @@ defineProps<Props>();
 </script>
 
 <template>
-  <div class="column u-gap-8 u-h-min-0 u-w-min-0 u-h-100">
-    <!-- Caso não haja sensores disponíveis -->
-    <div v-if="sensorList.length === 0" class="text-center text-grey u-h-min-0 u-w-min-0 u-h-100">
-      <q-icon name="sensors_off" size="md" class="q-mr-sm" />
-      Nenhum sensor disponível no momento.
+  <div class="column u-gap-12 u-w-100 u-h-100">
+    <div
+      v-if="sensorList.length === 0"
+      class="flex flex-col items-center justify-center text-grey-6 u-h-min-0 u-w-min-0 u-h-100 u-w-100"
+    >
+      <q-icon name="sensors_off" size="48px" class="q-mb-sm" />
+      <div class="text-subtitle1">Nenhum sensor disponível no momento.</div>
     </div>
 
-    <!-- Caso existam sensores, mas nenhum esteja selecionado -->
     <div
       v-else-if="selectedSensors.size === 0"
-      class="row text-grey justify-center u-w-min-0 u-w-100 u-p-8 items-center u-gap-8"
+      class="flex items-center justify-center text-grey-7 q-py-lg q-gutter-sm"
     >
       <q-icon name="info" size="md" />
-      Nenhum sensor conectado.
+      <div>Nenhum sensor conectado.</div>
     </div>
 
     <q-card
-      flat
-      bordered
-      class="u-p-12 u-w-min-0"
       v-for="(sensor, index) in sensorList"
       :key="index"
+      flat
+      bordered
+      class="q-pa-md rounded-2xl shadow-sm hover:shadow-md transition-all u-gap-16 column"
     >
-      <div class="row justify-between q-mb-sm">
-        <span
-          v-if="Array.from(selectedSensors).some((s) => s.ip === sensor.ip)"
-          class="text-positive"
-        >
-          Conectado
-        </span>
-        <span class="f-bold"><b>Nome:</b> {{ sensor.name || 'Sem nome' }}</span>
-        <span class="f-bold">
-          <b>IP: </b>
-          <a :href="sensor.ip" target="_blank">{{ sensor.ip }}</a>
-        </span>
+      <div class="row items-center justify-between">
+        <div class="row items-center q-gutter-sm">
+          <q-icon name="sensors" color="primary" size="sm" />
+          <div class="text-weight-bold text-primary">
+            {{ sensor.name || 'Sem nome' }}
+          </div>
+        </div>
+
+        <div class="row items-center q-gutter-xs">
+          <q-icon name="lan" color="grey-7" size="sm" />
+          <a :href="`http://${sensor.ip}`" target="_blank" class="text-blue-8 text-weight-medium">
+            {{ sensor.ip }}
+          </a>
+        </div>
+
+        <div class="row items-center">
+          <q-chip
+            v-if="Array.from(selectedSensors).some((s) => s.ip === sensor.ip)"
+            color="positive"
+            text-color="white"
+            icon="check_circle"
+            label="Conectado"
+          />
+          <q-chip
+            v-else
+            color="grey-5"
+            text-color="black"
+            icon="highlight_off"
+            label="Desconectado"
+          />
+        </div>
       </div>
 
-      <div class="row justify-between">
+      <div class="row justify-between q-gutter-sm">
         <q-btn
           rounded
-          dense
-          unelevated
-          label="Calibrar"
-          size="md"
-          class="row"
+          flat
+          color="secondary"
           icon="settings"
+          label="Calibrar"
           @click="() => commandCalibrate(sensor)"
         />
-
         <q-btn
+          v-if="!Array.from(selectedSensors).some((s) => s.ip === sensor.ip)"
           rounded
-          dense
-          unelevated
-          label="Adicionar sensor"
-          size="md"
-          class="row"
+          flat
+          color="primary"
           icon="done"
+          label="Adicionar"
           @click="() => addSensorListener(sensor)"
         />
-
         <q-btn
-          dense
-          flat
+          v-if="Array.from(selectedSensors).some((s) => s.ip === sensor.ip)"
           rounded
-          unelevated
-          label="Remover sensor"
-          size="md"
-          class="row"
-          color="primary"
+          color="negative"
+          flat
           icon="close"
+          label="Remover"
           @click="() => removeSensorListener(sensor)"
         />
       </div>

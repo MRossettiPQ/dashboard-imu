@@ -1,26 +1,85 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import type { ProcedureType } from 'src/common/models/procedure/Procedure';
+import { Procedure } from 'src/common/models/procedure/Procedure';
 import type { QTableColumn } from 'quasar';
 import type { MovementType } from 'src/common/models/movement/Movement';
+import { findMovementEnum, Movement } from 'src/common/models/movement/Movement';
+import type { Session } from 'src/common/models/session/Session';
 
 interface Props {
+  session: Session;
   procedureTypes: ProcedureType[];
-  addProcedure: (procedureType: ProcedureType | undefined, movementTypes: MovementType[]) => void;
 }
 
-const emit = defineEmits<(e: 'update:procedureTypes', val: ProcedureType[]) => void>();
 const props = defineProps<Props>();
+
+const selectedProcedure = ref<ProcedureType | undefined>();
+const selectedMovements = ref<MovementType[]>([]);
+const emit = defineEmits<{
+  (e: 'update:procedureTypes', val: ProcedureType[]): void;
+  (e: 'update:session', val: Session): void;
+}>();
+
 const procedureTypes = computed({
   get: () => props.procedureTypes,
   set: (val) => emit('update:procedureTypes', val),
 });
-const selectedProcedure = ref<ProcedureType | undefined>();
-const selectedMovements = ref<MovementType[]>([]);
-// Reset selected movements quando o procedimento muda
-watch(selectedProcedure, () => {
-  selectedMovements.value = [];
+const session = computed({
+  get: () => props.session,
+  set: (val) => emit('update:session', val),
 });
+
+function addProcedure(
+  procedureType: ProcedureType | undefined,
+  movementTypes: MovementType[],
+): void {
+  if (!procedureType?.type) {
+    return;
+  }
+
+  let isNewProcedure = false;
+  let procedure = session.value.procedures.find((p) => p.type === procedureType.type);
+
+  if (!procedure) {
+    isNewProcedure = true;
+    procedure = new Procedure();
+  }
+
+  procedure.type = procedureType.type;
+
+  const existingMovementsByType = new Map<string, Movement[]>();
+  procedure.movements.forEach((movement) => {
+    if (movement.type) {
+      if (!existingMovementsByType.has(movement.type)) {
+        existingMovementsByType.set(movement.type, []);
+      }
+      existingMovementsByType.get(movement.type)!.push(movement);
+    }
+  });
+
+  const newMovements: Movement[] = [];
+  for (const movementType of movementTypes) {
+    if (!movementType.type) {
+      continue;
+    }
+
+    const existingMovements = existingMovementsByType.get(movementType.type) || [];
+    if (existingMovements.length > 0) {
+      newMovements.push(...existingMovements);
+    } else {
+      const movement = new Movement();
+      movement.type = movementType.type;
+      newMovements.push(movement);
+    }
+  }
+
+  procedure.movements = newMovements;
+
+  if (isNewProcedure) {
+    session.value.procedures.push(procedure);
+  }
+}
 
 const toggleMovementSelection = (movement: MovementType) => {
   const index = selectedMovements.value.findIndex((m) => m.id === movement.id);
@@ -60,12 +119,22 @@ const columns: QTableColumn[] = [
 
 function onSelectProcedure() {
   selectedMovements.value = [];
+  const selectedType = selectedProcedure.value;
+  const procedureType = props.procedureTypes.find((p) => p.type === selectedType?.type);
+  const sessionProcedure = props.session.procedures.find((p) => p.type === selectedType?.type);
+
+  if (procedureType && sessionProcedure) {
+    selectedMovements.value =
+      procedureType.movementsTypes?.filter((m) =>
+        sessionProcedure.movements.some((pm) => pm.type === m.type),
+      ) ?? [];
+  }
 }
 </script>
 
 <template>
-  <div class="column u-gap-12 h-100 u-h-min-0" style="height: 100%">
-    <q-card flat bordered class="column w-100 u-gap-8 u-p-8" v-if="procedureTypes">
+  <div class="flex column u-gap-12 u-h-min-0 u-w-min-0 u-w-100 u-h-100">
+    <q-card flat bordered class="flex column u-w-100 u-gap-8 u-p-8" v-if="procedureTypes">
       <q-select
         v-model="selectedProcedure"
         :options="procedureTypes"
@@ -75,7 +144,7 @@ function onSelectProcedure() {
         label="Procedimento"
         option-label="description"
         option-value="value"
-        @select="onSelectProcedure"
+        @update:model-value="onSelectProcedure"
       />
 
       <q-btn
@@ -120,7 +189,7 @@ function onSelectProcedure() {
           </q-td>
           <q-td key="type" :props="props">
             <q-badge color="primary">
-              {{ props.row.type }}
+              {{ findMovementEnum(props.row.type) }}
             </q-badge>
           </q-td>
           <q-td key="imageName" :props="props">
@@ -159,6 +228,8 @@ function onSelectProcedure() {
 
 <style scoped lang="scss">
 .movement-table {
+  min-height: 0;
+  min-width: 0;
   height: 100%;
   width: 100%;
 

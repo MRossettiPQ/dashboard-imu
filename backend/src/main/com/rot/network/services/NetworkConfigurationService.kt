@@ -40,23 +40,23 @@ class NetworkConfigurationService(
         Log.info("The application is stopping...")
     }
 
-    @Transactional
-    @Scheduled(every = "5m", delay = 20, delayUnit = TimeUnit.SECONDS)
-    fun checkConnection() {
-        val actualNetwork = NetworkConfiguration.createQuery()
-            .where(NetworkConfiguration.q.active.isTrue)
-            .fetchFirst()
-
-        val localHost = InetAddress.getLocalHost()
-
-        val serviceInfos = jmdns.list("_http._tcp.local.")
-        for (info in serviceInfos) {
-            println("InetAddress: ${info.inetAddresses.joinToString()}")
-        }
-
-        val ip = detect()
-        println("localHost: $localHost - $ip")
-    }
+//    @Transactional
+//    @Scheduled(every = "5m", delay = 20, delayUnit = TimeUnit.SECONDS)
+//    fun checkConnection() {
+//        val actualNetwork = NetworkConfiguration.createQuery()
+//            .where(NetworkConfiguration.q.active.isTrue)
+//            .fetchFirst()
+//
+//        val localHost = InetAddress.getLocalHost()
+//
+//        val serviceInfos = jmdns.list("_http._tcp.local.")
+//        for (info in serviceInfos) {
+//            println("InetAddress: ${info.inetAddresses.joinToString()}")
+//        }
+//
+//        val ip = detect()
+//        println("localHost: $localHost - $ip")
+//    }
 
     fun gateway(): String? {
         return ""

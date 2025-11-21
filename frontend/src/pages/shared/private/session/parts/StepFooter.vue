@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Session } from 'src/common/models/session/Session';
+import type { Sensor } from 'src/common/models/sensor/Sensor';
 
 interface Props {
   next: () => void;
   prev: () => void;
   session: Session;
+  selectedSensors: Set<Sensor>;
   inProgress: boolean;
   loadingSave: boolean;
   actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
@@ -34,12 +36,7 @@ const disableNextButton = computed(() => {
       if (props.session.procedures.length < 1) return true;
       return props.session.procedures.some((p) => p.movements.length < 1);
     case 'second-step':
-      return false;
-    // return (
-    //   this.syncedConnection?.numberOfValidConnection < this.syncedSession?.minSensor ||
-    //   this.syncedConnection?.numberOfValidConnection > this.syncedSession?.minSensor ||
-    //   this.checkPositionBlank
-    // );
+      return props.selectedSensors.size < 1;
     case 'third-step':
       return false;
     // return this.syncedConnection?.blockSave || this.blockIfMovementsMeasurementsEmpty;

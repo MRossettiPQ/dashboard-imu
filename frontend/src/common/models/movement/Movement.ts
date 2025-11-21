@@ -3,27 +3,43 @@ import { Sensor } from 'src/common/models/sensor/Sensor';
 import { Type } from 'class-transformer';
 
 export enum MovementEnum {
-  SIMPLE = 'Simple',
-  FLEXION = 'Flexion',
-  EXTENSION = 'Extension',
-  ADDUCTION = 'Adduction',
-  ABDUCTION = 'Abduction',
-  INTERNAL_ROTATION = 'Internal Rotation',
-  EXTERNAL_ROTATION = 'External Rotation',
-  PRONATION = 'Pronation',
-  SUPINATION = 'Supination',
-  THUMB_INTERNAL_FLEXION = 'Thumb internal flexion',
-  THUMB_INTERNAL_EXTENSION = 'Thumb internal extension',
-  INTERNAL_EXTENSION_FINGERS = 'Internal extensions fingers',
-  ULNAR_ADDUCTION = 'Ulnar adduction',
-  RADIAL_ADDUCTION = 'Radial adduction',
+  SIMPLE = 'Simples',
+  FLEXION = 'Flexão',
+  EXTENSION = 'Extensão',
+  ADDUCTION = 'Adução',
+  ABDUCTION = 'Abdução',
+  INTERNAL_ROTATION = 'Rotação interna',
+  EXTERNAL_ROTATION = 'Rotação externa',
+  PRONATION = 'Pronação',
+  SUPINATION = 'Supinação',
+  THUMB_INTERNAL_FLEXION = 'Flexão interna do polegar',
+  THUMB_INTERNAL_EXTENSION = 'Extensão interna do polegar',
+  INTERNAL_EXTENSION_FINGERS = 'Extensões internas dos dedos',
+  ULNAR_ADDUCTION = 'Adução ulnar',
+  RADIAL_ADDUCTION = 'Adução radial',
 }
 
+export function findMovementEnum(strEn: string | MovementEnum): string | undefined {
+  return MovementEnum[strEn as keyof typeof MovementEnum];
+}
+
+function generateInternalId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `movement_${crypto.randomUUID()}`;
+  }
+  return `movement_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
 export class Movement extends BaseModel {
   observation?: string;
+  sessionIdentifier?: string;
   type?: MovementEnum;
   @Type(() => Sensor)
   sensors: Sensor[] = [];
+
+  constructor() {
+    super();
+    this.sessionIdentifier = generateInternalId();
+  }
 }
 
 export class AngleRule {

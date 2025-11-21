@@ -3,15 +3,19 @@ import { Movement, MovementType } from 'src/common/models/movement/Movement';
 import { Type } from 'class-transformer';
 
 export enum ProcedureEnum {
-  SIMPLE = 'Simple',
-  SHOULDER = 'Shoulder',
-  ELBOW = 'Elbow',
+  SIMPLE = 'Simples',
+  SHOULDER = 'Ombro',
+  ELBOW = 'Cotovelo',
   RADIOULNAR = 'Radioulnar',
-  WRIST = 'Wrist',
-  CARPOMETACARPAL_THUMB = 'Carpometacarpal thumb',
-  METACARPOPHALANGEAL = 'Metacarpalangeal',
-  PROXIMAL_INTERPHALANGEAL = 'Proximal Interpretalangeal',
-  DISTAL_INTERPHALANGEAL = 'Distal Interpretalangeal',
+  WRIST = 'Punho',
+  CARPOMETACARPAL_THUMB = 'Carpometacarpal do polegar',
+  METACARPOPHALANGEAL = 'Metacarpofalangeana',
+  PROXIMAL_INTERPHALANGEAL = 'Interfalângica proximal',
+  DISTAL_INTERPHALANGEAL = 'Interfalângica distal',
+}
+
+export function findProcedureEnum(strEn: string | ProcedureEnum): string | undefined {
+  return ProcedureEnum[strEn as keyof typeof ProcedureEnum];
 }
 
 export class Procedure extends BaseModel {

@@ -12,10 +12,12 @@ import type { Patient } from 'src/common/models/patient/Patient';
 import type { Session } from 'src/common/models/session/Session';
 import type { QForm } from 'quasar';
 import { formUtils } from 'src/common/utils/FormUtils';
+import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
 
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
+const loadingSearch = ref(false);
 const saving = ref(false);
 const mainForm = ref<QForm | null>(null);
 const columns: TableColumn<Session>[] = [
@@ -52,11 +54,18 @@ const form = ref<Patient>({
 });
 
 onMounted(async () => {
-  if (uuid.value) {
-    const { data } = await patientService.get({ uuid: uuid.value });
-    if (data.content) {
-      form.value = data.content;
+  try {
+    loading.value = true;
+    if (uuid.value) {
+      const { data } = await patientService.get({ uuid: uuid.value });
+      if (data.content) {
+        form.value = data.content;
+      }
     }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    loading.value = false;
   }
 });
 
@@ -92,19 +101,20 @@ async function save() {
 
 async function search() {
   try {
-    loading.value = true;
+    loadingSearch.value = true;
     await pagination.value.search();
   } catch (error) {
     console.error(error);
   } finally {
-    loading.value = false;
+    loadingSearch.value = false;
   }
 }
 </script>
 
 <template>
   <custom-page id="patient-page">
-    <div class="u-w-100 u-h-100 flex u-gap-18 u-pb-12">
+    <load-div v-if="loading"> </load-div>
+    <div v-else class="u-w-100 u-h-100 flex u-gap-18 u-pb-12">
       <q-card flat bordered class="col column u-w-100" style="min-width: 300px">
         <q-form ref="mainForm" class="col column u-w-100 u-gap-12 u-p-12 u-ph-16">
           <q-input
@@ -144,7 +154,7 @@ async function search() {
           />
           <q-input
             v-if="form.user && form.user?.id == null"
-            v-model.trim="form.user.username"
+            v-model.trim="form.user!.username"
             dense
             label="Username"
             outlined
@@ -152,7 +162,7 @@ async function search() {
           />
           <q-input
             v-if="form.user && form.user?.id == null"
-            v-model.trim="form.user.name"
+            v-model.trim="form.user!.name"
             dense
             label="Nome"
             outlined
@@ -160,7 +170,7 @@ async function search() {
           />
           <q-input
             v-if="form.user && form.user?.id == null"
-            v-model.trim="form.user.email"
+            v-model.trim="form.user!.email"
             dense
             type="email"
             label="E-mail"
@@ -169,7 +179,7 @@ async function search() {
           />
           <q-input
             v-if="form.user && form.user?.id == null"
-            v-model.trim="form.user.password"
+            v-model.trim="form.user!.password"
             dense
             outlined
             type="password"
@@ -195,6 +205,7 @@ async function search() {
         flat
         bordered
         :on-row-click="openSession"
+        :loading="loadingSearch"
       >
         <template #top>
           <div class="flex justify-between u-gap-8 u-w-100 no-wrap">
