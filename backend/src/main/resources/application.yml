@@ -11,7 +11,7 @@ application:
     url: ${FRONTEND_URL:"http://localhost:8080"}
   backend:
     host: ${BACKEND_HOST:0.0.0.0}
-    port: ${BACKEND_PORT:8000}
+    port: ${BACKEND_PORT:7000}
     protocol: ${BACKEND_PROTOCOL:http}
     base-url: ${application.backend.host}:${application.backend.port}
   security:
@@ -20,10 +20,10 @@ application:
     subject: ${SECURITY_ISSUER:dashboard-imu}
   socket:
     host: ${SOCKET_HOST:localhost}
-    port: ${SOCKET_PORT:8001}
+    port: ${SOCKET_PORT:7001}
   mqtt:
     host: ${MQTT_HOST:localhost}
-    port: ${MQTT_PORT:8002}
+    port: ${MQTT_PORT:7002}
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
     name: ${MDNS_NAME:dashboard}

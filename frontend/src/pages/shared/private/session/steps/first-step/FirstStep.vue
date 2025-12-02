@@ -9,7 +9,7 @@ import type { Session } from 'src/common/models/session/Session';
 
 interface Props {
   session: Session;
-  procedureTypes: ProcedureType[];
+  availableProcedureList: ProcedureType[];
 }
 
 const props = defineProps<Props>();
@@ -17,13 +17,13 @@ const props = defineProps<Props>();
 const selectedProcedure = ref<ProcedureType | undefined>();
 const selectedMovements = ref<MovementType[]>([]);
 const emit = defineEmits<{
-  (e: 'update:procedureTypes', val: ProcedureType[]): void;
+  (e: 'update:availableProcedureList', val: ProcedureType[]): void;
   (e: 'update:session', val: Session): void;
 }>();
 
-const procedureTypes = computed({
-  get: () => props.procedureTypes,
-  set: (val) => emit('update:procedureTypes', val),
+const availableProcedureList = computed({
+  get: () => props.availableProcedureList,
+  set: (val) => emit('update:availableProcedureList', val),
 });
 const session = computed({
   get: () => props.session,
@@ -120,7 +120,7 @@ const columns: QTableColumn[] = [
 function onSelectProcedure() {
   selectedMovements.value = [];
   const selectedType = selectedProcedure.value;
-  const procedureType = props.procedureTypes.find((p) => p.type === selectedType?.type);
+  const procedureType = props.availableProcedureList.find((p) => p.type === selectedType?.type);
   const sessionProcedure = props.session.procedures.find((p) => p.type === selectedType?.type);
 
   if (procedureType && sessionProcedure) {
@@ -134,10 +134,10 @@ function onSelectProcedure() {
 
 <template>
   <div class="flex column u-gap-12 u-h-min-0 u-w-min-0 u-w-100 u-h-100">
-    <q-card flat bordered class="flex column u-w-100 u-gap-8 u-p-8" v-if="procedureTypes">
+    <q-card flat bordered class="flex column u-w-100 u-gap-8 u-p-8" v-if="availableProcedureList">
       <q-select
         v-model="selectedProcedure"
-        :options="procedureTypes"
+        :options="availableProcedureList"
         emit-value
         dense
         filled

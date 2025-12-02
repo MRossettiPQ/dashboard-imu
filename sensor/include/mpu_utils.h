@@ -175,7 +175,7 @@ class SensorUtils {
 public:
 	static JsonObject read() {
 		JsonDocument measurement;
-		String read_at = timeClient.getFormattedTime();
+		const String read_at = timeClient.getFormattedTime();
 		const double acc_bias_x = mpu.getAccBiasX();
 		const double acc_bias_y = mpu.getAccBiasY();
 		const double acc_bias_z = mpu.getAccBiasZ();

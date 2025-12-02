@@ -11,9 +11,10 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
 
-open class MessageDto<T>(var type: MessageType = MessageType.DEFAULT, var content: T? = null) {
-    val date: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
-    val origin: OriginType = OriginType.UNKNOWN
+open class MessageDto<T>(var type: MessageType = MessageType.DEFAULT) {
+    var date: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
+    var origin: OriginType = OriginType.UNKNOWN
+    var originIdentifier: String? = null
 }
 
 // Client -> Server
@@ -85,27 +86,53 @@ class SessionSensorDto {
     }
 }
 
-class MessageSensorMeasurementBlock : MessageDto<Set<MeasurementDto>>(type = MessageType.SENSOR_SERVER_MEASUREMENT)
-class MessageClientMeasurementBlock : MessageDto<Set<MeasurementDto>>(type = MessageType.SERVER_CLIENT_MEASUREMENT)
 
 
 // Sensor -> Server
-class MessageSessionSensorDto : MessageDto<SessionSensorDto>(type = MessageType.SENSOR_SERVER_REGISTER_SENSOR)
+class MessageSessionSensorDto : MessageDto<SessionSensorDto>(type = MessageType.SENSOR_SERVER_REGISTER_SENSOR) {
+    var content: SessionSensorDto? = null
+}
+class MessageSensorMeasurementBlock : MessageDto<MutableList<MeasurementDto>>(type = MessageType.SENSOR_SERVER_MEASUREMENT) {
+    var content: MutableList<MeasurementDto>? = mutableListOf()
+}
 
 
 // Server -> Client
-class MessageSensorListDto : MessageDto<MutableList<SessionSensorDto>>(type = MessageType.SERVER_CLIENT_SENSOR_LIST)
+class MessageSensorListDto : MessageDto<MutableList<SessionSensorDto>>(type = MessageType.SERVER_CLIENT_SENSOR_LIST) {
+    var content: MutableList<SessionSensorDto>? = mutableListOf()
+}
+class MessageClientMeasurementBlock : MessageDto<MutableList<MeasurementDto>>(type = MessageType.SERVER_CLIENT_MEASUREMENT) {
+    var content: MutableList<MeasurementDto>? = mutableListOf()
+}
 
 
 // Server -> Sensor
-class MessageStartCommandDto : MessageDto<StartCommandDto>(type = MessageType.SERVER_SENSOR_START)
-class MessageStopCommandDto : MessageDto<StopCommandDto>(type = MessageType.SERVER_SENSOR_STOP)
-class MessageCalibrateCommandDto : MessageDto<CalibrateCommandDto>(type = MessageType.SERVER_SENSOR_CALIBRATE)
-class MessageJoinedRoomDto : MessageDto<JoinedRoomDto>(type = MessageType.SERVER_SENSOR_JOINED_ROOM)
-class MessageRemovedRoomDto : MessageDto<RemovedRoomDto>(type = MessageType.SERVER_SENSOR_REMOVED_ROOM)
+class MessageStartCommandDto : MessageDto<StartCommandDto>(type = MessageType.SERVER_SENSOR_START) {
+    var content: SessionSensorDto? = null
+}
+class MessageStopCommandDto : MessageDto<StopCommandDto>(type = MessageType.SERVER_SENSOR_STOP) {
+    var content: StopCommandDto? = null
+}
+class MessageCalibrateCommandDto : MessageDto<CalibrateCommandDto>(type = MessageType.SERVER_SENSOR_CALIBRATE) {
+    var content: CalibrateCommandDto? = null
+}
+class MessageJoinedRoomDto : MessageDto<JoinedRoomDto>(type = MessageType.SERVER_SENSOR_JOINED_ROOM) {
+    var content: JoinedRoomDto? = null
+}
+class MessageRemovedRoomDto : MessageDto<RemovedRoomDto>(type = MessageType.SERVER_SENSOR_REMOVED_ROOM) {
+    var content: RemovedRoomDto? = null
+}
 
 // Client -> Server
-class MessageAddSensorDto : MessageDto<AddSensorDto>(type = MessageType.CLIENT_SERVER_ADD_SENSOR)
-class MessageRemoveSensorDto : MessageDto<RemoveSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR)
-class MessageCalibrateSensorDto : MessageDto<CalibrateSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR)
-class MessageSaveSessionDto : MessageDto<SaveSessionDto>(type = MessageType.CLIENT_SERVER_SAVE_SESSION)
+class MessageAddSensorDto : MessageDto<AddSensorDto>(type = MessageType.CLIENT_SERVER_ADD_SENSOR) {
+    var content: AddSensorDto? = null
+}
+class MessageRemoveSensorDto : MessageDto<RemoveSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR) {
+    var content: RemoveSensorDto? = null
+}
+class MessageCalibrateSensorDto : MessageDto<CalibrateSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR) {
+    var content: CalibrateSensorDto? = null
+}
+class MessageSaveSessionDto : MessageDto<SaveSessionDto>(type = MessageType.CLIENT_SERVER_SAVE_SESSION) {
+    var content: SaveSessionDto? = null
+}

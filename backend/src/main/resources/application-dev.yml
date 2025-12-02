@@ -7,3 +7,9 @@ application:
     username: postgres
     password: 1
     port: 5432
+  backend:
+    port: 8700
+  socket:
+    port: 8701
+  mqtt:
+    port: 8702

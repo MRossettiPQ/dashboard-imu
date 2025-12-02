@@ -1,39 +1,47 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Movement } from 'src/common/models/movement/Movement';
+import { findMovementEnum } from 'src/common/models/movement/Movement';
 import type { Session } from 'src/common/models/session/Session';
 import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
+import { socket } from 'boot/socket';
+import { SocketEvents } from 'src/common/models/socket/SocketEvents';
 
 type ViewMode = 'grid' | 'unified' | 'table' | 'summary';
 interface Props {
   rightDrawer: boolean;
   session: Session;
-  sensorList: SessionSensorDto[];
-  selectedSensors: Set<SessionSensorDto>;
+  selectedSensorList: Set<SessionSensorDto>;
   selectedMovement?: Movement | undefined;
   actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
   actualStepLabel: string;
-  actualStepOrder: number;
-  actualMovementLabel?: string | undefined;
-  requestedSensorList: boolean;
-  requestSensorList: () => Promise<void>;
   viewType: ViewMode;
 }
+
+// Lista de sensores requisitada
+const requestedSensorList = ref(false);
 const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'update:rightDrawer', val: boolean): void;
   (e: 'update:viewType', val: ViewMode): void;
+  (e: 'update:requestedSensorList', val: boolean): void;
 }>();
-
 const rightDrawer = computed({
   get: () => props.rightDrawer,
   set: (val: boolean) => emit('update:rightDrawer', val),
 });
-
 const actualView = computed({
   get: () => props.viewType ?? 'grid',
   set: (val: ViewMode) => emit('update:viewType', val),
 });
+
+const actualMovementLabel = computed(() => {
+  if (props.selectedMovement?.type) {
+    return findMovementEnum(props.selectedMovement?.type) ?? 'Não encontrado';
+  }
+  return '';
+});
+
 const showActualMovement = computed(() => props.actualStepName == 'third-step');
 const viewIcon = computed(() => {
   switch (actualView.value) {
@@ -49,6 +57,17 @@ const viewIcon = computed(() => {
       return 'view_module';
   }
 });
+
+async function requestSensorList(): Promise<void> {
+  try {
+    requestedSensorList.value = true;
+    await socket.emitWithAck(SocketEvents.CLIENT_SERVER_SENSOR_LIST, '');
+  } catch (e) {
+    console.error(e);
+  } finally {
+    requestedSensorList.value = false;
+  }
+}
 </script>
 
 <template>
@@ -67,19 +86,19 @@ const viewIcon = computed(() => {
           unelevated
           :loading="requestedSensorList"
           :icon="requestedSensorList ? '' : 'refresh'"
-          @click="requestSensorList()"
+          @click="requestSensorList"
         >
           <q-tooltip>Recarregar lista de sensores</q-tooltip>
         </q-btn>
         <q-btn
           class="row"
           round
-          :color="selectedSensors.size > 0 ? 'positive' : 'negative'"
+          :color="selectedSensorList.size > 0 ? 'positive' : 'negative'"
           dense
-          :icon="selectedSensors.size > 0 ? 'sensors' : 'sensors_off'"
+          :icon="selectedSensorList.size > 0 ? 'sensors' : 'sensors_off'"
         >
           <q-tooltip>
-            {{ selectedSensors.size > 0 ? 'Conectado em sensores' : 'Nenhum sensor conectado' }}
+            {{ selectedSensorList.size > 0 ? 'Conectado em sensores' : 'Nenhum sensor conectado' }}
           </q-tooltip>
         </q-btn>
 

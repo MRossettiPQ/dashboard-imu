@@ -12,7 +12,7 @@ import { positionOptions } from 'src/common/models/sensor/Sensor';
 interface Props {
   session: Session;
   rightDrawer: boolean;
-  selectedSensors: Set<Sensor>;
+  selectedSensorList: Set<Sensor>;
   selectedProcedure?: Procedure | undefined;
   selectedMovement?: Movement | undefined;
 }
@@ -243,12 +243,12 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
         </div>
       </q-card>
 
-      <div v-if="selectedSensors.size" class="column u-gap-12 no-wrap">
+      <div v-if="selectedSensorList.size" class="column u-gap-12 no-wrap">
         <b class="u-m-0">Sensores</b>
         <q-table
           hide-pagination
           dense
-          :rows="Array.from(selectedSensors)"
+          :rows="Array.from(selectedSensorList)"
           :columns="sensorColumns"
           flat
           bordered

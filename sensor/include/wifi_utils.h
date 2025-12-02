@@ -79,7 +79,7 @@ inline void setupExternalWifi() {
 
     WiFi.begin(sta_ssid, sta_password);
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    setupExternalWifCompleted = true;
+    setupExternalWifiCompleted = true;
 
     checkExternalWifi();
 }

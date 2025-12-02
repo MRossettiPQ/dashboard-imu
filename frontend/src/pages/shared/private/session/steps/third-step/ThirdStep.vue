@@ -7,9 +7,6 @@ interface Props {
   selectedProcedure: Procedure | undefined;
   selectedMovement: Movement | undefined;
   viewType: 'grid' | 'unified' | 'table' | 'summary';
-  commandStart: () => void;
-  commandRestart: () => void;
-  commandStop: () => void;
 }
 
 defineProps<Props>();

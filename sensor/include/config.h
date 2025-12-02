@@ -49,7 +49,7 @@ SocketIOclient socketIO;
 
 // Network
 bool connectedWifi = false;
-bool setupExternalWifCompleted = false;
+bool setupExternalWifiCompleted = false;
 unsigned long last_wifi_try_connect = 0;
 void setupInternalWifi();
 void loadConfigWifi();

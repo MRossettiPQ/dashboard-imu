@@ -1,23 +1,14 @@
 package com.rot.socket.services
 
-import com.corundumstudio.socketio.AckRequest
-import com.corundumstudio.socketio.Configuration
-import com.corundumstudio.socketio.SocketIOClient
-import com.corundumstudio.socketio.SocketIOServer
-import com.corundumstudio.socketio.Transport
+import com.corundumstudio.socketio.*
 import com.corundumstudio.socketio.protocol.JacksonJsonSupport
-import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.rot.core.config.ApplicationConfig
-import com.rot.core.utils.JsonUtils
 import com.rot.core.utils.JwtUtils
 import com.rot.session.enums.SessionType
 import com.rot.session.models.*
@@ -25,7 +16,6 @@ import com.rot.socket.dtos.*
 import com.rot.socket.enums.MessageType
 import com.rot.socket.enums.UserSessionType
 import com.rot.user.models.User
-import io.netty.buffer.ByteBufInputStream
 import io.quarkus.logging.Log
 import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
@@ -177,7 +167,9 @@ class SocketService(
             // Remover sensores da sala desse usuário
             val roomId = sessionContext.room.toString()
             val rom = server.getRoomOperations(roomId)
+            Log.warn("Remover clients da sessão")
             rom.clients.forEach { sensorClient ->
+                Log.warn("Remover client ${sensorClient.sessionId} da sessão")
                 runCatching {
                     sensorClient.leaveRoom(roomId)
                 }
@@ -379,7 +371,6 @@ class SocketService(
         val block = MessageClientMeasurementBlock()
         block.content = message.content
         userClient.sendEvent(MessageType.SERVER_CLIENT_MEASUREMENT.description, message)
-        userClient.sendEvent("${MessageType.SERVER_CLIENT_MEASUREMENT.description}:${mac}", message)
     }
 
     private fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSessionSensorDto, request: AckRequest) {

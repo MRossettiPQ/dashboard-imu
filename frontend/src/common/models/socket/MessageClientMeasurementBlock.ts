@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { transformerDateTime } from 'src/common/models/models';
 import dayjs from 'dayjs';
-import { SocketEvents } from 'boot/socket';
+import { SocketEvents } from 'src/common/models/socket/SocketEvents';
 import { Measurement } from 'src/common/models/measurement/Measurement';
 
 export class MessageClientMeasurementBlock {
@@ -11,4 +11,6 @@ export class MessageClientMeasurementBlock {
   type?: SocketEvents | undefined = SocketEvents.SERVER_CLIENT_MEASUREMENT;
 
   declare content: Measurement[];
+
+  originIdentifier?: string | undefined;
 }

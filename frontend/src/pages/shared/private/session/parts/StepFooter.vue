@@ -2,17 +2,21 @@
 import { computed } from 'vue';
 import type { Session } from 'src/common/models/session/Session';
 import type { Sensor } from 'src/common/models/sensor/Sensor';
+import { socket } from 'boot/socket';
+import { SocketEvents } from 'src/common/models/socket/SocketEvents';
 
 interface Props {
-  next: () => void;
-  prev: () => void;
   session: Session;
-  selectedSensors: Set<Sensor>;
+  selectedSensorList: Set<Sensor>;
   inProgress: boolean;
   loadingSave: boolean;
   actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
 }
 
+const emit = defineEmits<{
+  prev: [];
+  next: [];
+}>();
 const props = defineProps<Props>();
 const disablePrevButton = computed(() => {
   if (!props.session) return true;
@@ -36,7 +40,7 @@ const disableNextButton = computed(() => {
       if (props.session.procedures.length < 1) return true;
       return props.session.procedures.some((p) => p.movements.length < 1);
     case 'second-step':
-      return props.selectedSensors.size < 1;
+      return props.selectedSensorList.size < 1;
     case 'third-step':
       return false;
     // return this.syncedConnection?.blockSave || this.blockIfMovementsMeasurementsEmpty;
@@ -44,6 +48,24 @@ const disableNextButton = computed(() => {
       return false;
   }
 });
+
+async function commandRestart() {
+  console.log('commandRestart');
+  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_RESTART, '');
+  console.log(r);
+}
+
+async function commandStart() {
+  console.log('commandStart');
+  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_START, '');
+  console.log(r);
+}
+
+async function commandStop() {
+  console.log('commandStop');
+  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_STOP, '');
+  console.log(r);
+}
 </script>
 
 <template>
@@ -55,11 +77,19 @@ const disableNextButton = computed(() => {
       :disable="disablePrevButton"
       color="primary"
       icon="arrow_back_ios_new"
-      @click="prev"
+      @click="emit('prev')"
     />
 
     <q-btn-group v-if="actualStepName === 'third-step'" rounded flat>
-      <q-btn dense color="primary" size="md" unelevated round icon="play_arrow" />
+      <q-btn
+        dense
+        color="primary"
+        size="md"
+        unelevated
+        round
+        icon="play_arrow"
+        @click="commandStart"
+      />
       <q-btn dense color="primary" size="md" round icon="alarm" unelevated>
         <q-menu fit>
           <q-list style="min-width: 100px">
@@ -82,8 +112,16 @@ const disableNextButton = computed(() => {
         </q-menu>
         <q-tooltip> Temporizador</q-tooltip>
       </q-btn>
-      <q-btn dense color="primary" size="md" icon="stop" round unelevated />
-      <q-btn dense color="primary" size="md" round icon="restart_alt" unelevated>
+      <q-btn dense color="primary" size="md" icon="stop" round unelevated @click="commandStop" />
+      <q-btn
+        dense
+        color="primary"
+        size="md"
+        round
+        icon="restart_alt"
+        unelevated
+        @click="commandRestart"
+      >
         <!--        <q-tooltip v-if="!syncedConnection.disableRestartBtn">-->
         <!--          Reiniciar medições, apaga as medições que não foram adicionadas ao movimento-->
         <!--        </q-tooltip>-->
@@ -101,7 +139,7 @@ const disableNextButton = computed(() => {
       :loading="loadingSave"
       :disable="disableNextButton"
       :icon="actualStepName !== 'third-step' ? 'arrow_forward_ios' : 'save'"
-      @click="next"
+      @click="emit('next')"
     />
   </q-card>
 </template>

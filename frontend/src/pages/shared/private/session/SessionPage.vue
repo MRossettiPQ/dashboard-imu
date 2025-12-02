@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { computed, markRaw, onMounted, onUnmounted, ref } from 'vue';
-import { socket, SocketEvents } from 'boot/socket';
+import { socket } from 'boot/socket';
 import { MessageSensorListDto } from 'src/common/models/socket/MessageSensorListDto';
 import { plainToInstance } from 'class-transformer';
 import { useRoute, useRouter } from 'vue-router';
@@ -21,18 +21,9 @@ import type { Patient } from 'src/common/models/patient/Patient';
 import { Session } from 'src/common/models/session/Session';
 import type { Procedure, ProcedureType } from 'src/common/models/procedure/Procedure';
 import type { Movement } from 'src/common/models/movement/Movement';
-import { findMovementEnum } from 'src/common/models/movement/Movement';
-import { Sensor } from 'src/common/models/sensor/Sensor';
+import type { Sensor } from 'src/common/models/sensor/Sensor';
 import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
-import {
-  MessageRemoveSensorDto,
-  RemoveSensorDto,
-} from 'src/common/models/socket/MessageRemoveSensorDto';
-import { AddSensorDto, MessageAddSensorDto } from 'src/common/models/socket/MessageAddSensorDto';
-import {
-  CalibrateSensorDto,
-  MessageCalibrateSensorDto,
-} from 'src/common/models/socket/MessageCalibrateSensorDto';
+import { SocketEvents } from 'src/common/models/socket/SocketEvents';
 
 interface NavigationStep {
   order: number;
@@ -52,8 +43,6 @@ const error = ref<boolean>(false);
 const inProgress = ref(false);
 // Ao finalizar sessão
 const loadingSave = ref(false);
-// Lista de sensores requisitada
-const requestedSensorList = ref(false);
 
 // Movimentação de telas
 const steps = ref<NavigationStep[]>([
@@ -119,11 +108,11 @@ const patient = ref<Patient>();
 const session = ref<Session>(new Session());
 
 // Lista de sensores conectados ao backend e lista de procedimentos disponiveis
-const sensorList = ref<SessionSensorDto[]>([]);
-const procedureTypes = ref<ProcedureType[]>([]);
+const availableSensorList = ref<SessionSensorDto[]>([]);
+const availableProcedureList = ref<ProcedureType[]>([]);
 
 // Sensores aplicados a sessão
-const selectedSensors = ref<Set<Sensor>>(new Set());
+const selectedSensorList = ref<Set<Sensor>>(new Set());
 
 // Tipo de visualização na tela de detalhes
 const viewType = ref<'grid' | 'unified' | 'table' | 'summary'>('grid');
@@ -131,109 +120,9 @@ const viewType = ref<'grid' | 'unified' | 'table' | 'summary'>('grid');
 // Procedimento e movimento escolhidos para realização no momento
 const selectedProcedure = ref<Procedure | undefined>();
 const selectedMovement = ref<Movement | undefined>();
-const actualMovementLabel = computed(() => {
-  if (selectedMovement.value?.type) {
-    return findMovementEnum(selectedMovement.value.type) ?? 'Não encontrado';
-  }
-  return '';
-});
-async function addSensorListener(sessionSensorDto: SessionSensorDto) {
-  if (!sessionSensorDto.mac) return;
-
-  const sensors = Array.from(selectedSensors.value);
-  const alreadyExists = sensors.some((s) => s.macAddress === sessionSensorDto.mac);
-  if (alreadyExists) return;
-
-  const sensor = new Sensor();
-  sensor.ip = sessionSensorDto.ip ?? '';
-  sensor.macAddress = sessionSensorDto.mac ?? '';
-  sensor.sensorName = sessionSensorDto.name ?? '';
-  selectedSensors.value.add(sensor);
-
-  const addSensor = new MessageAddSensorDto();
-  const content = new AddSensorDto();
-  content.sensor = sessionSensorDto.clientId ?? '';
-  addSensor.content = content;
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_ADD_SENSOR, addSensor);
-  if (r == 'JOINED_ROOM') {
-    const event = `${SocketEvents.SERVER_CLIENT_MEASUREMENT}:${sessionSensorDto.mac}`;
-    socket.on(event, (data: MessageClientMeasurementBlock) => {
-      const block = data.content;
-      console.log(SocketEvents.SERVER_CLIENT_MEASUREMENT, data);
-      const sensors = selectedMovement.value?.sensors ?? [];
-      const sensorIndex = sensors.findIndex((s) => s.macAddress == sessionSensorDto.mac);
-      if (sensorIndex != -1) {
-        const sensor = selectedMovement.value?.sensors?.[sensorIndex];
-        if (sensor) {
-          selectedMovement.value!.sensors[sensorIndex]!.measurements =
-            sensor.measurements.concat(block);
-        }
-      }
-    });
-  }
-}
-
-async function removeSensorListener(sessionSensorDto: SessionSensorDto) {
-  if (!sessionSensorDto.mac) return;
-
-  const sensors = Array.from(selectedSensors.value);
-  const alreadyExists = sensors.some((s) => s.macAddress === sessionSensorDto.mac);
-  const alreadyExistsIndex = sensors.findIndex((s) => s.macAddress === sessionSensorDto.mac);
-  if (!alreadyExists) return;
-
-  const removeSensor = new MessageRemoveSensorDto();
-  const content = new RemoveSensorDto();
-  content.sensor = sessionSensorDto.clientId ?? '';
-  removeSensor.content = content;
-
-  const sensorToRemove = sensors[alreadyExistsIndex];
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_REMOVE_SENSOR, removeSensor);
-  if (r == 'REMOVED_ROOM' && sensorToRemove) {
-    const event = `${SocketEvents.SERVER_CLIENT_MEASUREMENT}:${sessionSensorDto.mac}`;
-    socket.removeListener(event);
-    selectedSensors.value.delete(sensorToRemove);
-  }
-}
-
-async function commandCalibrate(sessionSensorDto: SessionSensorDto) {
-  const message = new MessageCalibrateSensorDto();
-  const content = new CalibrateSensorDto();
-  content.sensor = sessionSensorDto.clientId!;
-  message.content = content;
-  await socket.emitWithAck(SocketEvents.CLIENT_SERVER_CALIBRATE, message);
-}
-
-async function commandRestart() {
-  console.log('commandRestart');
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_RESTART, '');
-  console.log(r);
-}
-
-async function commandStart() {
-  console.log('commandStart');
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_STOP, '');
-  console.log(r);
-}
-
-async function commandStop() {
-  console.log('commandStop');
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_STOP, '');
-  console.log(r);
-}
-
-async function requestSensorList(): Promise<void> {
-  try {
-    requestedSensorList.value = true;
-    await socket.emitWithAck(SocketEvents.CLIENT_SERVER_SENSOR_LIST, '');
-  } catch (e) {
-    console.error(e);
-  } finally {
-    requestedSensorList.value = false;
-  }
-}
 
 onUnmounted(() => {
-  for (const sensor of Array.from(selectedSensors.value)) {
+  for (const sensor of Array.from(selectedSensorList.value)) {
     console.log(sensor);
     // removeSensorListener(sensor);
   }
@@ -255,10 +144,12 @@ onMounted(async () => {
 
     if (data.content && metadata.content?.procedureTypes) {
       patient.value = data.content;
-      procedureTypes.value = metadata.content.procedureTypes;
+      availableProcedureList.value = metadata.content.procedureTypes;
     }
 
-    console.log(selectedSensors);
+    socket.on('connect', () => {
+      console.log('Conectado!', socket.id);
+    });
     socket.on(SocketEvents.WELCOME, (data: string) => {
       console.log('WELCOME', data);
     });
@@ -267,14 +158,10 @@ onMounted(async () => {
     });
     socket.on(SocketEvents.SERVER_CLIENT_SENSOR_LIST, (data: object) => {
       const { content } = plainToInstance(MessageSensorListDto, data);
-      sensorList.value = content;
-      console.log(SocketEvents.SERVER_CLIENT_SENSOR_LIST, sensorList.value);
+      availableSensorList.value = content ?? [];
     });
     socket.on(SocketEvents.SERVER_CLIENT_MEASUREMENT, (data: MessageClientMeasurementBlock) => {
       console.log(SocketEvents.SERVER_CLIENT_MEASUREMENT, data);
-    });
-    socket.on('connect', () => {
-      console.log('Conectado!', socket.id);
     });
     socket.connect();
   } catch (e: unknown) {
@@ -296,15 +183,10 @@ onMounted(async () => {
       <step-header
         class="step-header"
         v-model:right-drawer="rightDrawer"
-        v-model:viewType="viewType"
-        :request-sensor-list="requestSensorList"
-        :requested-sensor-list="requestedSensorList"
-        :selected-sensors="selectedSensors"
-        :sensor-list="sensorList"
+        v-model:view-type="viewType"
+        :selected-sensor-list="selectedSensorList"
         :actual-step-name="actualStepName"
-        :actual-step-order="actualStepOrder"
         :actual-step-label="actualStepLabel"
-        :actual-movement-label="actualMovementLabel"
         :session="session"
         :selected-movement="selectedMovement"
       />
@@ -314,39 +196,34 @@ onMounted(async () => {
           :is="actualStepValue"
           v-model:right-drawer="rightDrawer"
           v-model:session="session"
-          :sensor-list="sensorList"
-          :selected-sensors="selectedSensors"
-          :add-sensor-listener="addSensorListener"
-          :remove-sensor-listener="removeSensorListener"
-          :procedure-types="procedureTypes"
-          :selected-movement="selectedMovement"
+          v-model:selected-movement="selectedMovement"
+          v-model:selected-procedure="selectedProcedure"
+          :selected-sensor-list="selectedSensorList"
+          :available-sensor-list="availableSensorList"
+          :available-procedure-list="availableProcedureList"
           :view-type="viewType"
           :in-progress="inProgress"
           :loading-save="loadingSave"
-          :command-start="commandStart"
-          :command-restart="commandRestart"
-          :command-stop="commandStop"
-          :command-calibrate="commandCalibrate"
         />
         <drawer-menu
-          :selected-sensors="selectedSensors"
           v-model:session="session"
           v-model:right-drawer="rightDrawer"
           v-model:selected-movement="selectedMovement"
           v-model:selected-procedure="selectedProcedure"
+          :selected-sensor-list="selectedSensorList"
         />
       </q-card>
 
       <step-footer
         class="step-footer"
         v-if="session"
-        :next="next"
-        :prev="prev"
         :session="session"
+        @next="next"
+        @prev="prev"
         :in-progress="inProgress"
         :loading-save="loadingSave"
         :actual-step-name="actualStepName"
-        :selected-sensors="selectedSensors"
+        :selected-sensor-list="selectedSensorList"
       />
     </div>
   </custom-page>

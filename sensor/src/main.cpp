@@ -43,6 +43,8 @@ void stack() {
 
         buffer["origin"] = "SENSOR";
         buffer["type"] = "SENSOR_SERVER_MEASUREMENT";
+        buffer["originIdentifier"] = WiFi.macAddress();
+
         const JsonObject measurement = SensorUtils::read();
         measurement_count_total++;
         measurement_count++;
@@ -102,7 +104,7 @@ void stack() {
         const unsigned long current_millis = millis();
         connectedWifi = WiFiClass::status() == WL_CONNECTED;
 
-        if ((current_millis >= (last_wifi_try_connect + 1000)) && connectedWifi != true && setupExternalWifCompleted) {
+        if ((current_millis >= (last_wifi_try_connect + 1000)) && connectedWifi != true && setupExternalWifiCompleted) {
             last_wifi_try_connect = current_millis;
             checkExternalWifi();
         }

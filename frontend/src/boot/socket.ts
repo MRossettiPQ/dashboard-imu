@@ -11,22 +11,6 @@ declare module 'vue' {
   }
 }
 
-enum SocketEvents {
-  DEFAULT = 'DEFAULT',
-  WELCOME = 'WELCOME',
-  LEAVE_ROOM = 'LEAVE_ROOM',
-  CLIENT_SERVER_STOP = 'CLIENT_SERVER_STOP',
-  CLIENT_SERVER_START = 'CLIENT_SERVER_START',
-  CLIENT_SERVER_RESTART = 'CLIENT_SERVER_RESTART',
-  CLIENT_SERVER_CALIBRATE = 'CLIENT_SERVER_CALIBRATE',
-  CLIENT_SERVER_SAVE_SESSION = 'CLIENT_SERVER_SAVE_SESSION',
-  CLIENT_SERVER_SENSOR_LIST = 'CLIENT_SERVER_SENSOR_LIST',
-  CLIENT_SERVER_ADD_SENSOR = 'CLIENT_SERVER_ADD_SENSOR',
-  CLIENT_SERVER_REMOVE_SENSOR = 'CLIENT_SERVER_REMOVE_SENSOR',
-  SERVER_CLIENT_SENSOR_LIST = 'SERVER_CLIENT_SENSOR_LIST',
-  SERVER_CLIENT_MEASUREMENT = 'SERVER_CLIENT_MEASUREMENT',
-}
-
 const wss = process.env.SOCKET_API;
 const opts: Partial<ManagerOptions & SocketOptions> = {
   reconnectionDelayMax: 10000,
@@ -49,4 +33,4 @@ export default defineBoot(({ app }) => {
   app.config.globalProperties.$socket = socket;
 });
 
-export { socket, SocketEvents };
+export { socket };
