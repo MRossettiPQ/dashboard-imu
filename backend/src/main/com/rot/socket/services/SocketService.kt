@@ -107,7 +107,7 @@ class SocketService(
         val typeStr = handshakeData.getSingleUrlParam("type")
 
         if (typeStr.isNullOrBlank()) {
-            Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usúario")
+            Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usuário")
             return client.disconnect()
         }
 
@@ -148,7 +148,7 @@ class SocketService(
         } else if (type == UserSessionType.SENSOR) {
             sessionContext.type = UserSessionType.SENSOR
         } else {
-            Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usúario")
+            Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usuário")
             return client.disconnect()
         }
         sessions[sessionId] = sessionContext
@@ -180,14 +180,14 @@ class SocketService(
             removeSensor(sessionContext.sensorId)
         }
 
-        if (sessionContext.room != null) {
-            if (sessionContext.type == UserSessionType.SENSOR) {
-                runCatching {
-                    val rom = server.getRoomOperations(sessionContext.room.toString())
-                    rom?.sendEvent(MessageType.SERVER_SENSOR_REMOVED_ROOM.description, "Sensor ${sessionContext.sensorId} saiu da sala.")
-                }
+        if (sessionContext.room != null && sessionContext.type == UserSessionType.SENSOR) {
+            runCatching {
+                val rom = server.getRoomOperations(sessionContext.room.toString())
+                rom?.sendEvent(MessageType.SERVER_SENSOR_REMOVED_ROOM.description, "Sensor ${sessionContext.sensorId} saiu da sala.")
             }
+        }
 
+        if (sessionContext.room != null) {
             client.leaveRoom(sessionContext.room.toString())
         }
 
@@ -341,7 +341,7 @@ class SocketService(
         if (session == null || session.type != UserSessionType.USER) return
 
         sendStopRoom(session.room.toString())
-        request.sendAckData("STOPED_MEASUREMENTS")
+        request.sendAckData("STOPPED_MEASUREMENTS")
     }
 
     private fun clientServerSensorList(client: SocketIOClient, message: String, request: AckRequest) {
