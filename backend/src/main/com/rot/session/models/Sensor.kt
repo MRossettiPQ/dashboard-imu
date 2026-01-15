@@ -53,6 +53,18 @@ class Sensor : BaseEntity<Sensor>() {
     var observation: String? = null
 
     @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "body_segment", nullable = false)
+    var bodySegment: BodySegmentEnum? = null
+
+    /**
+     * Define se é o sensor proximal (mais próximo do tronco) ou distal
+     */
+    @NotNull
+    @Column(name = "is_proximal", nullable = false)
+    var isProximal: Boolean = false
+
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "movement_id", nullable = false)
     var movement: Movement? = null
