@@ -1,8 +1,5 @@
 package com.rot.session.enums
 
-/**
- * Tipos de movimento com informações sobre o plano anatômico
- */
 enum class MovementEnum(
     val description: String,
     val plane: AnatomicalPlaneEnum,
