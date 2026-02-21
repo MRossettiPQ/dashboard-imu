@@ -7,7 +7,6 @@ import com.rot.session.enums.SessionType
 import com.rot.user.models.User
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
@@ -58,5 +57,5 @@ class Session : BaseEntity<Session>() {
     var physiotherapist: User? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
-    var procedures = mutableSetOf<Procedure>()
+    var articulations = mutableSetOf<Articulation>()
 }

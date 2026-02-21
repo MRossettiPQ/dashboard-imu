@@ -17,7 +17,7 @@ open class SessionDto {
     var observation: String? = null
     var patient: UserDto? = null
     var physiotherapist: UserDto? = null
-    var procedures = mutableSetOf<ProcedureDto>()
+    var procedures = mutableSetOf<ArticulationDto>()
 
     companion object {
         fun from(entity: Session): SessionDto {

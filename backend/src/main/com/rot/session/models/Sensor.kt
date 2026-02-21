@@ -38,16 +38,6 @@ class Sensor : BaseEntity<Sensor>() {
     @Column(name = "ip")
     var ip: String? = null
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "position", nullable = false)
-    var position: PositionEnum? = null
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    var type: SensorType = SensorType.GYROSCOPE
-
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "observation", columnDefinition = "TEXT")
     var observation: String? = null

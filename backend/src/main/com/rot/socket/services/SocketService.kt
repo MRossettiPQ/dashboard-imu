@@ -218,8 +218,8 @@ class SocketService(
                 session = session.save()
             }
 
-            val procedure = session.procedures.firstOrNull { it.type == content.procedure } ?: Procedure()
-            procedure.type = content.procedure
+            val articulation = session.articulations.firstOrNull { it.type == content.procedure } ?: Articulation()
+            articulation.type = content.procedure
 
             // Criar movimento sempre que solicitar para salvar
             val movement = Movement()
@@ -252,10 +252,10 @@ class SocketService(
             }
 
             // Adicionar movimentos ao procedimento
-            procedure.movements.add(movement)
+            articulation.movements.add(movement)
 
             // Adicionar procedimentos a sessão
-            session.procedures.add(procedure)
+            session.articulations.add(articulation)
             session.type = SessionType.REAL
             session.observation = content.observation
             session = session.save()

@@ -20,10 +20,10 @@ import java.util.*
 
 @Authenticated
 @ApplicationScoped
-@Path("/api/procedures")
+@Path("/api/articulations")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-class ProceduresController {
+class ArticulationController {
 
     @GET
     @Path("/{uuid}/movements/")

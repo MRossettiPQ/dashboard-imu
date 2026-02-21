@@ -5,6 +5,7 @@ import com.rot.file.models.FileStorage
 import com.rot.file.services.LocalStorageService
 import io.quarkus.logging.Log
 import jakarta.ws.rs.core.Response
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import java.io.*
 import java.net.URL
@@ -70,6 +71,58 @@ enum class FileStorageEnum {
 
         override fun doGetBasePath(fileStorage: FileStorage): String {
             return getService(fileStorage).baseFolder
+        }
+    },
+    DATABASE {
+        // No Database, não usamos o LocalStorageService
+
+        override fun doGetUrl(fileStorage: FileStorage): URL {
+            // Arquivos no banco não possuem URL externa direta (ex: S3).
+            // Retornamos a URL da API da aplicação que serve esse arquivo.
+            return URL(fileStorage.fileUrl)
+        }
+
+        @Throws(IOException::class)
+        override fun doDownload(fileStorage: FileStorage): File {
+            val bytes = doGetBytes(fileStorage) ?: throw IOException("Arquivo sem conteúdo no banco")
+            val tempFile = File.createTempFile("db_storage", ".${fileStorage.extension ?: "tmp"}")
+            FileUtils.writeByteArrayToFile(tempFile, bytes)
+            return tempFile
+        }
+
+        @Throws(IOException::class)
+        override fun doGetInputStream(fileStorage: FileStorage): InputStream {
+            val bytes = fileStorage.bytesFallback ?: throw IOException("Conteúdo do arquivo não encontrado na coluna do banco")
+            return ByteArrayInputStream(bytes)
+        }
+
+        @Throws(IOException::class)
+        override fun doGetBytes(fileStorage: FileStorage): ByteArray? {
+            // Retorna diretamente a coluna do banco
+            return fileStorage.bytesFallback
+        }
+
+        override fun doPersist(fileStorage: FileStorage) {
+            // Lê o stream e salva na variável que mapeia a coluna @Lob
+            if (fileStorage.inputStream != null) {
+                fileStorage.bytesFallback = IOUtils.toByteArray(fileStorage.inputStream)
+            } else {
+                throw IOException("InputStream vazio ao tentar persistir no Banco de Dados")
+            }
+        }
+
+        override fun doRemove(fileStorage: FileStorage): Boolean {
+            // Para remover, basta limpar a coluna
+            fileStorage.bytesFallback = null
+            return true
+        }
+
+        override fun doCheck(fileStorage: FileStorage): Boolean {
+            return fileStorage.bytesFallback != null && fileStorage.bytesFallback!!.isNotEmpty()
+        }
+
+        override fun doGetBasePath(fileStorage: FileStorage): String {
+            return "database_storage"
         }
     };
 

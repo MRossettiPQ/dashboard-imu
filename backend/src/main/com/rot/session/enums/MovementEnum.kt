@@ -1,66 +1,45 @@
 package com.rot.session.enums
 
-enum class MovementEnum(
-    val description: String,
-    val plane: AnatomicalPlaneEnum,
-    val positiveDirection: Boolean = true
-) {
-    SIMPLE("Simple", AnatomicalPlaneEnum.SAGITTAL),
+enum class MovementEnum(val description: String) {
+    // --- MOVIMENTOS GERAIS ---
+    FLEXION("Flexão"),
+    EXTENSION("Extensão"),
+    ABDUCTION("Abdução"),
+    ADDUCTION("Adução"),
+    INTERNAL_ROTATION("Rotação Interna"),
+    EXTERNAL_ROTATION("Rotação Externa"),
 
-    // Plano Sagital (Flexão/Extensão)
-    FLEXION("Flexion", AnatomicalPlaneEnum.SAGITTAL, true),
-    EXTENSION("Extension", AnatomicalPlaneEnum.SAGITTAL, false),
+    // --- COLUNA (Específicos de direção) ---
+    LATERAL_FLEXION_RIGHT("Flexão Lateral Direita"),
+    LATERAL_FLEXION_LEFT("Flexão Lateral Esquerda"),
+    ROTATION_RIGHT("Rotação Direita"),
+    ROTATION_LEFT("Rotação Esquerda"),
 
-    // Plano Frontal (Abdução/Adução)
-    ADDUCTION("Adduction", AnatomicalPlaneEnum.FRONTAL, true),
-    ABDUCTION("Abduction", AnatomicalPlaneEnum.FRONTAL, false),
+    // --- PUNHO E MÃO ---
+    RADIAL_DEVIATION("Desvio Radial"),
+    ULNAR_DEVIATION("Desvio Ulnar"),
 
-    // Plano Transversal (Rotações)
-    INTERNAL_ROTATION("Internal Rotation", AnatomicalPlaneEnum.TRANSVERSE, true),
-    EXTERNAL_ROTATION("External Rotation", AnatomicalPlaneEnum.TRANSVERSE, false),
+    // --- GONIOMETRIA ESPECIAL: POLEGAR E DEDOS (Section 4) ---
+    OPPOSITION("Oposição"), // Específico do Polegar (Cap. 4)
+    PALMAR_ABDUCTION("Abdução Palmar"), // Polegar
+    RADIAL_ABDUCTION("Abdução Radial"), // Polegar
 
-    // Antebraço
-    PRONATION("Pronation", AnatomicalPlaneEnum.TRANSVERSE, true),
-    SUPINATION("Supination", AnatomicalPlaneEnum.TRANSVERSE, false),
+    // --- PÉ E TORNOZELO ---
+    DORSIFLEXION("Dorsiflexão"),
+    PLANTAR_FLEXION("Flexão Plantar"),
+    INVERSION("Inversão"),
+    EVERSION("Eversão"),
 
-    // Polegar específico
-    THUMB_INTERNAL_FLEXION("Thumb internal flexion", AnatomicalPlaneEnum.SAGITTAL, true),
-    THUMB_INTERNAL_EXTENSION("Thumb internal extension", AnatomicalPlaneEnum.SAGITTAL, false),
+    // --- GONIOMETRIA ESPECIAL: ATM (Section 4) ---
+    MANDIBULAR_DEPRESSION("Depressão (Abertura da Boca)"),
+    MANDIBULAR_PROTRUSION("Protrusão"),
+    MANDIBULAR_RETRUSION("Retração"), // Ou Retrusão
+    MANDIBULAR_LATERAL_DEVIATION_RIGHT("Desvio Lateral Direito"),
+    MANDIBULAR_LATERAL_DEVIATION_LEFT("Desvio Lateral Esquerdo"),
 
-    // Dedos
-    INTERNAL_EXTENSION_FINGERS("Internal extensions fingers", AnatomicalPlaneEnum.SAGITTAL, false),
-
-    // Punho (desvios)
-    ULNAR_ADDUCTION("Ulnar adduction", AnatomicalPlaneEnum.FRONTAL, true),
-    RADIAL_ADDUCTION("Radial adduction", AnatomicalPlaneEnum.FRONTAL, false);
-
-    /**
-     * Retorna o movimento oposto (ex: FLEXION ↔ EXTENSION)
-     */
-    fun opposite(): MovementEnum? {
-        return when (this) {
-            FLEXION -> EXTENSION
-            EXTENSION -> FLEXION
-            ADDUCTION -> ABDUCTION
-            ABDUCTION -> ADDUCTION
-            INTERNAL_ROTATION -> EXTERNAL_ROTATION
-            EXTERNAL_ROTATION -> INTERNAL_ROTATION
-            PRONATION -> SUPINATION
-            SUPINATION -> PRONATION
-            THUMB_INTERNAL_FLEXION -> THUMB_INTERNAL_EXTENSION
-            THUMB_INTERNAL_EXTENSION -> THUMB_INTERNAL_FLEXION
-            ULNAR_ADDUCTION -> RADIAL_ADDUCTION
-            RADIAL_ADDUCTION -> ULNAR_ADDUCTION
-            else -> null
-        }
-    }
-}
-
-/**
- * Planos anatômicos de movimento
- */
-enum class AnatomicalPlaneEnum(val description: String) {
-    SAGITTAL("Sagittal Plane"),      // Flexão/Extensão - pitch
-    FRONTAL("Frontal Plane"),         // Abdução/Adução - roll
-    TRANSVERSE("Transverse Plane")    // Rotação - yaw
+    // --- OUTROS ---
+    ELEVATION("Elevação"), // Ex: Escápula
+    DEPRESSION("Depressão"), // Ex: Escápula
+    PROTRACTION("Protração"),
+    RETRACTION("Retração")
 }

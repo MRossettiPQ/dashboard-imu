@@ -2,7 +2,6 @@ package com.rot.session.services
 
 import com.rot.core.exceptions.ApplicationException
 import com.rot.session.dtos.MeasurementDto
-import com.rot.session.enums.PositionEnum
 import com.rot.session.models.Measurement
 import com.rot.session.models.Movement
 import io.quarkus.logging.Log

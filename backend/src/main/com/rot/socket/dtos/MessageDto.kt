@@ -2,9 +2,7 @@ package com.rot.socket.dtos
 
 import com.rot.session.dtos.MeasurementDto
 import com.rot.session.enums.MovementEnum
-import com.rot.session.enums.PositionEnum
-import com.rot.session.enums.ProcedureEnum
-import com.rot.session.enums.SensorType
+import com.rot.session.enums.ArticulationEnum
 import com.rot.socket.enums.MessageType
 import com.rot.socket.enums.OriginType
 import java.time.OffsetDateTime
@@ -34,7 +32,7 @@ class SaveSessionDto {
     var patientId: UUID? = null
     var observation: String? = null
 
-    var procedure: ProcedureEnum = ProcedureEnum.SIMPLE
+    var procedure: ArticulationEnum = ArticulationEnum.SIMPLE
 
     var movementType: MovementEnum = MovementEnum.SIMPLE
     var movementObservation: String? = null
