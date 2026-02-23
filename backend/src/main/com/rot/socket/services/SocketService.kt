@@ -10,6 +10,10 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JwtUtils
+import com.rot.gonimetry.models.MovementType
+import com.rot.measurement.models.Measurement
+import com.rot.measurement.models.Sensor
+import com.rot.measurement.models.SensorInfo
 import com.rot.session.enums.SessionType
 import com.rot.session.models.*
 import com.rot.socket.dtos.*
@@ -80,14 +84,14 @@ class SocketService(
         server.addEventListener(MessageType.CLIENT_SERVER_START.description, String::class.java, this::clientServerCommandStart)
         server.addEventListener(MessageType.CLIENT_SERVER_RESTART.description, String::class.java, this::clientServerCommandStart)
         server.addEventListener(MessageType.CLIENT_SERVER_SENSOR_LIST.description, String::class.java, this::clientServerSensorList)
-        server.addEventListener(MessageType.CLIENT_SERVER_ADD_SENSOR.description, MessageAddSensorDto::class.java, this::clientServerAddSensor)
-        server.addEventListener(MessageType.CLIENT_SERVER_REMOVE_SENSOR.description, MessageRemoveSensorDto::class.java, this::clientServerRemoveSensor)
-        server.addEventListener(MessageType.CLIENT_SERVER_CALIBRATE.description, MessageCalibrateSensorDto::class.java, this::clientServerCalibrate)
-        server.addEventListener(MessageType.CLIENT_SERVER_SAVE_SESSION.description, MessageSaveSessionDto::class.java, this::clientServerSaveSession)
+        server.addEventListener(MessageType.CLIENT_SERVER_ADD_SENSOR.description, MessageClientServerAddSensorDto::class.java, this::clientServerAddSensor)
+        server.addEventListener(MessageType.CLIENT_SERVER_REMOVE_SENSOR.description, MessageClientServerRemoveSensorDto::class.java, this::clientServerRemoveSensor)
+        server.addEventListener(MessageType.CLIENT_SERVER_CALIBRATE.description, MessageClientServerCalibrateSensorDto::class.java, this::clientServerCalibrate)
+        server.addEventListener(MessageType.CLIENT_SERVER_SAVE_SESSION.description, MessageClientServerSaveSessionDto::class.java, this::clientServerSaveSession)
 
         // Sensor -> Server
-        server.addEventListener(MessageType.SENSOR_SERVER_MEASUREMENT.description, MessageSensorMeasurementBlock::class.java, this::sensorServerMeasurement)
-        server.addEventListener(MessageType.SENSOR_SERVER_REGISTER_SENSOR.description, MessageSessionSensorDto::class.java, this::sensorServerRegisterSensor)
+        server.addEventListener(MessageType.SENSOR_SERVER_MEASUREMENT.description, MessageSensorServerMeasurementBlock::class.java, this::sensorServerMeasurement)
+        server.addEventListener(MessageType.SENSOR_SERVER_REGISTER_SENSOR.description, MessageSensorServerSessionSensorDto::class.java, this::sensorServerRegisterSensor)
 
         server.start()
         Log.info("Socket.IO Server iniciado na porta ${config.port}")
@@ -196,7 +200,7 @@ class SocketService(
 
     // Client -> Server
     @Transactional(value = Transactional.TxType.REQUIRES_NEW)
-    fun clientServerSaveSession(client: SocketIOClient, message: MessageSaveSessionDto, request: AckRequest) {
+    fun clientServerSaveSession(client: SocketIOClient, message: MessageClientServerSaveSessionDto, request: AckRequest) {
         Log.info("Cliente ${client.sessionId} pediu para salvar a sessão $message")
         val sessionContext = sessions[client.sessionId]
         val content = message.content
@@ -218,8 +222,8 @@ class SocketService(
                 session = session.save()
             }
 
-            val articulation = session.articulations.firstOrNull { it.type == content.procedure } ?: Articulation()
-            articulation.type = content.procedure
+            val articulation = session.articulations.firstOrNull() ?: Articulation()
+//            articulation.type = content.procedure
 
             // Criar movimento sempre que solicitar para salvar
             val movement = Movement()
@@ -238,9 +242,7 @@ class SocketService(
                 }
 
                 sensor.ip = first.ip
-                sensor.type = first.type
                 sensor.sensorInfo = sensorInfo
-                sensor.position = first.position
                 sensor.observation = first.observation
 
                 for (measurement in second.sortedBy { it.readOrder }) {
@@ -265,7 +267,7 @@ class SocketService(
         request.sendAckData("SAVED_SESSION")
     }
 
-    fun clientServerRemoveSensor(client: SocketIOClient, message: MessageRemoveSensorDto, request: AckRequest) {
+    fun clientServerRemoveSensor(client: SocketIOClient, message: MessageClientServerRemoveSensorDto, request: AckRequest) {
         val session = sessions[client.sessionId]
         val content = message.content
         if (session == null || session.type != UserSessionType.USER || content == null) return
@@ -274,7 +276,7 @@ class SocketService(
         if (sensorContext != null) {
             val sensorClient = server.getClient(content.sensor)
             sensorClient.leaveRoom(content.sensor.toString())
-            sensorClient.sendEvent(MessageType.SERVER_SENSOR_REMOVED_ROOM.description, MessageRemovedRoomDto())
+            sensorClient.sendEvent(MessageType.SERVER_SENSOR_REMOVED_ROOM.description, MessageServerSensorRemovedRoomDto())
             sensorContext.room = null
 
             Log.info("Cliente ${client.sessionId} saiu da sala $message")
@@ -282,7 +284,7 @@ class SocketService(
         }
     }
 
-    fun clientServerCalibrate(client: SocketIOClient, message: MessageCalibrateSensorDto, request: AckRequest) {
+    fun clientServerCalibrate(client: SocketIOClient, message: MessageClientServerCalibrateSensorDto, request: AckRequest) {
         val session = sessions[client.sessionId]
         val content = message.content
         if (session == null || session.type != UserSessionType.USER || content == null) return
@@ -297,7 +299,7 @@ class SocketService(
         }
     }
 
-    fun clientServerAddSensor(client: SocketIOClient, message: MessageAddSensorDto, request: AckRequest) {
+    fun clientServerAddSensor(client: SocketIOClient, message: MessageClientServerAddSensorDto, request: AckRequest) {
         val session = sessions[client.sessionId]
         val content = message.content
         if (session == null || session.type != UserSessionType.USER || content == null) return
@@ -308,7 +310,7 @@ class SocketService(
         Log.info("Cliente ${client.sessionId} entrou na sala $message")
 
         sensorClient.joinRoom(session.room.toString())
-        sensorClient.sendEvent(MessageType.SERVER_SENSOR_JOINED_ROOM.description, MessageJoinedRoomDto())
+        sensorClient.sendEvent(MessageType.SERVER_SENSOR_JOINED_ROOM.description, MessageServerSensorJoinedRoomDto())
         sensorContext.room = session.room
 
         val sensor = findSensorByIp(sensorContext.sensorId.toString())
@@ -354,7 +356,7 @@ class SocketService(
     }
 
     // Sensor -> Server
-    fun sensorServerMeasurement(client: SocketIOClient, message: MessageSensorMeasurementBlock, request: AckRequest) {
+    fun sensorServerMeasurement(client: SocketIOClient, message: MessageSensorServerMeasurementBlock, request: AckRequest) {
         Log.info("Register measurement listener: $message")
         val sessionId = client.sessionId
         val session = sessions[sessionId]
@@ -368,12 +370,12 @@ class SocketService(
         sensor.second.addAll(content)
         val mac = sensor.first.mac
 
-        val block = MessageClientMeasurementBlock()
+        val block = MessageServerClientMeasurementBlock()
         block.content = message.content
         userClient.sendEvent(MessageType.SERVER_CLIENT_MEASUREMENT.description, message)
     }
 
-    private fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSessionSensorDto, request: AckRequest) {
+    private fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSensorServerSessionSensorDto, request: AckRequest) {
         Log.info("Register sensor: $message")
         val session = sessions[client.sessionId]
         val content = message.content
@@ -391,8 +393,6 @@ class SocketService(
                 it.name = content.name
                 it.mac = content.mac
                 it.observation = content.observation
-                it.position = content.position
-                it.type = content.type
             }
             broadcastSensorList()
             return request.sendAckData("UPDATED")
@@ -408,12 +408,12 @@ class SocketService(
 
     private fun sendStartRoom(room: String) {
         val rom = server.getRoomOperations(room)
-        rom.sendEvent(MessageType.SERVER_SENSOR_START.description, MessageStartCommandDto())
+        rom.sendEvent(MessageType.SERVER_SENSOR_START.description, MessageServerSensorStartCommandDto())
     }
 
     private fun sendStopRoom(room: String) {
         val rom = server.getRoomOperations(room)
-        rom.sendEvent(MessageType.SERVER_SENSOR_STOP.description, MessageStopCommandDto())
+        rom.sendEvent(MessageType.SERVER_SENSOR_STOP.description, MessageServerSensorStopCommandDto())
     }
 
     private fun findSensorByIp(ip: String): SessionSensorDto? {
@@ -425,13 +425,13 @@ class SocketService(
     }
 
     private fun sendSensorList(client: SocketIOClient) = runCatching {
-        val message = MessageSensorListDto()
+        val message = MessageServerClientSensorListDto()
         message.content = sensors
         client.sendEvent(MessageType.SERVER_CLIENT_SENSOR_LIST.description, message)
     }
 
     private fun broadcastSensorList() = runCatching {
-        val message = MessageSensorListDto()
+        val message = MessageServerClientSensorListDto()
         message.content = sensors
         server.broadcastOperations.sendEvent(MessageType.SERVER_CLIENT_SENSOR_LIST.description, message)
     }

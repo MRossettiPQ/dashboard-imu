@@ -3,7 +3,7 @@ package com.rot.mqtt.services
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JsonUtils
 import com.rot.mqtt.dto.MqttMessage
-import com.rot.session.dtos.MeasurementDto
+import com.rot.measurement.dtos.MeasurementDto
 import io.moquette.broker.Server
 import io.moquette.broker.config.MemoryConfig
 import io.moquette.interception.AbstractInterceptHandler

@@ -1,14 +1,13 @@
 package com.rot.session.services
 
 import com.rot.core.exceptions.ApplicationException
-import com.rot.session.dtos.MeasurementDto
-import com.rot.session.models.Measurement
+import com.rot.measurement.dtos.MeasurementDto
+import com.rot.measurement.models.Measurement
 import com.rot.session.models.Movement
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import java.math.BigDecimal
 import java.time.Duration
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 
@@ -26,34 +25,34 @@ class SciLabServices {
         }
 
         return MeasurementDto().apply {
-            capturedAt = measurements.firstOrNull()?.capturedAt
-            sensorName = measurements.firstOrNull()?.sensorName
-            readOrder = measurements.firstOrNull()?.readOrder
+            capturedAt = measurements.firstOrNull()?.capturedAt!!
+            sensorName = measurements.firstOrNull()?.sensorName!!
+            readOrder = measurements.firstOrNull()?.readOrder!!
 
-            accelMssX = averageOf { it.accelMssX }
-            accelMssY = averageOf { it.accelMssY }
-            accelMssZ = averageOf { it.accelMssZ }
+            accelMssX = averageOf { it.accelMssX }!!
+            accelMssY = averageOf { it.accelMssY }!!
+            accelMssZ = averageOf { it.accelMssZ }!!
 
-            accelLinX = averageOf { it.accelLinX }
-            accelLinY = averageOf { it.accelLinY }
-            accelLinZ = averageOf { it.accelLinZ }
+            accelLinX = averageOf { it.accelLinX }!!
+            accelLinY = averageOf { it.accelLinY }!!
+            accelLinZ = averageOf { it.accelLinZ }!!
 
-            gyroRadsX = averageOf { it.gyroRadsX }
-            gyroRadsY = averageOf { it.gyroRadsY }
-            gyroRadsZ = averageOf { it.gyroRadsZ }
+            gyroRadsX = averageOf { it.gyroRadsX }!!
+            gyroRadsY = averageOf { it.gyroRadsY }!!
+            gyroRadsZ = averageOf { it.gyroRadsZ }!!
 
-            roll = averageOf { it.roll }
-            pitch = averageOf { it.pitch }
-            yaw = averageOf { it.yaw }
+            roll = averageOf { it.roll }!!
+            pitch = averageOf { it.pitch }!!
+            yaw = averageOf { it.yaw }!!
 
-            eulerX = averageOf { it.eulerX }
-            eulerY = averageOf { it.eulerY }
-            eulerZ = averageOf { it.eulerZ }
+            eulerX = averageOf { it.eulerX }!!
+            eulerY = averageOf { it.eulerY }!!
+            eulerZ = averageOf { it.eulerZ }!!
 
-            quaternionX = averageOf { it.quaternionX }
-            quaternionY = averageOf { it.quaternionY }
-            quaternionZ = averageOf { it.quaternionZ }
-            quaternionW = averageOf { it.quaternionW }
+            quaternionX = averageOf { it.quaternionX }!!
+            quaternionY = averageOf { it.quaternionY }!!
+            quaternionZ = averageOf { it.quaternionZ }!!
+            quaternionW = averageOf { it.quaternionW }!!
         }
     }
 
@@ -64,12 +63,12 @@ class SciLabServices {
             throw ApplicationException("No sensors detected")
         }
 
-        val sensor1 = movement.sensors.find { it.position == PositionEnum.ONE }
+        val sensor1 = movement.sensors.first()
             ?: throw ApplicationException("No detected sensor position one")
         val measurement1 = sensor1.measurements
             .sortedBy { it.readOrder }
             .groupBy { it.capturedAt!! }
-        val sensor2 = movement.sensors.find { it.position == PositionEnum.TWO }
+        val sensor2 = movement.sensors.last()
             ?: throw ApplicationException("No detected sensor position two")
         val measurement2 = sensor2.measurements
             .sortedBy { it.readOrder }

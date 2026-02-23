@@ -1,8 +1,8 @@
-import com.rot.core.jaxrs.PaginationDto
+import com.rot.core.jaxrs.Pagination
 import com.rot.file.enums.FileStorageEnum
 import com.rot.file.enums.ModificationEnum
 import com.rot.file.models.FileStorage
-import com.rot.session.enums.MovementEnum
+import com.rot.gonimetry.enums.MovementEnum
 import java.time.LocalDateTime
 import java.util.*
 
@@ -35,8 +35,8 @@ class FileStorageDto {
             dto.volumeStatus = entity.volumeStatus
             return dto
         }
-        fun from(paginationDto: PaginationDto<FileStorage>): PaginationDto<FileStorageDto> {
-            return paginationDto.transform { from(it) }
+        fun from(pagination: Pagination<FileStorage>): Pagination<FileStorageDto> {
+            return pagination.transform { from(it) }
         }
     }
 }

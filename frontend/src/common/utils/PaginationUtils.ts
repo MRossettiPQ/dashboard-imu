@@ -1,8 +1,10 @@
 import type { AxiosResponse } from 'axios';
-import type { BasicResponse, Pagination } from 'src/common/models/models';
+import type { Pagination } from 'src/api/manual/models';
+
+type Result<T> = AxiosResponse<{ content: Pagination<T> | null | undefined }>;
 
 type PaginationUtilsConstructorType<T, R> = {
-  service: (params: R) => Promise<AxiosResponse<BasicResponse<Pagination<T>>>>;
+  service: (params: R) => Promise<Result<T>>;
   params: R;
   onError?: (error: unknown) => void;
   onSuccess?: (data: Pagination<T>) => void;
@@ -24,7 +26,7 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
     this.onLoad = onLoad;
   }
 
-  service: (params: R) => Promise<AxiosResponse<BasicResponse<Pagination<T>>>>;
+  service: (params: R) => Promise<Result<T>>;
   result: Pagination<T> = {
     list: [],
     page: 1,

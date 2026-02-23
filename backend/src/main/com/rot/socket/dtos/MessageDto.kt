@@ -1,10 +1,11 @@
 package com.rot.socket.dtos
 
-import com.rot.session.dtos.MeasurementDto
-import com.rot.session.enums.MovementEnum
-import com.rot.session.enums.ArticulationEnum
+import com.rot.gonimetry.enums.ArticulationEnum
+import com.rot.gonimetry.enums.MovementEnum
+import com.rot.measurement.dtos.MeasurementDto
 import com.rot.socket.enums.MessageType
 import com.rot.socket.enums.OriginType
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
@@ -32,9 +33,9 @@ class SaveSessionDto {
     var patientId: UUID? = null
     var observation: String? = null
 
-    var procedure: ArticulationEnum = ArticulationEnum.SIMPLE
+    var procedure: ArticulationEnum = ArticulationEnum.SAMPLE
 
-    var movementType: MovementEnum = MovementEnum.SIMPLE
+    var movementType: MovementEnum = MovementEnum.SAMPLE
     var movementObservation: String? = null
 }
 
@@ -66,8 +67,6 @@ class SessionSensorDto {
     var name: String? = null
     var mac: String? = null
     var observation: String? = null
-    var position: PositionEnum? = null
-    var type: SensorType = SensorType.GYROSCOPE
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
@@ -87,50 +86,72 @@ class SessionSensorDto {
 
 
 // Sensor -> Server
-class MessageSessionSensorDto : MessageDto<SessionSensorDto>(type = MessageType.SENSOR_SERVER_REGISTER_SENSOR) {
+@Schema(name = "SocketSensorServerSessionSensor")
+class MessageSensorServerSessionSensorDto : MessageDto<SessionSensorDto>(type = MessageType.SENSOR_SERVER_REGISTER_SENSOR) {
     var content: SessionSensorDto? = null
 }
-class MessageSensorMeasurementBlock : MessageDto<MutableList<MeasurementDto>>(type = MessageType.SENSOR_SERVER_MEASUREMENT) {
+
+@Schema(name = "SocketSensorServerSensorMeasurementBlock")
+class MessageSensorServerMeasurementBlock : MessageDto<MutableList<MeasurementDto>>(type = MessageType.SENSOR_SERVER_MEASUREMENT) {
     var content: MutableList<MeasurementDto>? = mutableListOf()
 }
 
 
 // Server -> Client
-class MessageSensorListDto : MessageDto<MutableList<SessionSensorDto>>(type = MessageType.SERVER_CLIENT_SENSOR_LIST) {
+@Schema(name = "SocketServerClientSensorList")
+class MessageServerClientSensorListDto : MessageDto<MutableList<SessionSensorDto>>(type = MessageType.SERVER_CLIENT_SENSOR_LIST) {
     var content: MutableList<SessionSensorDto>? = mutableListOf()
 }
-class MessageClientMeasurementBlock : MessageDto<MutableList<MeasurementDto>>(type = MessageType.SERVER_CLIENT_MEASUREMENT) {
+
+@Schema(name = "SocketServerClientMeasurementBlock")
+class MessageServerClientMeasurementBlock : MessageDto<MutableList<MeasurementDto>>(type = MessageType.SERVER_CLIENT_MEASUREMENT) {
     var content: MutableList<MeasurementDto>? = mutableListOf()
 }
 
 
 // Server -> Sensor
-class MessageStartCommandDto : MessageDto<StartCommandDto>(type = MessageType.SERVER_SENSOR_START) {
+@Schema(name = "SocketServerSensorStartCommand")
+class MessageServerSensorStartCommandDto : MessageDto<StartCommandDto>(type = MessageType.SERVER_SENSOR_START) {
     var content: SessionSensorDto? = null
 }
-class MessageStopCommandDto : MessageDto<StopCommandDto>(type = MessageType.SERVER_SENSOR_STOP) {
+
+@Schema(name = "SocketServerSensorStopCommand")
+class MessageServerSensorStopCommandDto : MessageDto<StopCommandDto>(type = MessageType.SERVER_SENSOR_STOP) {
     var content: StopCommandDto? = null
 }
+
+@Schema(name = "SocketServerSensorCalibrateSensor")
 class MessageCalibrateCommandDto : MessageDto<CalibrateCommandDto>(type = MessageType.SERVER_SENSOR_CALIBRATE) {
     var content: CalibrateCommandDto? = null
 }
-class MessageJoinedRoomDto : MessageDto<JoinedRoomDto>(type = MessageType.SERVER_SENSOR_JOINED_ROOM) {
+
+@Schema(name = "SocketServerSensorJoinedRoom")
+class MessageServerSensorJoinedRoomDto : MessageDto<JoinedRoomDto>(type = MessageType.SERVER_SENSOR_JOINED_ROOM) {
     var content: JoinedRoomDto? = null
 }
-class MessageRemovedRoomDto : MessageDto<RemovedRoomDto>(type = MessageType.SERVER_SENSOR_REMOVED_ROOM) {
+
+@Schema(name = "SocketServerSensorRemovedRoom")
+class MessageServerSensorRemovedRoomDto : MessageDto<RemovedRoomDto>(type = MessageType.SERVER_SENSOR_REMOVED_ROOM) {
     var content: RemovedRoomDto? = null
 }
 
 // Client -> Server
-class MessageAddSensorDto : MessageDto<AddSensorDto>(type = MessageType.CLIENT_SERVER_ADD_SENSOR) {
+@Schema(name = "SocketClientServerAddSensor")
+class MessageClientServerAddSensorDto : MessageDto<AddSensorDto>(type = MessageType.CLIENT_SERVER_ADD_SENSOR) {
     var content: AddSensorDto? = null
 }
-class MessageRemoveSensorDto : MessageDto<RemoveSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR) {
+
+@Schema(name = "SocketClientServerRemoveSensor")
+class MessageClientServerRemoveSensorDto : MessageDto<RemoveSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR) {
     var content: RemoveSensorDto? = null
 }
-class MessageCalibrateSensorDto : MessageDto<CalibrateSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR) {
+
+@Schema(name = "SocketClientServerCalibrateSensor")
+class MessageClientServerCalibrateSensorDto : MessageDto<CalibrateSensorDto>(type = MessageType.CLIENT_SERVER_REMOVE_SENSOR) {
     var content: CalibrateSensorDto? = null
 }
-class MessageSaveSessionDto : MessageDto<SaveSessionDto>(type = MessageType.CLIENT_SERVER_SAVE_SESSION) {
+
+@Schema(name = "SocketClientServerSaveSession")
+class MessageClientServerSaveSessionDto : MessageDto<SaveSessionDto>(type = MessageType.CLIENT_SERVER_SAVE_SESSION) {
     var content: SaveSessionDto? = null
 }

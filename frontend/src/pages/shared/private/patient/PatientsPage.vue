@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import PaginationUtils from 'src/common/utils/PaginationUtils';
-import { patientService } from 'src/common/services/patient/patient-service';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import CustomPagination from 'components/CustomPagination/CustomPagination.vue';
-import type { TableColumn } from 'src/common/models/models';
+import type { TableColumn } from 'src/api/manual/models';
 import { useRouter } from 'vue-router';
-import type { Patient } from 'src/common/models/patient/Patient';
-import type { User } from 'src/common/models/user/User';
+import { api } from 'boot/axios';
+import type { PatientDto, PatientDtoUser } from 'src/api/generated/models';
 
 const router = useRouter();
 const loading = ref(false);
-const columns: TableColumn<Patient>[] = [
+const columns: TableColumn<PatientDto>[] = [
   {
     name: 'id',
     align: 'left',
@@ -23,8 +22,8 @@ const columns: TableColumn<Patient>[] = [
     name: 'name',
     align: 'left',
     label: 'Nome',
-    format(val: User /* row: Patient */) {
-      return val.name;
+    format(val: PatientDtoUser | undefined) {
+      return val?.name ?? '';
     },
     field: 'user',
   },
@@ -43,15 +42,17 @@ const columns: TableColumn<Patient>[] = [
     props: {
       color: 'primary',
       icon: 'edit',
-      onClick: (evt: Event, row?: Patient) => {
+      onClick: (evt: Event, row?: PatientDto) => {
         void open(evt, row);
       },
     },
   },
 ];
-const pagination = ref(
+
+type PatientParams = { page: number; rpp: number; term: string };
+const pagination = ref<PaginationUtils<PatientDto, PatientParams>>(
   new PaginationUtils({
-    service: patientService.list,
+    service: api.getApiPatients,
     params: {
       page: 1,
       rpp: 10,
@@ -64,7 +65,7 @@ onMounted(async () => {
   await search();
 });
 
-async function open(_evt: Event, row?: Patient) {
+async function open(_evt: Event, row?: PatientDto) {
   await router.push({ name: 'private.patient', params: { uuid: row?.id } });
 }
 async function newPatient() {

@@ -1,6 +1,6 @@
 package com.rot.socket.dtos
 
-import com.rot.session.dtos.MeasurementDto
+import com.rot.measurement.dtos.MeasurementDto
 import com.rot.socket.enums.UserSessionType
 import java.util.UUID
 

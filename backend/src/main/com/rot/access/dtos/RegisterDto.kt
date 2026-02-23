@@ -11,4 +11,6 @@ class RegisterDto {
     lateinit var email: String
     @field:NotEmpty(message = "Password is required")
     lateinit var password: String
+    @field:NotEmpty(message = "Confirm password is required")
+    lateinit var passwordConfirm: String
 }

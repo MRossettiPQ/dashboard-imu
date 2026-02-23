@@ -7,6 +7,7 @@ import com.rot.core.utils.JsonUtils
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.ws.rs.core.Response
+import org.jboss.resteasy.reactive.RestResponse
 
 class ApplicationException(
     override val message: String,
@@ -42,6 +43,15 @@ class ApplicationException(
     }
 
     fun toResponse(): Response {
+        exception?.printStackTrace()
+        return ResultContent.of()
+            .withContent(content?.let { JsonUtils.MAPPER.convertValue(content, Map::class.java) })
+            .withStatusCode(statusCode!!)
+            .withMessage(message)
+            .buildResponse()
+    }
+
+    fun toRestResponse(): RestResponse<*> {
         exception?.printStackTrace()
         return ResultContent.of()
             .withContent(content?.let { JsonUtils.MAPPER.convertValue(content, Map::class.java) })

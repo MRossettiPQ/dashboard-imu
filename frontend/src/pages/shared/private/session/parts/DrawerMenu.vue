@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Session } from 'src/common/models/session/Session';
-import type { TableColumn } from 'src/common/models/models';
+import type { TableColumn } from 'src/api/manual/models';
 import { Movement } from 'src/common/models/movement/Movement';
 import { findMovementEnum } from 'src/common/models/movement/Movement';
 import type { Procedure } from 'src/common/models/procedure/Procedure';

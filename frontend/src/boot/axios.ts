@@ -1,6 +1,7 @@
 import { defineBoot } from '#q-app/wrappers';
 import axios, { type AxiosInstance } from 'axios';
-import api from 'src/common/services/http-client';
+import apiConfig from 'src/api/mutator/custom-instance';
+import { getDashboardAPI } from 'src/api/generated/endpoints';
 
 declare module 'vue' {
   interface ComponentCustomProperties {
@@ -22,9 +23,11 @@ export default defineBoot(({ app }) => {
   // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
   //       so you won't necessarily have to import axios in each vue file
 
-  app.config.globalProperties.$api = api;
+  app.config.globalProperties.$api = apiConfig;
   // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
   //       so you can easily perform requests against your app's API
 });
+
+const api = getDashboardAPI();
 
 export { api };

@@ -2,7 +2,7 @@
 import type { QTableProps } from 'quasar';
 import type PaginationUtils from 'src/common/utils/PaginationUtils';
 import { computed, toRaw } from 'vue';
-import type { TableColumn } from 'src/common/models/models';
+import type { TableColumn } from 'src/api/manual/models';
 
 // T = tipo dos dados por linha, ex: Record<string, any> ou algo mais específico
 type TableProps = Omit<Partial<QTableProps>, 'columns'>;

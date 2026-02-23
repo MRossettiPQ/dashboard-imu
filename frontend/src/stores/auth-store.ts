@@ -1,20 +1,23 @@
 import { Cookies } from 'quasar';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import type { UserRole } from 'src/common/models/user/User';
-import type { AuthStore } from 'src/common/models/store/AuthStore';
+import type { AuthStore } from 'src/api/manual/AuthStore';
 import { useRouter } from 'vue-router';
-import { accessService } from 'src/common/services/access/access-service';
 import { CookieType, getCookieConfiguration } from 'src/common/utils/cookieUtils';
-import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import type { AccessDto } from 'src/common/models/access/AccessDto';
+import { api } from 'boot/axios';
+import type { AccessDto, UserRole } from 'src/api/generated/models';
 
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 
-const trimDate = (input: string | null): Dayjs | null => {
+const trimDate = (input: string | null): Date | null => {
   const formated = input?.replace(/\.(\d{3})\d+/, '.$1');
   if (formated == null) return null;
-  return dayjs(input?.replace(/\.(\d{3})\d+/, '.$1'));
+  return dayjs(input?.replace(/\.(\d{3})\d+/, '.$1')).toDate();
+};
+
+const ensureDate = (value: string | Date | null | undefined): Date | null => {
+  if (!value) return null;
+  return value instanceof Date ? value : new Date(value);
 };
 
 export const useAuthStore = defineStore('auth', {
@@ -69,7 +72,8 @@ export const useAuthStore = defineStore('auth', {
       this.loadCookies();
       const now = new Date();
 
-      if (this.accessTokenExpiresAt && this.accessTokenExpiresAt?.isAfter(now) === true) {
+      // Corrigido: usando > para comparar Date nativo
+      if (this.accessTokenExpiresAt && this.accessTokenExpiresAt > now) {
         if (!this.user) {
           try {
             await this.loadContext();
@@ -81,7 +85,8 @@ export const useAuthStore = defineStore('auth', {
         return true;
       }
 
-      if (this.refreshTokenExpiresAt && this.refreshTokenExpiresAt?.isAfter(now) === true) {
+      // Corrigido: usando > para comparar Date nativo
+      if (this.refreshTokenExpiresAt && this.refreshTokenExpiresAt > now) {
         try {
           await this.refreshTokens();
           await this.loadContext();
@@ -98,15 +103,18 @@ export const useAuthStore = defineStore('auth', {
       this.loadCookies();
 
       const router = useRouter();
-      const now = dayjs();
+      const now = new Date(); // Substituído dayjs por new Date nativo
+
       if (!this.accessTokenExpiresAt) {
         return;
       }
 
       try {
         this.loading = true;
-        if (this.accessTokenExpiresAt?.isAfter(now) === true) {
-          const { data } = await accessService.context();
+
+        // Corrigido: usando > para comparar
+        if (this.accessTokenExpiresAt > now) {
+          const { data } = await api.getApiAccessContext();
           this.user = data.content;
           this.scheduleRefresh();
         } else {
@@ -125,20 +133,20 @@ export const useAuthStore = defineStore('auth', {
     async save(data: AccessDto, rememberMe: boolean = false) {
       this.accessToken = data.accessToken;
       this.refreshToken = data.refreshToken;
-      this.accessTokenExpiresAt = data.accessTokenExpiresAt;
-      this.refreshTokenExpiresAt = data.refreshTokenExpiresAt;
+      this.accessTokenExpiresAt = ensureDate(data.accessTokenExpiresAt);
+      this.refreshTokenExpiresAt = ensureDate(data.refreshTokenExpiresAt);
 
       if (this.accessTokenExpiresAt == null || this.refreshTokenExpiresAt == null) return;
 
-      const accessTokenExpiry = this.accessTokenExpiresAt.toDate();
+      const accessTokenExpiry = this.accessTokenExpiresAt;
       const confAccess = getCookieConfiguration(accessTokenExpiry);
-      Cookies.set(CookieType.ACCESS_TOKEN, this.accessToken, confAccess);
+      Cookies.set(CookieType.ACCESS_TOKEN, this.accessToken!, confAccess);
       Cookies.set(CookieType.ACCESS_TOKEN_DATE, accessTokenExpiry.toISOString(), confAccess);
 
       if (rememberMe) {
-        const refreshTokenExpiry = this.refreshTokenExpiresAt.toDate();
+        const refreshTokenExpiry = this.refreshTokenExpiresAt;
         const confRefresh = getCookieConfiguration(refreshTokenExpiry);
-        Cookies.set(CookieType.REFRESH_TOKEN, this.accessToken, confRefresh);
+        Cookies.set(CookieType.REFRESH_TOKEN, this.accessToken!, confRefresh);
         Cookies.set(CookieType.REFRESH_TOKEN_DATE, refreshTokenExpiry.toISOString(), confRefresh);
       }
 
@@ -149,11 +157,13 @@ export const useAuthStore = defineStore('auth', {
       if (refreshTimeout) clearTimeout(refreshTimeout);
 
       if (this.accessTokenExpiresAt != null) {
-        const now = dayjs();
+        const now = new Date();
         const refreshTime = this.accessTokenExpiresAt;
 
-        if (refreshTime.isBefore(now)) {
-          const delay = refreshTime.toDate().getTime() - now.toDate().getTime();
+        if (refreshTime > now) {
+          // O delay será o tempo no futuro menos o tempo atual
+          const delay = refreshTime.getTime() - now.getTime();
+
           refreshTimeout = setTimeout(() => {
             this.refreshTokens().catch((e) => console.error(e));
           }, delay);
@@ -165,7 +175,7 @@ export const useAuthStore = defineStore('auth', {
       const router = useRouter();
       if (!this.refreshToken) throw new Error('No refresh token available');
 
-      const { data } = await accessService.refreshToken(this.refreshToken);
+      const { data } = await api.postApiAccessRefresh(this.refreshToken);
       if (!data?.content?.access) throw new Error('No content in response');
       try {
         await this.save(data.content.access);

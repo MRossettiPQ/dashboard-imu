@@ -2,28 +2,25 @@
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { computed, markRaw, onMounted, onUnmounted, ref } from 'vue';
 import { socket } from 'boot/socket';
-import { MessageSensorListDto } from 'src/common/models/socket/MessageSensorListDto';
 import { plainToInstance } from 'class-transformer';
 import { useRoute, useRouter } from 'vue-router';
-import { patientService } from 'src/common/services/patient/patient-service';
 import { notify } from 'src/common/utils/NotifyUtils';
-import type { MessageClientMeasurementBlock } from 'src/common/models/socket/MessageClientMeasurementBlock';
 import ErrorDiv from 'components/ErrorDiv/ErrorDiv.vue';
 import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
 import StepHeader from 'pages/shared/private/session/parts/StepHeader.vue';
 import StepFooter from 'pages/shared/private/session/parts/StepFooter.vue';
 import DrawerMenu from 'pages/shared/private/session/parts/DrawerMenu.vue';
-import { sessionService } from 'src/common/services/session/session-service';
 import FirstStep from 'pages/shared/private/session/steps/first-step/FirstStep.vue';
 import SecondStep from 'pages/shared/private/session/steps/second-step/SecondStep.vue';
 import ThirdStep from 'pages/shared/private/session/steps/third-step/ThirdStep.vue';
-import type { Patient } from 'src/common/models/patient/Patient';
-import { Session } from 'src/common/models/session/Session';
-import type { Procedure, ProcedureType } from 'src/common/models/procedure/Procedure';
-import type { Movement } from 'src/common/models/movement/Movement';
-import type { Sensor } from 'src/common/models/sensor/Sensor';
-import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
-import { SocketEvents } from 'src/common/models/socket/SocketEvents';
+import { api } from 'boot/axios';
+import type {
+  MovementDto,
+  PatientDto,
+  SensorDto,
+  SessionSensorDto,
+} from 'src/api/generated/models';
+import { MessageType } from 'src/api/generated/models';
 
 interface NavigationStep {
   order: number;
@@ -104,22 +101,22 @@ function prev(): void {
 }
 
 // Dados do paciente e dados da sessão
-const patient = ref<Patient>();
-const session = ref<Session>(new Session());
+const patient = ref<PatientDto>();
+const session = ref<PatientDto>(new Session());
 
 // Lista de sensores conectados ao backend e lista de procedimentos disponiveis
 const availableSensorList = ref<SessionSensorDto[]>([]);
 const availableProcedureList = ref<ProcedureType[]>([]);
 
 // Sensores aplicados a sessão
-const selectedSensorList = ref<Set<Sensor>>(new Set());
+const selectedSensorList = ref<Set<SensorDto>>(new Set());
 
 // Tipo de visualização na tela de detalhes
 const viewType = ref<'grid' | 'unified' | 'table' | 'summary'>('grid');
 
 // Procedimento e movimento escolhidos para realização no momento
 const selectedProcedure = ref<Procedure | undefined>();
-const selectedMovement = ref<Movement | undefined>();
+const selectedMovement = ref<MovementDto | undefined>();
 
 onUnmounted(() => {
   for (const sensor of Array.from(selectedSensorList.value)) {
@@ -139,8 +136,8 @@ onMounted(async () => {
 
   try {
     loading.value = true;
-    const { data } = await patientService.get({ uuid: uuid.value });
-    const { data: metadata } = await sessionService.metadata();
+    const { data } = await api.getApiPatientsUuid(uuid.value);
+    const { data: metadata } = await api.getApiSessionsMetadata();
 
     if (data.content && metadata.content?.procedureTypes) {
       patient.value = data.content;
@@ -150,18 +147,18 @@ onMounted(async () => {
     socket.on('connect', () => {
       console.log('Conectado!', socket.id);
     });
-    socket.on(SocketEvents.WELCOME, (data: string) => {
+    socket.on(MessageType.WELCOME, (data: string) => {
       console.log('WELCOME', data);
     });
-    socket.on(SocketEvents.LEAVE_ROOM, (data: string) => {
+    socket.on(MessageType.LEAVE_ROOM, (data: string) => {
       console.log('LEAVE_ROOM', data);
     });
-    socket.on(SocketEvents.SERVER_CLIENT_SENSOR_LIST, (data: object) => {
+    socket.on(MessageType.SERVER_CLIENT_SENSOR_LIST, (data: object) => {
       const { content } = plainToInstance(MessageSensorListDto, data);
       availableSensorList.value = content ?? [];
     });
-    socket.on(SocketEvents.SERVER_CLIENT_MEASUREMENT, (data: MessageClientMeasurementBlock) => {
-      console.log(SocketEvents.SERVER_CLIENT_MEASUREMENT, data);
+    socket.on(MessageType.SERVER_CLIENT_MEASUREMENT, (data: MessageClientMeasurementBlock) => {
+      console.log(MessageType.SERVER_CLIENT_MEASUREMENT, data);
     });
     socket.connect();
   } catch (e: unknown) {

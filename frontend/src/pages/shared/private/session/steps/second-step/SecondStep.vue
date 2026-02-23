@@ -14,7 +14,7 @@ import {
   CalibrateSensorDto,
   MessageCalibrateSensorDto,
 } from 'src/common/models/socket/MessageCalibrateSensorDto';
-import { SocketEvents } from 'src/common/models/socket/SocketEvents';
+import { SocketEvents } from 'src/api/manual/SocketEvents';
 
 interface Props {
   inProgress: boolean;

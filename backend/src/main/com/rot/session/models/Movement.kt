@@ -3,7 +3,9 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.session.enums.MovementEnum
+import com.rot.gonimetry.models.MovementType
+import com.rot.measurement.models.Sensor
+import com.rot.gonimetry.enums.MovementEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.util.*
@@ -18,14 +20,14 @@ import java.util.*
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
 class Movement : BaseEntity<Movement>() {
-    companion object : BaseCompanion<Movement, UUID, QMovement> {
+    companion object : BaseCompanion<Movement, Int, QMovement> {
         override val entityClass: Class<Movement> = Movement::class.java
         override val q: QMovement = QMovement.movement
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    override var id: UUID? = null
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    override var id: Int? = null
 
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "observation", columnDefinition = "TEXT")

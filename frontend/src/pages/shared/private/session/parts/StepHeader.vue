@@ -5,7 +5,7 @@ import { findMovementEnum } from 'src/common/models/movement/Movement';
 import type { Session } from 'src/common/models/session/Session';
 import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
 import { socket } from 'boot/socket';
-import { SocketEvents } from 'src/common/models/socket/SocketEvents';
+import { SocketEvents } from 'src/api/manual/SocketEvents';
 
 type ViewMode = 'grid' | 'unified' | 'table' | 'summary';
 interface Props {

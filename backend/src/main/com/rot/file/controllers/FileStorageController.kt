@@ -1,7 +1,10 @@
 package com.rot.file.controllers
 
+import FileStorageDto
 import com.rot.core.exceptions.ApplicationException
+import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.ResultContent
+import com.rot.file.dtos.FileDownloadResponse
 import com.rot.file.dtos.FileUploadInput
 import com.rot.file.enums.FileStorageEnum
 import com.rot.file.models.FileStorage
@@ -9,18 +12,18 @@ import com.rot.user.enums.UserRoleString
 import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
-import jakarta.ws.rs.BeanParam
-import jakarta.ws.rs.Consumes
-import jakarta.ws.rs.GET
-import jakarta.ws.rs.POST
-import jakarta.ws.rs.Path
-import jakarta.ws.rs.Produces
+import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import org.jboss.resteasy.reactive.MultipartForm
+import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.media.Content as ContentB
+import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestPath
+import org.jboss.resteasy.reactive.RestResponse
 import java.nio.file.Files
 import java.util.*
+
 
 @ApplicationScoped
 @Path("/api/files")
@@ -30,9 +33,22 @@ import java.util.*
 class FileStorageController {
 
     @GET
-    @Path("/{uuid}")
     @Transactional
-    fun download(@RestPath("uuid") uuid: UUID): Response {
+    @Path("/{uuid}")
+    @Operation(
+        summary = "Download de arquivo",
+        description = "Recupera o conteúdo binário de um arquivo através do seu UUID"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Arquivo recuperado com sucesso",
+        content = [ContentB(schema = Schema(implementation = FileDownloadResponse::class))]
+    )
+    @APIResponse(responseCode = "401", description = "Autenticação inválida")
+    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
+    @APIResponse(responseCode = "404", description = "Arquivo não encontrado")
+    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    fun download(@RestPath("uuid") uuid: UUID): RestResponse<Content<ByteArray?>> {
         val fileStorage = FileStorage.findOrThrowById(uuid)
         return ResultContent.of(fileStorage.content)
             .withHeader("Content-Disposition", "inline;filename=${fileStorage.fileName}")
@@ -41,10 +57,22 @@ class FileStorageController {
     }
 
     @POST
+    @Transactional
+    @Path("/")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
-    fun upload(@BeanParam input: FileUploadInput): Response {
+    @Operation(
+        summary = "Upload de arquivo",
+        description = "Realiza o envio de um novo arquivo para o servidor"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Arquivo enviado com sucesso",
+    )
+    @APIResponse(responseCode = "401", description = "Autenticação inválida")
+    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
+    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    fun upload(@BeanParam input: FileUploadInput): RestResponse<Content<FileStorageDto>> {
         if (input.file == null) {
             throw ApplicationException("O arquivo é obrigatório.")
         }
@@ -63,8 +91,10 @@ class FileStorageController {
             fileStorage.save()
         }
 
-        return Response.status(Response.Status.CREATED)
-            .entity(fileStorage)
+        return ResultContent.of(fileStorage)
+            .withStatusCode(Response.Status.OK)
+            .transform(FileStorageDto::from)
+            .withMessage("Arquivo enviado com sucesso")
             .build()
     }
 

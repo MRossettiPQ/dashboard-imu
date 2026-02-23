@@ -1,22 +1,21 @@
 package com.rot.session.controllers
 
+import com.rot.core.jaxrs.Content
+import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
 import com.rot.session.dtos.MovementDto
-import com.rot.session.dtos.MovementPaginationResponse
 import com.rot.session.models.Movement
 import com.rot.session.models.Session
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.transaction.Transactional
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
-import jakarta.ws.rs.core.Response
 import org.eclipse.microprofile.openapi.annotations.Operation
-import org.eclipse.microprofile.openapi.annotations.media.Content
-import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestPath
 import org.jboss.resteasy.reactive.RestQuery
-import java.util.*
+import org.jboss.resteasy.reactive.RestResponse
 
 @Authenticated
 @ApplicationScoped
@@ -26,29 +25,26 @@ import java.util.*
 class ArticulationController {
 
     @GET
-    @Path("/{uuid}/movements/")
+    @Transactional
+    @Path("/{id}/movements/")
     @Operation(
-        summary = "Pagination of procedure movements",
-        description = "List of procedure movements"
+        summary = "Paginação de movimentações da articulação",
+        description = "Lista as movimentações realizadas em uma articulação específica"
     )
     @APIResponse(
         responseCode = "200",
-        description = "Pagination of procedure movements",
-        content = [
-            Content(
-                mediaType = MediaType.APPLICATION_JSON,
-                schema = Schema(implementation = MovementPaginationResponse::class),
-            )
-        ]
+        description = "Paginação de movimentações recuperada com sucesso",
     )
-    @APIResponse(responseCode = "500", description = "Internal server error")
+    @APIResponse(responseCode = "401", description = "Autenticação inválida")
+    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
+    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun listMovements(
-        @RestPath("uuid") uuid: UUID,
+        @RestPath("id") id: Int,
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,
-    ): Response {
+    ): RestResponse<Content<Pagination<MovementDto>>> {
         val query = Movement.createQuery()
-            .where(Movement.q.procedure().id.eq(uuid))
+            .where(Movement.q.articulation().id.eq(id))
 
         return ResultContent.of(Session.fetch(query, page, rpp))
             .transform(MovementDto::from)

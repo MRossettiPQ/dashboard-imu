@@ -54,6 +54,30 @@ class User : BaseEntity<User>() {
                 .where(Patient.q.id.eq(patientId))
                 .fetchFirst() ?: throw ApplicationException("User not found", Response.Status.NOT_FOUND)
         }
+
+        fun findByRefreshToken(token: String, issuer: String): User {
+            try {
+                // No seu JwtUtils.generate, o 'audience' é configurado com o valor do 'issuer'
+                val jwt = JwtUtils.claim(token, issuer, issuer)
+
+                // Verifica se o token recebido é estritamente um REFRESH token
+                val tokenType = jwt.getClaim<String>("token_type")
+                if (tokenType != JwtType.REFRESH.name.lowercase()) {
+                    throw ApplicationException("O token fornecido não é um refresh token válido", Response.Status.UNAUTHORIZED)
+                }
+
+                // Extrai o username (upn) inserido durante a geração
+                val username = jwt.getClaim<String>("upn")
+                    ?: throw ApplicationException("Identificação do usuário ausente no token", Response.Status.UNAUTHORIZED)
+
+                return findByUsername(username)
+            } catch (e: ApplicationException) {
+                throw e
+            } catch (e: Exception) {
+                // Vai capturar ParseException e outras falhas de validação (como token expirado ou assinatura inválida)
+                throw ApplicationException("Refresh token inválido ou expirado", Response.Status.UNAUTHORIZED)
+            }
+        }
     }
 
     @Id

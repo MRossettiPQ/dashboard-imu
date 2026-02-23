@@ -5,34 +5,18 @@ import com.rot.core.exceptions.ApplicationException
 import com.rot.core.hibernate.structures.BaseCompanion
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.jboss.resteasy.reactive.RestResponse
 import java.time.LocalDateTime
-import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.companionObjectInstance
 
-class ResultContent<T> {
+class ResultContent<T : Any> {
     private var statusCode: Int = 200
     private var internalCode: Int = 0
-    private var data: ContentDto<T> = ContentDto()
+    private var data: Content<T> = Content()
     private var type: String = MediaType.APPLICATION_JSON
     private var headers: MutableMap<String, Any?> = mutableMapOf()
-    private var fields: List<KMutableProperty1<out T, *>> = emptyList()
-
-    private fun filterSelectedFields(): Any {
-        val content = data.content ?: return data
-
-        return ContentDto<Any>().apply {
-            this.httpCode = data.httpCode
-            this.code = data.code
-            this.message = data.message
-            this.content = content
-        }
-    }
-
-    fun filterFields(fields: List<KMutableProperty1<out T, *>>): ResultContent<T> {
-        this.fields = fields
-        return this
-    }
 
     fun withType(type: MediaType): ResultContent<T> {
         this.type = type.type
@@ -63,7 +47,7 @@ class ResultContent<T> {
     }
 
     fun withContent(content: T? = null): ResultContent<T> {
-        data.content = content
+        data.content = content!!
         return this
     }
 
@@ -77,19 +61,32 @@ class ResultContent<T> {
         return this
     }
 
-    fun <R> transform(fn: (T) -> R): ResultContent<R> {
+    fun <R : Any> transform(fn: (T) -> R): ResultContent<R> {
         val newResult = ResultContent<R>()
         newResult.statusCode = statusCode
         newResult.data.httpCode = data.httpCode
         newResult.data.message = data.message
         newResult.headers = headers
-        return ResultContent<R>().withContent(fn(data.content!!))
+        return of(fn(data.content!!))
     }
 
-    fun build(): Response {
+    fun buildResponse(): Response {
         val builder = Response.status(statusCode)
             .type(type)
-            .entity(if (fields.isNotEmpty()) filterSelectedFields() else data)
+            .entity(data)
+
+        headers.forEach {
+            builder.header(it.key, it.value)
+        }
+
+        return builder.build()
+    }
+
+    fun build(): RestResponse<Content<T>> {
+        val status = RestResponse.Status.fromStatusCode(statusCode)
+        val builder = RestResponse.ResponseBuilder.create(status, data)
+
+        builder.type(type)
 
         headers.forEach {
             builder.header(it.key, it.value)
@@ -103,11 +100,11 @@ class ResultContent<T> {
             return ResultContent()
         }
 
-        fun <T> of(content: T): ResultContent<T> {
+        fun <T : Any> of(content: T): ResultContent<T> {
             return ResultContent<T>().withContent(content)
         }
 
-        fun <T> of(entityClass: Class<*>, query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): ResultContent<PaginationDto<T>> {
+        fun <T> of(entityClass: Class<*>, query: JPQLQuery<T>, page: Int? = 1, rpp: Int? = 10, fetchCount: Boolean = true): ResultContent<Pagination<T>> {
             val companion = entityClass.kotlin.companionObjectInstance
                 ?: throw ApplicationException("Entity ${entityClass.simpleName} não possui companion object")
 
@@ -121,45 +118,49 @@ class ResultContent<T> {
 }
 
 @Schema(description = "Generic API response")
-open class ContentDto<T> {
-    @Schema(description = "Response timestamp")
+open class Content<T : Any> {
+    @Schema(description = "Response timestamp", required = true)
     var date: LocalDateTime = LocalDateTime.now()
 
-    @Schema(description = "HTTP status code of the response")
+    @Schema(description = "HTTP status code of the response", required = true)
     var httpCode: Int = 200
 
-    @Schema(description = "Internal response code")
+    @Schema(description = "Internal response code", required = true)
     var code: Int = 0
 
-    @Schema(description = "Optional response message")
+    @Schema(description = "Optional response message", type = SchemaType.STRING)
     var message: String? = null
 
-    @Schema(description = "Response payload")
+    @Schema(
+        description = "Response payload",
+        required = true,
+        nullable = false
+    )
     var content: T? = null
 }
 
 @Schema(description = "Paginated API response")
-open class PaginationDto<T> {
-    @Schema(description = "Current page")
+open class Pagination<T> {
+    @Schema(description = "Current page", required = true)
     var page: Int = 1
 
-    @Schema(description = "Records per page")
+    @Schema(description = "Records per page", required = true)
     var rpp: Int = 10
 
-    @Schema(description = "Total number of records")
+    @Schema(description = "Total number of records", required = true)
     var count: Long = 0
 
-    @Schema(description = "Indicates whether there are more pages")
+    @Schema(description = "Indicates whether there are more pages", required = true)
     var hasMore: Boolean = true
 
-    @Schema(description = "List of results")
+    @Schema(description = "List of results", required = true)
     var list: MutableList<T> = mutableListOf()
 
-    @Schema(description = "Additional information")
+    @Schema(description = "Additional information", required = true)
     var extra: MutableMap<String, Any?> = mutableMapOf()
 
-    fun <R> transform(fn: (T) -> R): PaginationDto<R> {
-        val transformed = PaginationDto<R>()
+    fun <R> transform(fn: (T) -> R): Pagination<R> {
+        val transformed = Pagination<R>()
         transformed.page = page
         transformed.rpp = rpp
         transformed.hasMore = hasMore
@@ -169,7 +170,7 @@ open class PaginationDto<T> {
         return transformed
     }
 
-    fun addExtraData(key: String, value: Any?): PaginationDto<T> {
+    fun addExtraData(key: String, value: Any?): Pagination<T> {
         this.extra[key] = value
         return this
     }

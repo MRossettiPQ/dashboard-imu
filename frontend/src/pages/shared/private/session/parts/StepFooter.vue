@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import type { Session } from 'src/common/models/session/Session';
 import type { Sensor } from 'src/common/models/sensor/Sensor';
 import { socket } from 'boot/socket';
-import { SocketEvents } from 'src/common/models/socket/SocketEvents';
+import { SocketEvents } from 'src/api/manual/SocketEvents';
 
 interface Props {
   session: Session;

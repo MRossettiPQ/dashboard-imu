@@ -1,11 +1,9 @@
 package com.rot.file.dtos
 
-import com.rot.core.jaxrs.PaginationDto
+import com.rot.core.jaxrs.Content
 import com.rot.file.enums.FileStorageEnum
-import com.rot.session.enums.MovementEnum
-import com.rot.session.models.AngleRule
-import com.rot.session.models.MovementType
 import jakarta.ws.rs.core.MediaType
+import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.jboss.resteasy.reactive.PartType
 import org.jboss.resteasy.reactive.RestForm
 import org.jboss.resteasy.reactive.multipart.FileUpload
@@ -23,3 +21,6 @@ class FileUploadInput {
     @PartType(MediaType.TEXT_PLAIN)
     var storageMethod: FileStorageEnum? = null
 }
+
+@Schema(name = "FileDownloadResponse")
+class FileDownloadResponse : Content<ByteArray?>()

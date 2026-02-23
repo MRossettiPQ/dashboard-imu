@@ -3,16 +3,14 @@ import { computed, onMounted, ref } from 'vue';
 import PaginationUtils from 'src/common/utils/PaginationUtils';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import CustomPagination from 'components/CustomPagination/CustomPagination.vue';
-import type { TableColumn } from 'src/common/models/models';
+import type { TableColumn } from 'src/api/manual/models';
 import { useRoute, useRouter } from 'vue-router';
-import { sessionService } from 'src/common/services/session/session-service';
-import { patientService } from 'src/common/services/patient/patient-service';
-import { UserRole } from 'src/common/models/user/User';
-import type { Patient } from 'src/common/models/patient/Patient';
-import type { Session } from 'src/common/models/session/Session';
 import type { QForm } from 'quasar';
 import { formUtils } from 'src/common/utils/FormUtils';
 import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
+import { api } from 'boot/axios';
+import type { PatientDto, SessionDto } from 'src/api/generated/models';
+import { UserRole } from 'src/api/generated/models';
 
 const route = useRoute();
 const router = useRouter();
@@ -20,7 +18,7 @@ const loading = ref(false);
 const loadingSearch = ref(false);
 const saving = ref(false);
 const mainForm = ref<QForm | null>(null);
-const columns: TableColumn<Session>[] = [
+const columns: TableColumn<SessionDto>[] = [
   {
     name: 'id',
     align: 'left',
@@ -29,9 +27,11 @@ const columns: TableColumn<Session>[] = [
     sortable: true,
   },
 ];
-const pagination = ref(
+
+type SessionParams = { page: number; rpp: number; term: string };
+const pagination = ref<PaginationUtils<PatientDto, SessionParams>>(
   new PaginationUtils({
-    service: sessionService.list,
+    service: (params) => api.getApiPatientsUuidSessions(uuid.value, params),
     params: {
       page: 1,
       rpp: 10,
@@ -41,7 +41,7 @@ const pagination = ref(
 );
 
 const uuid = computed(() => route.params?.['uuid']?.toString());
-const form = ref<Patient>({
+const form = ref<PatientDto>({
   phone: '',
   cellphone: '',
   user: {
@@ -57,7 +57,7 @@ onMounted(async () => {
   try {
     loading.value = true;
     if (uuid.value) {
-      const { data } = await patientService.get({ uuid: uuid.value });
+      const { data } = await api.getApiPatientsUuid(uuid.value);
       if (data.content) {
         form.value = data.content;
       }
@@ -73,7 +73,7 @@ async function newSession() {
   await router.push({ name: 'private.session', params: { uuid: uuid.value } });
 }
 
-async function openSession(_evt: Event, row: Session, index: number) {
+async function openSession(_evt: Event, row: SessionDto, index: number) {
   await router.push({ name: 'private.session.view', params: { uuid: row.id, index } });
 }
 
@@ -86,7 +86,7 @@ async function save() {
     }
 
     await formUtils.validate(mainForm.value);
-    const { data } = await patientService.save({ form: form.value });
+    const { data } = await api.postApiPatients(form.value);
 
     if (data?.content) {
       form.value = data?.content;

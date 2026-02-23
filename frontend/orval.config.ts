@@ -1,18 +1,26 @@
-export default {
-  api: {
-    // input: './openapi.yaml', // ou .json
-    input: 'http://localhost:9000/q/openapi',
+import { defineConfig } from 'orval';
+
+export default defineConfig({
+  dashboardApi: {
+    input: {
+      target: 'http://localhost:8700/q/openapi',
+    },
     output: {
-      mode: 'single',
-      target: './src/common/services/generated-api.ts',
-      schemas: './src/common/services/generated-schemas',
+      target: './src/api/generated/endpoints.ts',
+      schemas: './src/api/generated/models',
+      headers: true,
       client: 'axios',
+      prettier: true,
+      clean: true,
+      // mode: 'tags',
       override: {
+        useDates: true,
         mutator: {
-          path: './src/common/services/orval-axios.ts',
-          name: 'axiosInstance',
+          path: './src/api/mutator/custom-instance.ts', // Caminho para o arquivo acima
+          name: 'customInstance',
         },
+        enumGenerationType: 'enum',
       },
     },
   },
-};
+});

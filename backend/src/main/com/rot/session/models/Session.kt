@@ -34,8 +34,8 @@ class Session : BaseEntity<Session>() {
     override var id: UUID? = null
 
     @NotNull
-    @Column(name = "date", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
-    var date: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
+    @Column(name = "session_date", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    var sessionDate: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
 
     @NotNull
     @Enumerated(EnumType.STRING)

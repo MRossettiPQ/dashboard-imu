@@ -2,17 +2,17 @@
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import type { QForm } from 'quasar';
 import { ref } from 'vue';
-import type { RegisterRequestDto } from 'src/common/models/access/RegisterRequestDto';
-import { accessService } from 'src/common/services/access/access-service';
 import { formUtils } from 'src/common/utils/FormUtils';
 import { useAuthStore } from 'stores/auth-store';
 import { useRouter } from 'vue-router';
+import { api } from 'boot/axios';
+import type { RegisterDto } from 'src/api/generated/models';
 
 const store = useAuthStore();
 const router = useRouter();
 const mainForm = ref<QForm | null>(null);
 const loading = ref(false);
-const form = ref<RegisterRequestDto>({
+const form = ref<RegisterDto>({
   name: '',
   email: '',
   username: '',
@@ -29,7 +29,7 @@ async function register(): Promise<void> {
 
     await formUtils.validate(mainForm.value);
 
-    const { data } = await accessService.register({ form: form.value });
+    const { data } = await api.postApiAccessRegister(form.value);
     if (data?.content?.access) {
       await store.save(data.content.access);
       await router.push({ name: 'shared.home' });

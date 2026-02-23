@@ -1,9 +1,9 @@
 package com.rot.session.services
 
 import com.rot.file.models.FileStorage
-import com.rot.session.dtos.ArticulationTypeCreateOrUpgradeDto
-import com.rot.session.models.ArticulationType
-import com.rot.session.models.MovementType
+import com.rot.gonimetry.dtos.ArticulationTypeCreateOrUpgradeDto
+import com.rot.gonimetry.models.ArticulationType
+import com.rot.gonimetry.models.MovementType
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.validation.Valid
 

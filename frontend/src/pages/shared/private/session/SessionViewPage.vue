@@ -2,22 +2,30 @@
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Session } from 'src/common/models/session/Session';
-import { sessionService } from 'src/common/services/session/session-service';
 import { notify } from 'src/common/utils/NotifyUtils';
+import { api } from 'boot/axios';
+import type { SessionDto } from 'src/api/generated/models';
+import { SessionType } from 'src/api/generated/models';
 
 const route = useRoute();
 const router = useRouter();
 const uuid = computed(() => route.params?.['uuid']?.toString());
-const form = ref<Session>(new Session());
+const form = ref<SessionDto>({
+  id: null,
+  sessionDate: null,
+  type: SessionType.REAL,
+  observation: null,
+  patient: null,
+  physiotherapist: null,
+  procedures: [],
+});
 
 onMounted(async () => {
   if (!uuid.value) {
     notify.error('Obrigatório o identificador da sessão');
     return await router.push({ name: 'private.session' });
   }
-
-  const { data } = await sessionService.get({ uuid: uuid.value });
+  const { data } = await api.getApiSessionsUuid(uuid.value);
   if (!data.content) {
     notify.error('Sessão não encontrada');
     return await router.push({ name: 'private.session' });
