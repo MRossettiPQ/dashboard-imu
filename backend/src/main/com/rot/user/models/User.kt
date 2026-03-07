@@ -94,7 +94,7 @@ class User : BaseEntity<User>() {
 
     @NotNull
     @NotEmpty
-    @Column(name = "name", unique = true, nullable = false)
+    @Column(name = "name", nullable = false)
     var name: String? = null
 
     @Email

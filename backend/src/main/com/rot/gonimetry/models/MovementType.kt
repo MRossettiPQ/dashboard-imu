@@ -1,11 +1,14 @@
 package com.rot.gonimetry.models
 
 import com.querydsl.core.annotations.Config
+import com.querydsl.core.annotations.PropertyType
+import com.querydsl.core.annotations.QueryType
 import com.rot.core.exceptions.ApplicationException
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.file.models.FileStorage
 import com.rot.gonimetry.enums.MovementEnum
+import io.quarkus.runtime.annotations.RegisterForReflection
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.core.Response
@@ -61,20 +64,24 @@ class MovementType : BaseEntity<MovementType>() {
     @Basic(fetch = FetchType.LAZY)
     @ColumnTransformer(write = "?::jsonb")
     @Column(name = "angle_rule", columnDefinition = "jsonb")
+    @QueryType(PropertyType.SIMPLE)
     var angleRule: AngleRule? = null
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Basic(fetch = FetchType.LAZY)
     @ColumnTransformer(write = "?::jsonb")
     @Column(name = "goniometry_procedure", columnDefinition = "jsonb")
+    @QueryType(PropertyType.SIMPLE)
     var goniometryProcedure: GoniometryProcedure? = null
 }
 
+@RegisterForReflection
 class AngleRule {
     var min: BigDecimal? = null
     var max: BigDecimal? = null
 }
 
+@RegisterForReflection
 class GoniometryProcedure {
     /** Posição ideal do paciente para a medição */
     var idealPosition: String? = null

@@ -7,11 +7,13 @@
 import type { ArticulationTypeCreateOrUpgradeDtoId } from './articulationTypeCreateOrUpgradeDtoId';
 import type { ArticulationTypeCreateOrUpgradeDtoType } from './articulationTypeCreateOrUpgradeDtoType';
 import type { ArticulationTypeCreateOrUpgradeDtoDescription } from './articulationTypeCreateOrUpgradeDtoDescription';
+import type { BodySideEnum } from './bodySideEnum';
 import type { MovementTypeCreateOrUpgradeDto } from './movementTypeCreateOrUpgradeDto';
 
 export interface ArticulationTypeCreateOrUpgradeDto {
   id?: ArticulationTypeCreateOrUpgradeDtoId;
   type: ArticulationTypeCreateOrUpgradeDtoType;
   description: ArticulationTypeCreateOrUpgradeDtoDescription;
+  side: BodySideEnum;
   movementsTypes: MovementTypeCreateOrUpgradeDto[];
 }

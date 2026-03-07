@@ -9,6 +9,7 @@ import type { MovementTypeCreateOrUpgradeDtoType } from './movementTypeCreateOrU
 import type { MovementTypeCreateOrUpgradeDtoDescription } from './movementTypeCreateOrUpgradeDtoDescription';
 import type { MovementTypeCreateOrUpgradeDtoImage } from './movementTypeCreateOrUpgradeDtoImage';
 import type { MovementTypeCreateOrUpgradeDtoAngleRule } from './movementTypeCreateOrUpgradeDtoAngleRule';
+import type { MovementTypeCreateOrUpgradeDtoGoniometryProcedure } from './movementTypeCreateOrUpgradeDtoGoniometryProcedure';
 
 export interface MovementTypeCreateOrUpgradeDto {
   id?: MovementTypeCreateOrUpgradeDtoId;
@@ -16,4 +17,5 @@ export interface MovementTypeCreateOrUpgradeDto {
   description: MovementTypeCreateOrUpgradeDtoDescription;
   image: MovementTypeCreateOrUpgradeDtoImage;
   angleRule: MovementTypeCreateOrUpgradeDtoAngleRule;
+  goniometryProcedure?: MovementTypeCreateOrUpgradeDtoGoniometryProcedure;
 }

@@ -1,5 +1,6 @@
 package com.rot.user.controllers
 
+import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
@@ -130,7 +131,12 @@ class PatientController {
             entity.user = user.save()
         }
 
-        entity.validate()
+        try {
+            entity.validate()
+        } catch (e: ApplicationException) {
+            e.printStackTrace() // This will reveal the actual business error
+            throw e
+        }
         entity.active = true
         return ResultContent.of(entity.save())
             .withStatusCode(Response.Status.OK)

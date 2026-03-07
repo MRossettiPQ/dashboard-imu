@@ -12,14 +12,15 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary   : #1976D2;
-$secondary : #26A69A;
-$accent    : #9C27B0;
+// ── Violeta + Menta — tech saúde ──
+$primary   : #5B21B6;  // Violeta escuro — ações principais, header, botões
+$secondary : #2DD4BF;  // Menta/teal — destaques, complementos, badges
+$accent    : #7C3AED;  // Violeta médio — hovers, gradientes, accent bars
 
-$dark      : #1D1D1D;
-$dark-page : #121212;
+$dark      : #1C1033;  // Violeta profundo
+$dark-page : #130C24;  // Violeta quase preto
 
-$positive  : #21BA45;
-$negative  : #C10015;
-$info      : #31CCEC;
-$warning   : #F2C037;
+$positive  : #22C55E;  // Verde sucesso
+$negative  : #EF4444;  // Vermelho erro
+$info      : #38BDF8;  // Azul sky info
+$warning   : #FBBF24;  // Âmbar aviso

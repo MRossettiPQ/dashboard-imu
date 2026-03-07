@@ -10,6 +10,7 @@ import type { MovementTypeDtoType } from './movementTypeDtoType';
 import type { MovementTypeDtoDescription } from './movementTypeDtoDescription';
 import type { MovementTypeDtoImage } from './movementTypeDtoImage';
 import type { MovementTypeDtoAngleRule } from './movementTypeDtoAngleRule';
+import type { MovementTypeDtoGoniometryProcedure } from './movementTypeDtoGoniometryProcedure';
 
 export interface MovementTypeDto {
   id?: MovementTypeDtoId;
@@ -18,4 +19,5 @@ export interface MovementTypeDto {
   description?: MovementTypeDtoDescription;
   image?: MovementTypeDtoImage;
   angleRule?: MovementTypeDtoAngleRule;
+  goniometryProcedure?: MovementTypeDtoGoniometryProcedure;
 }

@@ -47,7 +47,7 @@ class ResultContent<T : Any?> {
     }
 
     fun withContent(content: T? = null): ResultContent<T> {
-        data.content = content!!
+        data.content = content
         return this
     }
 

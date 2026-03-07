@@ -49,6 +49,7 @@ dependencies {
     implementation("io.quarkus:quarkus-quartz")
     implementation("io.quarkus:quarkus-scheduler")
     implementation("io.quarkus:quarkus-config-yaml")
+    implementation("io.quarkus:quarkus-container-image-docker")
 
     // === REST / JSON / WEBSERVICES ===
     implementation("io.quarkus:quarkus-rest")

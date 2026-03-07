@@ -5,7 +5,7 @@ import {
   AccessDtoAccessTokenExpiresAt,
   AccessDtoRefreshToken,
   UserDto,
-} from '../generated/models';
+} from 'src/common/api/generated/models';
 
 export class AuthStore {
   loading!: boolean;
