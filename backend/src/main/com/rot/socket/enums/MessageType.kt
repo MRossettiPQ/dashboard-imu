@@ -1,5 +1,7 @@
 package com.rot.socket.enums
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema
+
 object SocketEvents {
     //   Client -> Server
     const val CLIENT_SERVER_STOP = "CLIENT_SERVER_STOP"
@@ -67,4 +69,17 @@ enum class MessageType(val description: String) {
 
     // All
     WELCOME(SocketEvents.WELCOME);
+}
+
+
+@Schema(name = "AckMessage")
+enum class AckMessage(val description: String) {
+    JOINED_ROOM("JOINED_ROOM"),
+    STARTED_MEASUREMENTS("STARTED_MEASUREMENTS"),
+    STOPPED_MEASUREMENTS("STOPPED_MEASUREMENTS"),
+    REQUESTED_SENSOR_LIST("REQUESTED_SENSOR_LIST"),
+    REGISTERED("REGISTERED"),
+    CALIBRATED_REQUESTED("CALIBRATED_REQUESTED"),
+    REMOVED_ROOM("REMOVED_ROOM"),
+    SAVED_SESSION("SAVED_SESSION"),
 }

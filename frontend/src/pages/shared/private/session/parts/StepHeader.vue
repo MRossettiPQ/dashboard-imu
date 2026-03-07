@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { Movement } from 'src/common/models/movement/Movement';
-import { findMovementEnum } from 'src/common/models/movement/Movement';
-import type { Session } from 'src/common/models/session/Session';
-import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
 import { socket } from 'boot/socket';
-import { SocketEvents } from 'src/api/manual/SocketEvents';
+import type { MovementDto, SessionDto, SessionSensorDto } from 'src/common/api/generated/models';
+import { MessageType } from 'src/common/api/generated/models';
 
 type ViewMode = 'grid' | 'unified' | 'table' | 'summary';
 interface Props {
   rightDrawer: boolean;
-  session: Session;
+  session: SessionDto;
   selectedSensorList: Set<SessionSensorDto>;
-  selectedMovement?: Movement | undefined;
+  selectedMovement?: MovementDto | undefined;
   actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
   actualStepLabel: string;
   viewType: ViewMode;
@@ -37,7 +34,7 @@ const actualView = computed({
 
 const actualMovementLabel = computed(() => {
   if (props.selectedMovement?.type) {
-    return findMovementEnum(props.selectedMovement?.type) ?? 'Não encontrado';
+    return props.selectedMovement?.type ?? 'Não encontrado';
   }
   return '';
 });
@@ -61,7 +58,7 @@ const viewIcon = computed(() => {
 async function requestSensorList(): Promise<void> {
   try {
     requestedSensorList.value = true;
-    await socket.emitWithAck(SocketEvents.CLIENT_SERVER_SENSOR_LIST, '');
+    await socket.emitWithAck(MessageType.CLIENT_SERVER_SENSOR_LIST, '');
   } catch (e) {
     console.error(e);
   } finally {

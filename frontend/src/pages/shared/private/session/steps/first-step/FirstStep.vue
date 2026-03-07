@@ -1,29 +1,30 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { ProcedureType } from 'src/common/models/procedure/Procedure';
-import { Procedure } from 'src/common/models/procedure/Procedure';
 import type { QTableColumn } from 'quasar';
-import type { MovementType } from 'src/common/models/movement/Movement';
-import { findMovementEnum, Movement } from 'src/common/models/movement/Movement';
-import type { Session } from 'src/common/models/session/Session';
+import type {
+  ArticulationTypeDto,
+  MovementTypeDto,
+  SessionDto,
+} from 'src/common/api/generated/models';
+import { Articulation, Movement } from 'src/common/api/manual/constructors_api';
 
 interface Props {
-  session: Session;
-  availableProcedureList: ProcedureType[];
+  session: SessionDto;
+  availableArticulationList: ArticulationTypeDto[];
 }
 
 const props = defineProps<Props>();
 
-const selectedProcedure = ref<ProcedureType | undefined>();
-const selectedMovements = ref<MovementType[]>([]);
+const selectedArticulation = ref<ArticulationTypeDto | undefined>();
+const selectedMovements = ref<MovementTypeDto[]>([]);
 const emit = defineEmits<{
-  (e: 'update:availableProcedureList', val: ProcedureType[]): void;
-  (e: 'update:session', val: Session): void;
+  (e: 'update:availableArticulationList', val: ArticulationTypeDto[]): void;
+  (e: 'update:session', val: SessionDto): void;
 }>();
 
-const availableProcedureList = computed({
-  get: () => props.availableProcedureList,
-  set: (val) => emit('update:availableProcedureList', val),
+const availableArticulationList = computed({
+  get: () => props.availableArticulationList,
+  set: (val) => emit('update:availableArticulationList', val),
 });
 const session = computed({
   get: () => props.session,
@@ -31,30 +32,36 @@ const session = computed({
 });
 
 function addProcedure(
-  procedureType: ProcedureType | undefined,
-  movementTypes: MovementType[],
+  articulationType: ArticulationTypeDto | undefined,
+  movementTypes: MovementTypeDto[],
 ): void {
-  if (!procedureType?.type) {
+  if (!articulationType?.type) {
     return;
   }
 
   let isNewProcedure = false;
-  let procedure = session.value.procedures.find((p) => p.type === procedureType.type);
+  let articulation = session.value.articulations.find((p) => p.type === articulationType.type);
 
-  if (!procedure) {
+  if (!articulation) {
     isNewProcedure = true;
-    procedure = new Procedure();
+    articulation = new Articulation();
   }
 
-  procedure.type = procedureType.type;
+  const type = availableArticulationList.value.find((a) => a.type == articulation?.type);
+
+  if (!type) {
+    return;
+  }
+
+  articulation.type = type;
 
   const existingMovementsByType = new Map<string, Movement[]>();
-  procedure.movements.forEach((movement) => {
+  articulation.movements.forEach((movement) => {
     if (movement.type) {
       if (!existingMovementsByType.has(movement.type)) {
         existingMovementsByType.set(movement.type, []);
       }
-      existingMovementsByType.get(movement.type)!.push(movement);
+      existingMovementsByType.get(movement.type)!.push(new Movement(movement));
     }
   });
 
@@ -69,19 +76,18 @@ function addProcedure(
       newMovements.push(...existingMovements);
     } else {
       const movement = new Movement();
-      movement.type = movementType.type;
       newMovements.push(movement);
     }
   }
 
-  procedure.movements = newMovements;
+  articulation.movements = newMovements;
 
   if (isNewProcedure) {
-    session.value.procedures.push(procedure);
+    session.value.articulations.push(articulation);
   }
 }
 
-const toggleMovementSelection = (movement: MovementType) => {
+const toggleMovementSelection = (movement: MovementTypeDto) => {
   const index = selectedMovements.value.findIndex((m) => m.id === movement.id);
   if (index > -1) {
     selectedMovements.value.splice(index, 1);
@@ -90,7 +96,7 @@ const toggleMovementSelection = (movement: MovementType) => {
   }
 };
 
-const isMovementSelected = (movement: MovementType) => {
+const isMovementSelected = (movement: MovementTypeDto) => {
   return selectedMovements.value.some((m) => m.id === movement.id);
 };
 
@@ -119,9 +125,9 @@ const columns: QTableColumn[] = [
 
 function onSelectProcedure() {
   selectedMovements.value = [];
-  const selectedType = selectedProcedure.value;
-  const procedureType = props.availableProcedureList.find((p) => p.type === selectedType?.type);
-  const sessionProcedure = props.session.procedures.find((p) => p.type === selectedType?.type);
+  const selectedType = selectedArticulation.value;
+  const procedureType = props.availableArticulationList.find((p) => p.type === selectedType?.type);
+  const sessionProcedure = props.session.articulations.find((p) => p.type === selectedType?.type);
 
   if (procedureType && sessionProcedure) {
     selectedMovements.value =
@@ -134,10 +140,15 @@ function onSelectProcedure() {
 
 <template>
   <div class="flex column u-gap-12 u-h-min-0 u-w-min-0 u-w-100 u-h-100">
-    <q-card flat bordered class="flex column u-w-100 u-gap-8 u-p-8" v-if="availableProcedureList">
+    <q-card
+      flat
+      bordered
+      class="flex column u-w-100 u-gap-8 u-p-8"
+      v-if="availableArticulationList"
+    >
       <q-select
-        v-model="selectedProcedure"
-        :options="availableProcedureList"
+        v-model="selectedArticulation"
+        :options="availableArticulationList"
         emit-value
         dense
         filled
@@ -148,18 +159,18 @@ function onSelectProcedure() {
       />
 
       <q-btn
-        v-if="selectedProcedure && selectedMovements.length > 0"
+        v-if="selectedArticulation && selectedMovements.length > 0"
         class="col"
         unelevated
         color="primary"
         dense
         icon="las la-plus"
         :label="`Adicionar procedimento e ${selectedMovements.length} movimento(s)`"
-        @click="() => addProcedure(selectedProcedure, selectedMovements)"
+        @click="() => addProcedure(selectedArticulation, selectedMovements)"
       />
 
       <q-banner
-        v-else-if="selectedProcedure && selectedMovements.length === 0"
+        v-else-if="selectedArticulation && selectedMovements.length === 0"
         class="bg-warning text-white"
         dense
       >
@@ -171,11 +182,11 @@ function onSelectProcedure() {
     </q-card>
 
     <q-table
-      v-if="selectedProcedure"
+      v-if="selectedArticulation"
       class="col column u-gap-8 u-h-min-0 u-w-min-0 movement-table"
       flat
       bordered
-      :rows="selectedProcedure.movementsTypes"
+      :rows="selectedArticulation.movementsTypes"
       :columns="columns"
       row-key="id"
       hide-pagination
@@ -189,7 +200,7 @@ function onSelectProcedure() {
           </q-td>
           <q-td key="type" :props="props">
             <q-badge color="primary">
-              {{ findMovementEnum(props.row.type) }}
+              {{ props.row.type }}
             </q-badge>
           </q-td>
           <q-td key="imageName" :props="props">

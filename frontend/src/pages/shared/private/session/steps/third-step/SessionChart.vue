@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import type { ECharts } from 'echarts/core';
 import * as echarts from 'echarts/core';
 import _ from 'lodash';
-import type { Sensor } from 'src/common/models/sensor/Sensor';
-import type { Measurement } from 'src/common/models/measurement/Measurement';
 import { BlobDownloader } from 'src/common/utils/BlobUtils';
 import { LineChart } from 'echarts/charts';
 import {
-  TooltipComponent,
-  GridComponent,
-  ToolboxComponent,
   DataZoomComponent,
+  GridComponent,
   LegendComponent,
+  ToolboxComponent,
+  TooltipComponent,
 } from 'echarts/components';
 import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 import { LegacyGridContainLabel } from 'echarts/features';
+import type { MeasurementDto } from 'src/common/api/generated/models';
+import type { Sensor } from 'src/common/api/manual/constructors_api';
 
 interface Props {
   sensors: Sensor[];
-  allowedColumn: (keyof Measurement)[];
+  allowedColumn: (keyof MeasurementDto)[];
 }
 
 // 🧩 Props
@@ -117,7 +117,7 @@ function setOption() {
       if (serieMax > maxValue) maxValue = serieMax;
       if (serieMin < minValue) minValue = serieMin;
 
-      const serieName = `${sensor.sensorName}-${col}`;
+      const serieName = `${sensor.id}-${col}`;
       legendData.push(serieName);
 
       series.push({

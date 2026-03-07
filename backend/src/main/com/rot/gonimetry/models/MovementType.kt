@@ -63,9 +63,34 @@ class MovementType : BaseEntity<MovementType>() {
     @Column(name = "angle_rule", columnDefinition = "jsonb")
     var angleRule: AngleRule? = null
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Basic(fetch = FetchType.LAZY)
+    @ColumnTransformer(write = "?::jsonb")
+    @Column(name = "goniometry_procedure", columnDefinition = "jsonb")
+    var goniometryProcedure: GoniometryProcedure? = null
 }
 
 class AngleRule {
     var min: BigDecimal? = null
     var max: BigDecimal? = null
+}
+
+class GoniometryProcedure {
+    /** Posição ideal do paciente para a medição */
+    var idealPosition: String? = null
+
+    /** Descrição de onde colocar o braço fixo do goniômetro */
+    var fixedArm: String? = null
+
+    /** Descrição de onde colocar o braço móvel do goniômetro */
+    var movableArm: String? = null
+
+    /** Ponto de referência do eixo do goniômetro */
+    var axis: String? = null
+
+    /** Observações e cuidados durante a medição */
+    var observation: String? = null
+
+    /** Nome da figura de referência no manual */
+    var figureName: String? = null
 }

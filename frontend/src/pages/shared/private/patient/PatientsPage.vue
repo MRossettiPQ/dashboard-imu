@@ -3,10 +3,10 @@ import { onMounted, ref } from 'vue';
 import PaginationUtils from 'src/common/utils/PaginationUtils';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import CustomPagination from 'components/CustomPagination/CustomPagination.vue';
-import type { TableColumn } from 'src/api/manual/models';
+import type { TableColumn } from 'src/common/api/manual/models';
 import { useRouter } from 'vue-router';
 import { api } from 'boot/axios';
-import type { PatientDto, PatientDtoUser } from 'src/api/generated/models';
+import type { PatientDto, PatientDtoUser } from 'src/common/api/generated/models';
 
 const router = useRouter();
 const loading = ref(false);

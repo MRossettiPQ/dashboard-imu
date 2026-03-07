@@ -7,7 +7,7 @@ import com.rot.gonimetry.dtos.ArticulationTypeCreateOrUpgradeDto
 import com.rot.gonimetry.dtos.ArticulationTypeDto
 import com.rot.gonimetry.models.ArticulationType
 import com.rot.session.models.Session
-import com.rot.session.services.ArticulationTypeService
+import com.rot.gonimetry.services.ArticulationTypeService
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.jboss.resteasy.reactive.RestQuery
 import org.jboss.resteasy.reactive.RestResponse
 
-@Authenticated
+//@Authenticated
 @ApplicationScoped
 @Path("/api/articulation-types")
 class ArticulationTypeController(
@@ -71,6 +71,27 @@ class ArticulationTypeController(
         val query = ArticulationType.createQuery()
 
         return ResultContent.of(Session.fetch(query, page, rpp))
+            .transform(ArticulationTypeDto::from)
+            .build()
+    }
+
+    @GET
+    @Transactional
+    @Path("/all")
+    @Operation(
+        summary = "Listar todos tipos de articulação",
+        description = "Retorna uma lista paginada de todos os tipos de articulação cadastrados"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Lista de tipos de articulação recuperada com sucesso"
+    )
+    @APIResponse(responseCode = "401", description = "Autenticação inválida")
+    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
+    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    fun all(): RestResponse<Content<List<ArticulationTypeDto>>> {
+        val all = ArticulationType.createQuery().fetch()
+        return ResultContent.of(all)
             .transform(ArticulationTypeDto::from)
             .build()
     }

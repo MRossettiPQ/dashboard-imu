@@ -1,25 +1,19 @@
 <script setup lang="ts">
-import type { SessionSensorDto } from 'src/common/models/socket/SessionSensorDto';
-import { Sensor } from 'src/common/models/sensor/Sensor';
-import { AddSensorDto, MessageAddSensorDto } from 'src/common/models/socket/MessageAddSensorDto';
 import { socket } from 'boot/socket';
-import type { MessageClientMeasurementBlock } from 'src/common/models/socket/MessageClientMeasurementBlock';
 import { computed } from 'vue';
-import type { Movement } from 'src/common/models/movement/Movement';
+import type { Movement } from 'src/common/api/manual/constructors_api';
+import { SessionSensor } from 'src/common/api/manual/constructors_api';
 import {
-  MessageRemoveSensorDto,
-  RemoveSensorDto,
-} from 'src/common/models/socket/MessageRemoveSensorDto';
-import {
-  CalibrateSensorDto,
-  MessageCalibrateSensorDto,
-} from 'src/common/models/socket/MessageCalibrateSensorDto';
-import { SocketEvents } from 'src/api/manual/SocketEvents';
+  ClientServerAddSensor,
+  ClientServerCalibrateSensor,
+} from 'src/common/api/manual/constructor_socket';
+import type { SessionSensorDto } from 'src/common/api/generated/models';
+import { AckMessage, MessageType } from 'src/common/api/generated/models';
 
 interface Props {
   inProgress: boolean;
   availableSensorList: SessionSensorDto[];
-  selectedSensorList: Set<SessionSensorDto>;
+  selectedSensorList: Set<SessionSensor>;
   selectedMovement?: Movement | undefined;
 }
 
@@ -33,10 +27,10 @@ const selectedSensorList = computed({
   get: () => props.selectedSensorList,
   set: (val) => emit('update:selectedSensorList', val),
 });
-const selectedMovement = computed({
-  get: () => props.selectedMovement,
-  set: (val) => emit('update:selectedMovement', val),
-});
+// const selectedMovement = computed({
+//   get: () => props.selectedMovement,
+//   set: (val) => emit('update:selectedMovement', val),
+// });
 
 async function addSensorListener(sessionSensorDto: SessionSensorDto) {
   if (!sessionSensorDto.mac) return;
@@ -45,31 +39,21 @@ async function addSensorListener(sessionSensorDto: SessionSensorDto) {
   const alreadyExists = sensors.some((s) => s.mac === sessionSensorDto.mac);
   if (alreadyExists) return;
 
-  const sensor = new Sensor();
+  const sensor = new SessionSensor();
   sensor.ip = sessionSensorDto.ip ?? '';
-  sensor.macAddress = sessionSensorDto.mac ?? '';
-  sensor.sensorName = sessionSensorDto.name ?? '';
+  sensor.mac = sessionSensorDto.mac ?? '';
+  sensor.name = sessionSensorDto.name ?? '';
   selectedSensorList.value.add(sensor);
 
-  const addSensor = new MessageAddSensorDto();
-  const content = new AddSensorDto();
-  content.sensor = sessionSensorDto.clientId ?? '';
-  addSensor.content = content;
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_ADD_SENSOR, addSensor);
-  if (r == 'JOINED_ROOM') {
-    const event = `${SocketEvents.SERVER_CLIENT_MEASUREMENT}:${sessionSensorDto.mac}`;
-    socket.on(event, (data: MessageClientMeasurementBlock) => {
-      const block = data.content;
-      console.log(SocketEvents.SERVER_CLIENT_MEASUREMENT, data);
-      const sensors = selectedMovement.value?.sensors ?? [];
-      const sensorIndex = sensors.findIndex((s) => s.macAddress == sessionSensorDto.mac);
-      if (sensorIndex != -1) {
-        const sensor = selectedMovement.value?.sensors?.[sensorIndex];
-        if (sensor) {
-          selectedMovement.value!.sensors[sensorIndex]!.measurements =
-            sensor.measurements.concat(block);
-        }
-      }
+  const addSensor = new ClientServerAddSensor();
+  addSensor.setContent(sessionSensorDto.clientId ?? '');
+
+  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_ADD_SENSOR, addSensor);
+  if (r == AckMessage.JOINED_ROOM.toString()) {
+    const mrp = sessionSensorDto.mac.replace(/:/g, '_');
+    const event = `${MessageType.SERVER_CLIENT_MEASUREMENT}_-_${mrp}`;
+    socket.on(event, (data: unknown) => {
+      console.log('', data);
     });
   }
 }
@@ -81,27 +65,15 @@ async function removeSensorListener(sessionSensorDto: SessionSensorDto) {
   const alreadyExists = sensors.some((s) => s.mac === sessionSensorDto.mac);
   const alreadyExistsIndex = sensors.findIndex((s) => s.mac === sessionSensorDto.mac);
   if (!alreadyExists) return;
+  console.log(alreadyExistsIndex);
 
-  const removeSensor = new MessageRemoveSensorDto();
-  const content = new RemoveSensorDto();
-  content.sensor = sessionSensorDto.clientId ?? '';
-  removeSensor.content = content;
-
-  const sensorToRemove = sensors[alreadyExistsIndex];
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_REMOVE_SENSOR, removeSensor);
-  if (r == 'REMOVED_ROOM' && sensorToRemove) {
-    const event = `${SocketEvents.SERVER_CLIENT_MEASUREMENT}:${sessionSensorDto.mac}`;
-    socket.removeListener(event);
-    selectedSensorList.value.delete(sensorToRemove);
-  }
+  await Promise.all([]);
 }
 
 async function commandCalibrate(sessionSensorDto: SessionSensorDto) {
-  const message = new MessageCalibrateSensorDto();
-  const content = new CalibrateSensorDto();
-  content.sensor = sessionSensorDto.clientId!;
-  message.content = content;
-  await socket.emitWithAck(SocketEvents.CLIENT_SERVER_CALIBRATE, message);
+  const message = new ClientServerCalibrateSensor();
+  message.setContent(sessionSensorDto.clientId ?? '');
+  await socket.emitWithAck(MessageType.CLIENT_SERVER_CALIBRATE, message);
 }
 </script>
 

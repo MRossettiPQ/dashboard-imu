@@ -11,7 +11,7 @@ import org.jboss.resteasy.reactive.RestResponse
 import java.time.LocalDateTime
 import kotlin.reflect.full.companionObjectInstance
 
-class ResultContent<T : Any> {
+class ResultContent<T : Any?> {
     private var statusCode: Int = 200
     private var internalCode: Int = 0
     private var data: Content<T> = Content()
@@ -100,7 +100,7 @@ class ResultContent<T : Any> {
             return ResultContent()
         }
 
-        fun <T : Any> of(content: T): ResultContent<T> {
+        fun <T : Any?> of(content: T): ResultContent<T> {
             return ResultContent<T>().withContent(content)
         }
 
@@ -118,7 +118,7 @@ class ResultContent<T : Any> {
 }
 
 @Schema(description = "Generic API response")
-open class Content<T : Any> {
+open class Content<T : Any?> {
     @Schema(description = "Response timestamp", required = true)
     var date: LocalDateTime = LocalDateTime.now()
 

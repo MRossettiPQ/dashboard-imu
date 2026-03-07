@@ -4,8 +4,8 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { notify } from 'src/common/utils/NotifyUtils';
 import { api } from 'boot/axios';
-import type { SessionDto } from 'src/api/generated/models';
-import { SessionType } from 'src/api/generated/models';
+import type { SessionDto } from 'src/common/api/generated/models';
+import { SessionType } from 'src/common/api/generated/models';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,7 +17,7 @@ const form = ref<SessionDto>({
   observation: null,
   patient: null,
   physiotherapist: null,
-  procedures: [],
+  articulations: [],
 });
 
 onMounted(async () => {

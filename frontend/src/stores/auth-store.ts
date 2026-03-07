@@ -1,11 +1,11 @@
 import { Cookies } from 'quasar';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import type { AuthStore } from 'src/api/manual/AuthStore';
+import type { AuthStore } from 'src/common/api/manual/AuthStore';
 import { useRouter } from 'vue-router';
 import { CookieType, getCookieConfiguration } from 'src/common/utils/cookieUtils';
 import dayjs from 'dayjs';
 import { api } from 'boot/axios';
-import type { AccessDto, UserRole } from 'src/api/generated/models';
+import type { AccessDto, UserRole } from 'src/common/api/generated/models';
 
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -175,7 +175,7 @@ export const useAuthStore = defineStore('auth', {
       const router = useRouter();
       if (!this.refreshToken) throw new Error('No refresh token available');
 
-      const { data } = await api.postApiAccessRefresh(this.refreshToken);
+      const { data } = await api.postApiAccessRefresh({ refreshToken: this.refreshToken });
       if (!data?.content?.access) throw new Error('No content in response');
       try {
         await this.save(data.content.access);

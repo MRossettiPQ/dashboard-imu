@@ -6,6 +6,7 @@ import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.gonimetry.models.MovementType
 import com.rot.measurement.models.Sensor
 import com.rot.gonimetry.enums.MovementEnum
+import com.rot.session.enums.ExecutionModeEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.util.*
@@ -35,8 +36,19 @@ class Movement : BaseEntity<Movement>() {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, unique = true)
+    @Column(name = "type", nullable = false)
     var type: MovementEnum? = null
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "execution_mode", nullable = false)
+    var executionMode: ExecutionModeEnum? = null
+
+    @Column(name = "start_angle", nullable = false)
+    var startAngle: Double? = null
+
+    @Column(name = "end_angle", nullable = false)
+    var endAngle: Double? = null
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)

@@ -17,6 +17,7 @@ import com.rot.measurement.models.SensorInfo
 import com.rot.session.enums.SessionType
 import com.rot.session.models.*
 import com.rot.socket.dtos.*
+import com.rot.socket.enums.AckMessage
 import com.rot.socket.enums.MessageType
 import com.rot.socket.enums.UserSessionType
 import com.rot.user.models.User
@@ -264,7 +265,7 @@ class SocketService(
             sessionContext.id = session.id
         }
 
-        request.sendAckData("SAVED_SESSION")
+        request.sendAckData(AckMessage.SAVED_SESSION.name)
     }
 
     fun clientServerRemoveSensor(client: SocketIOClient, message: MessageClientServerRemoveSensorDto, request: AckRequest) {
@@ -280,7 +281,7 @@ class SocketService(
             sensorContext.room = null
 
             Log.info("Cliente ${client.sessionId} saiu da sala $message")
-            request.sendAckData("REMOVED_ROOM")
+            request.sendAckData(AckMessage.REMOVED_ROOM.name)
         }
     }
 
@@ -295,7 +296,7 @@ class SocketService(
             sensorClient.sendEvent(MessageType.SERVER_SENSOR_CALIBRATE.description, MessageCalibrateCommandDto())
 
             Log.info("Cliente ${client.sessionId} solicitado calibração $message")
-            request.sendAckData("CALIBRATED_REQUESTED")
+            request.sendAckData(AckMessage.CALIBRATED_REQUESTED.name)
         }
     }
 
@@ -316,7 +317,7 @@ class SocketService(
         val sensor = findSensorByIp(sensorContext.sensorId.toString())
         if (sensor != null) session.sensors[content.sensor] = Pair(sensor, mutableSetOf())
 
-        request.sendAckData("JOINED_ROOM")
+        request.sendAckData(AckMessage.JOINED_ROOM.name)
     }
 
     fun clientServerCommandStart(client: SocketIOClient, message: String, request: AckRequest) {
@@ -334,7 +335,7 @@ class SocketService(
         }
 
         sendStartRoom(session.room.toString())
-        request.sendAckData("STARTED_MEASUREMENTS")
+        request.sendAckData(AckMessage.STARTED_MEASUREMENTS.name)
     }
 
     fun clientServerCommandStop(client: SocketIOClient, message: String, request: AckRequest) {
@@ -343,7 +344,7 @@ class SocketService(
         if (session == null || session.type != UserSessionType.USER) return
 
         sendStopRoom(session.room.toString())
-        request.sendAckData("STOPPED_MEASUREMENTS")
+        request.sendAckData(AckMessage.STOPPED_MEASUREMENTS.name)
     }
 
     private fun clientServerSensorList(client: SocketIOClient, message: String, request: AckRequest) {
@@ -352,7 +353,7 @@ class SocketService(
         if (session == null || session.type != UserSessionType.USER) return
 
         sendSensorList(client)
-        request.sendAckData("REQUESTED_SENSOR_LIST")
+        request.sendAckData(AckMessage.REQUESTED_SENSOR_LIST.name)
     }
 
     // Sensor -> Server
@@ -372,7 +373,9 @@ class SocketService(
 
         val block = MessageServerClientMeasurementBlock()
         block.content = message.content
-        userClient.sendEvent(MessageType.SERVER_CLIENT_MEASUREMENT.description, message)
+
+        val event = "${MessageType.SERVER_CLIENT_MEASUREMENT}_-_${mac!!.replace(":", "_")}"
+        userClient.sendEvent(event, message)
     }
 
     private fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSensorServerSessionSensorDto, request: AckRequest) {
@@ -402,7 +405,7 @@ class SocketService(
 
         sensors.add(content)
         broadcastSensorList()
-        return request.sendAckData("REGISTERED")
+        request.sendAckData(AckMessage.REGISTERED.name)
     }
 
 

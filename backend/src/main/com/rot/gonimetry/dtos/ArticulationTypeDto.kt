@@ -3,6 +3,7 @@ package com.rot.gonimetry.dtos
 import com.rot.core.jaxrs.Pagination
 import com.rot.gonimetry.enums.ArticulationEnum
 import com.rot.gonimetry.models.ArticulationType
+import com.rot.session.enums.BodySideEnum
 import jakarta.validation.constraints.NotNull
 
 
@@ -22,6 +23,10 @@ class ArticulationTypeDto {
             return dto
         }
 
+        fun from(entities: List<ArticulationType>): List<ArticulationTypeDto> {
+            return entities.map { from(it) }
+        }
+
         fun from(pagination: Pagination<ArticulationType>): Pagination<ArticulationTypeDto> {
             return pagination.transform { from(it) }
         }
@@ -36,5 +41,6 @@ class ArticulationTypeCreateOrUpgradeDto {
 
     @NotNull
     var description: String? = null
+    var side: BodySideEnum = BodySideEnum.RIGHT
     var movementsTypes = mutableSetOf<MovementTypeCreateOrUpgradeDto>()
 }

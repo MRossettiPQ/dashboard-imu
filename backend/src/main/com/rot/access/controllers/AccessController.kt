@@ -3,6 +3,7 @@ package com.rot.access.controllers
 import com.rot.access.dtos.LoginDto
 import com.rot.access.dtos.RefreshTokenDto
 import com.rot.access.dtos.RegisterDto
+import com.rot.access.services.UserService
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.context.ApplicationContext
 import com.rot.core.exceptions.ApplicationException
@@ -11,6 +12,7 @@ import com.rot.core.jaxrs.ResultContent
 import com.rot.core.utils.EncryptUtils
 import com.rot.user.dtos.UserDto
 import com.rot.user.models.User
+import io.quarkus.cache.CacheResult
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
@@ -27,7 +29,8 @@ import org.jboss.resteasy.reactive.RestResponse
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 class AccessController(
-    private val applicationConfig: ApplicationConfig
+    private val applicationConfig: ApplicationConfig,
+    private val userService: UserService
 ) {
 
     @POST
@@ -113,8 +116,10 @@ class AccessController(
     @APIResponse(responseCode = "404", description = "Usuário não encontrado")
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun context(): RestResponse<Content<UserDto>> {
-        val user = ApplicationContext.user
-            ?: throw ApplicationException("Acesso negado ou usuário não autenticado", Response.Status.FORBIDDEN)
+        val context = ApplicationContext.context
+            ?: throw ApplicationException("Não autenticado", Response.Status.FORBIDDEN)
+
+        val user = userService.getCachedUser(context.id)
         return ResultContent.of(user)
             .transform(UserDto::from)
             .build()

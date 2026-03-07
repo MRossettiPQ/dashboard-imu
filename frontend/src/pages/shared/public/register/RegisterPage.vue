@@ -6,7 +6,7 @@ import { formUtils } from 'src/common/utils/FormUtils';
 import { useAuthStore } from 'stores/auth-store';
 import { useRouter } from 'vue-router';
 import { api } from 'boot/axios';
-import type { RegisterDto } from 'src/api/generated/models';
+import type { RegisterDto } from 'src/common/api/generated/models';
 
 const store = useAuthStore();
 const router = useRouter();

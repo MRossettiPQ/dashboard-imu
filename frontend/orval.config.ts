@@ -6,8 +6,8 @@ export default defineConfig({
       target: 'http://localhost:8700/q/openapi',
     },
     output: {
-      target: './src/api/generated/endpoints.ts',
-      schemas: './src/api/generated/models',
+      target: './src/common/api/generated/endpoints.ts',
+      schemas: './src/common/api/generated/models',
       headers: true,
       client: 'axios',
       prettier: true,
@@ -16,7 +16,7 @@ export default defineConfig({
       override: {
         useDates: true,
         mutator: {
-          path: './src/api/mutator/custom-instance.ts', // Caminho para o arquivo acima
+          path: './src/common/api/mutator/custom-instance.ts', // Caminho para o arquivo acima
           name: 'customInstance',
         },
         enumGenerationType: 'enum',

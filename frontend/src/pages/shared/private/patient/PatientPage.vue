@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import type { Result } from 'src/common/utils/PaginationUtils';
 import PaginationUtils from 'src/common/utils/PaginationUtils';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import CustomPagination from 'components/CustomPagination/CustomPagination.vue';
-import type { TableColumn } from 'src/api/manual/models';
+import type { TableColumn } from 'src/common/api/manual/models';
 import { useRoute, useRouter } from 'vue-router';
 import type { QForm } from 'quasar';
 import { formUtils } from 'src/common/utils/FormUtils';
 import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
 import { api } from 'boot/axios';
-import type { PatientDto, SessionDto } from 'src/api/generated/models';
-import { UserRole } from 'src/api/generated/models';
+import type { PatientDto, SessionDto } from 'src/common/api/generated/models';
+import { UserRole } from 'src/common/api/generated/models';
+import type { AxiosResponse } from 'axios';
 
 const route = useRoute();
 const router = useRouter();
@@ -29,9 +31,16 @@ const columns: TableColumn<SessionDto>[] = [
 ];
 
 type SessionParams = { page: number; rpp: number; term: string };
-const pagination = ref<PaginationUtils<PatientDto, SessionParams>>(
+const pagination = ref<PaginationUtils<SessionDto, SessionParams>>(
   new PaginationUtils({
-    service: (params) => api.getApiPatientsUuidSessions(uuid.value, params),
+    service: () => {
+      return new Promise((resolve) => {
+        resolve({
+          data: { content: null },
+          status: 200,
+        } as AxiosResponse<{ content: null }> as unknown as Result<SessionDto>);
+      });
+    },
     params: {
       page: 1,
       rpp: 10,
@@ -57,7 +66,13 @@ onMounted(async () => {
   try {
     loading.value = true;
     if (uuid.value) {
-      const { data } = await api.getApiPatientsUuid(uuid.value);
+      pagination.value.service = (params) => api.getApiPatientsUuidSessions(uuid.value!, params);
+
+      const [{ data }] = await Promise.all([
+        api.getApiPatientsUuid(uuid.value),
+        pagination.value.search(),
+      ]);
+
       if (data.content) {
         form.value = data.content;
       }

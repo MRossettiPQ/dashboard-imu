@@ -2,7 +2,7 @@
 import type { QTableProps } from 'quasar';
 import type PaginationUtils from 'src/common/utils/PaginationUtils';
 import { computed, toRaw } from 'vue';
-import type { TableColumn } from 'src/api/manual/models';
+import type { TableColumn } from 'src/common/api/manual/models';
 
 // T = tipo dos dados por linha, ex: Record<string, any> ou algo mais específico
 type TableProps = Omit<Partial<QTableProps>, 'columns'>;
@@ -72,7 +72,7 @@ const props = defineProps<Props<T, R>>();
 
     <template v-slot:bottom>
       <div class="row u-w-100 items-center justify-between">
-        <div>Página {{ service.result.page }} de {{ service.result.pageCount }}</div>
+        <div>Página {{ service.result.page }} de {{ service.totalPages }}</div>
 
         <div class="row">
           <q-btn
@@ -102,19 +102,19 @@ const props = defineProps<Props<T, R>>();
             round
             dense
             flat
-            :disable="service.result.page === service.result.pageCount || !service.hasMore"
+            :disable="service.result.page === service.totalPages || !service.hasMore"
             @click.prevent="service.loadNext"
           />
 
           <q-btn
-            v-if="service.result.pageCount > 2"
+            v-if="service.totalPages > 2"
             icon="last_page"
             color="grey-8"
             round
             dense
             flat
-            :disable="service.result.page === service.result.pageCount || !service.hasMore"
-            @click="service.loadPage(service.result.pageCount)"
+            :disable="service.result.page === service.totalPages || !service.hasMore"
+            @click="service.loadPage(service.totalPages)"
           />
         </div>
       </div>

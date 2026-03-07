@@ -1,6 +1,6 @@
 import type { NavigationGuardNext, RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import { UserRole } from 'src/common/models/user/User';
+import { UserRole } from 'src/common/api/generated/models';
 
 const publicRoutes: RouteRecordRaw[] = [
   {
@@ -31,6 +31,7 @@ const publicRoutes: RouteRecordRaw[] = [
     },
   },
 ];
+
 const privateRoutes: RouteRecordRaw[] = [
   {
     path: 'account',

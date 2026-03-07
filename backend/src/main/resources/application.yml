@@ -89,6 +89,10 @@ quarkus:
         expire-after-write: 60M
       movement-types-cache:
         expire-after-write: 20M
+      user-context-cache:
+        expire-after-write: 10M
+        initial-capacity: 100
+        maximum-size: 1000
   hibernate-orm:
     log:
       sql: false

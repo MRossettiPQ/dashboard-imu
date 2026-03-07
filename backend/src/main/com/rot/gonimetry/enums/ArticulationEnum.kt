@@ -1,49 +1,27 @@
 package com.rot.gonimetry.enums
 
-import com.rot.session.enums.BodySegmentEnum
-
 enum class ArticulationEnum(
-    val bodySegment: BodySegmentEnum,
     val description: String,
-    val isBilateral: Boolean, // Indica se tem lado (Direito/Esquerdo) ou se é Central
-    val movements: Set<MovementEnum> = emptySet(),
 ) {
-    SAMPLE(BodySegmentEnum.SPINE, "Coluna Cervical", false),
-    // --- COLUNA (SPINE) ---
-    CERVICAL_SPINE(BodySegmentEnum.SPINE, "Coluna Cervical", false),
-    THORACIC_SPINE(BodySegmentEnum.SPINE, "Coluna Torácica", false),
-    LUMBAR_SPINE(BodySegmentEnum.SPINE, "Coluna Lombar", false),
-
-    // --- MEMBRO SUPERIOR (UPPER_LIMB) ---
-    SHOULDER(BodySegmentEnum.UPPER_LIMB, "Ombro", true),
-    ELBOW(BodySegmentEnum.UPPER_LIMB, "Cotovelo", true),
-    WRIST(BodySegmentEnum.UPPER_LIMB, "Punho", true),
-
-    // --- GONIOMETRIA ESPECIAL: MÃO E DEDOS (Section 4) ---
-    // Polegar
-    THUMB_CMC(BodySegmentEnum.UPPER_LIMB, "Carpometacarpiana do Polegar", true),
-    THUMB_MCP(BodySegmentEnum.UPPER_LIMB, "Metacarpofalângica do Polegar", true),
-    THUMB_IP(BodySegmentEnum.UPPER_LIMB, "Interfalângica do Polegar", true),
-
-    // Dedos (II a V)
-    FINGERS_MCP(BodySegmentEnum.UPPER_LIMB, "Metacarpofalângicas (Dedos II-V)", true),
-    FINGERS_PIP(BodySegmentEnum.UPPER_LIMB, "Interfalângicas Proximais (Dedos II-V)", true),
-    FINGERS_DIP(BodySegmentEnum.UPPER_LIMB, "Interfalângicas Distais (Dedos II-V)", true),
-
-    // --- MEMBRO INFERIOR (LOWER_LIMB) ---
-    HIP(BodySegmentEnum.LOWER_LIMB, "Quadril", true),
-    KNEE(BodySegmentEnum.LOWER_LIMB, "Joelho", true),
-    ANKLE(BodySegmentEnum.LOWER_LIMB, "Tornozelo", true),
-    SUBTALAR(BodySegmentEnum.LOWER_LIMB, "Subtalar", true),
-
-    // --- GONIOMETRIA ESPECIAL: PÉ E DEDOS (Section 4) ---
-    TOES_MTP(BodySegmentEnum.LOWER_LIMB, "Metatarsofalângicas (Dedos do Pé)", true),
-    TOES_IP(BodySegmentEnum.LOWER_LIMB, "Interfalângicas (Dedos do Pé)", true),
-    HALLUX_MTP(BodySegmentEnum.LOWER_LIMB, "Metatarsofalângica do Hálux", true),
-    HALLUX_IP(BodySegmentEnum.LOWER_LIMB, "Interfalângica do Hálux", true),
-
-    // --- GONIOMETRIA ESPECIAL: CABEÇA (HEAD) ---
-    // A ATM é uma unidade funcional, mas possui côndilos D e E.
-    // Movimentos como abertura são centrais, desvios são laterais.
-    TEMPOROMANDIBULAR(BodySegmentEnum.HEAD, "Articulação Temporomandibular (ATM)", false)
+    SAMPLE("SAMPLE"),                        // Flexão
+    FLEXION("FLEXION"),                        // Flexão
+    EXTENSION("EXTENSION"),                      // Extensão
+    ABDUCTION("ABDUCTION"),                      // Abdução
+    ADDUCTION("ADDUCTION"),                      // Adução
+    MEDIAL_ROTATION("MEDIAL_ROTATION"),                // Rotação medial
+    LATERAL_ROTATION("LATERAL_ROTATION"),               // Rotação lateral
+    PRONATION("PRONATION"),                      // Pronação
+    SUPINATION("SUPINATION"),                     // Supinação
+    DORSIFLEXION("DORSIFLEXION"),                   // Flexão dorsal
+    PLANTARFLEXION("PLANTARFLEXION"),                 // Flexão plantar
+    INVERSION("INVERSION"),                      // Inversão (adução do pé)
+    EVERSION("EVERSION"),                       // Eversão (abdução do pé)
+    LATERAL_FLEXION("LATERAL_FLEXION"),                // Flexão lateral (coluna)
+    ROTATION("ROTATION"),                       // Rotação (coluna)
+    FLEXION_FIRST_TOE("FLEXION_FIRST_TOE"),              // Flexão do 1° dedo
+    FLEXION_SECOND_TO_FIFTH_TOE("FLEXION_SECOND_TO_FIFTH_TOE"),    // Flexão do 2° ao 5° dedo
+    EXTENSION_FIRST_TOE("EXTENSION_FIRST_TOE"),            // Extensão do 1° dedo
+    EXTENSION_SECOND_TO_FIFTH_TOE("EXTENSION_SECOND_TO_FIFTH_TOE"),  // Extensão do 2° ao 5° dedo
+    FLEXION_IP_SECOND_TO_FIFTH_TOE("FLEXION_IP_SECOND_TO_FIFTH_TOE"), // Flexão interfalângica proximal 2°-5° dedo
+    FLEXION_ID_SECOND_TO_FIFTH_TOE("FLEXION_ID_SECOND_TO_FIFTH_TOE")  // Flexão interfalângica distal 2°-5° dedo
 }

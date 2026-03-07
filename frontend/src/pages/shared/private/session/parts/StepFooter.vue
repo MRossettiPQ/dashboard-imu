@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Session } from 'src/common/models/session/Session';
-import type { Sensor } from 'src/common/models/sensor/Sensor';
 import { socket } from 'boot/socket';
-import { SocketEvents } from 'src/api/manual/SocketEvents';
+import type { SensorDto, SessionDto } from 'src/common/api/generated/models';
+import { MessageType } from 'src/common/api/generated/models';
 
 interface Props {
-  session: Session;
-  selectedSensorList: Set<Sensor>;
+  session: SessionDto;
+  selectedSensorList: Set<SensorDto>;
   inProgress: boolean;
   loadingSave: boolean;
   actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
@@ -37,8 +36,8 @@ const disableNextButton = computed(() => {
 
   switch (props.actualStepName) {
     case 'first-step':
-      if (props.session.procedures.length < 1) return true;
-      return props.session.procedures.some((p) => p.movements.length < 1);
+      if (props.session.articulations.length < 1) return true;
+      return props.session.articulations.some((p) => p.movements.length < 1);
     case 'second-step':
       return props.selectedSensorList.size < 1;
     case 'third-step':
@@ -51,19 +50,19 @@ const disableNextButton = computed(() => {
 
 async function commandRestart() {
   console.log('commandRestart');
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_RESTART, '');
+  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_RESTART, '');
   console.log(r);
 }
 
 async function commandStart() {
   console.log('commandStart');
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_START, '');
+  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_START, '');
   console.log(r);
 }
 
 async function commandStop() {
   console.log('commandStop');
-  const r = await socket.emitWithAck(SocketEvents.CLIENT_SERVER_STOP, '');
+  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_STOP, '');
   console.log(r);
 }
 </script>

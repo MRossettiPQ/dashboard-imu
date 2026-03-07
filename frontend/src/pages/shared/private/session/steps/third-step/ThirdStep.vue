@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import SessionChart from 'pages/shared/private/session/steps/third-step/SessionChart.vue';
-import type { Movement } from 'src/common/models/movement/Movement';
-import type { Procedure } from 'src/common/models/procedure/Procedure';
+import type { Articulation, Movement } from 'src/common/api/manual/constructors_api';
 
 interface Props {
-  selectedProcedure: Procedure | undefined;
+  selectedProcedure: Articulation | undefined;
   selectedMovement: Movement | undefined;
   viewType: 'grid' | 'unified' | 'table' | 'summary';
 }

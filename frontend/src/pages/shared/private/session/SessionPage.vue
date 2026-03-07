@@ -15,12 +15,17 @@ import SecondStep from 'pages/shared/private/session/steps/second-step/SecondSte
 import ThirdStep from 'pages/shared/private/session/steps/third-step/ThirdStep.vue';
 import { api } from 'boot/axios';
 import type {
+  ArticulationDto,
+  ArticulationTypeDto,
+  MeasurementDto,
   MovementDto,
   PatientDto,
   SensorDto,
   SessionSensorDto,
-} from 'src/api/generated/models';
-import { MessageType } from 'src/api/generated/models';
+} from 'src/common/api/generated/models';
+import { MessageType } from 'src/common/api/generated/models';
+import { Session } from 'src/common/api/manual/constructors_api';
+import { SensorServerSensorMeasurementBlock } from 'src/common/api/manual/constructor_socket';
 
 interface NavigationStep {
   order: number;
@@ -102,11 +107,12 @@ function prev(): void {
 
 // Dados do paciente e dados da sessão
 const patient = ref<PatientDto>();
-const session = ref<PatientDto>(new Session());
+const session = ref<Session>(new Session());
 
 // Lista de sensores conectados ao backend e lista de procedimentos disponiveis
+const actualMeasurements = ref<MeasurementDto[]>([]);
 const availableSensorList = ref<SessionSensorDto[]>([]);
-const availableProcedureList = ref<ProcedureType[]>([]);
+const availableProcedureList = ref<ArticulationTypeDto[]>([]);
 
 // Sensores aplicados a sessão
 const selectedSensorList = ref<Set<SensorDto>>(new Set());
@@ -115,7 +121,7 @@ const selectedSensorList = ref<Set<SensorDto>>(new Set());
 const viewType = ref<'grid' | 'unified' | 'table' | 'summary'>('grid');
 
 // Procedimento e movimento escolhidos para realização no momento
-const selectedProcedure = ref<Procedure | undefined>();
+const selectedProcedure = ref<ArticulationDto | undefined>();
 const selectedMovement = ref<MovementDto | undefined>();
 
 onUnmounted(() => {
@@ -137,11 +143,11 @@ onMounted(async () => {
   try {
     loading.value = true;
     const { data } = await api.getApiPatientsUuid(uuid.value);
-    const { data: metadata } = await api.getApiSessionsMetadata();
+    const { data: dataProcedureTypes } = await api.getApiArticulationTypesAll();
 
-    if (data.content && metadata.content?.procedureTypes) {
+    if (data.content && dataProcedureTypes) {
       patient.value = data.content;
-      availableProcedureList.value = metadata.content.procedureTypes;
+      availableProcedureList.value = dataProcedureTypes.content ?? [];
     }
 
     socket.on('connect', () => {
@@ -150,14 +156,14 @@ onMounted(async () => {
     socket.on(MessageType.WELCOME, (data: string) => {
       console.log('WELCOME', data);
     });
-    socket.on(MessageType.LEAVE_ROOM, (data: string) => {
+    socket.on(MessageType.SERVER_SENSOR_REMOVED_ROOM, (data: string) => {
       console.log('LEAVE_ROOM', data);
     });
     socket.on(MessageType.SERVER_CLIENT_SENSOR_LIST, (data: object) => {
-      const { content } = plainToInstance(MessageSensorListDto, data);
-      availableSensorList.value = content ?? [];
+      const { content } = plainToInstance(SensorServerSensorMeasurementBlock, data);
+      actualMeasurements.value = content ?? [];
     });
-    socket.on(MessageType.SERVER_CLIENT_MEASUREMENT, (data: MessageClientMeasurementBlock) => {
+    socket.on(MessageType.SERVER_CLIENT_MEASUREMENT, (data: SensorServerSensorMeasurementBlock) => {
       console.log(MessageType.SERVER_CLIENT_MEASUREMENT, data);
     });
     socket.connect();
@@ -206,7 +212,7 @@ onMounted(async () => {
           v-model:session="session"
           v-model:right-drawer="rightDrawer"
           v-model:selected-movement="selectedMovement"
-          v-model:selected-procedure="selectedProcedure"
+          v-model:selected-articulation="selectedProcedure"
           :selected-sensor-list="selectedSensorList"
         />
       </q-card>

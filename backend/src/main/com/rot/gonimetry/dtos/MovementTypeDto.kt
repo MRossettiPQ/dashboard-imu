@@ -3,6 +3,7 @@ package com.rot.gonimetry.dtos
 import FileStorageDto
 import com.rot.gonimetry.enums.MovementEnum
 import com.rot.gonimetry.models.AngleRule
+import com.rot.gonimetry.models.GoniometryProcedure
 import com.rot.gonimetry.models.MovementType
 import jakarta.validation.constraints.NotNull
 
@@ -14,6 +15,7 @@ class MovementTypeDto {
     var description: String? = null
     var image: FileStorageDto? = null
     var angleRule: AngleRule? = null
+    var goniometryProcedure: GoniometryProcedure? = null
 
     companion object {
         fun from(entity: MovementType) : MovementTypeDto {
@@ -22,6 +24,7 @@ class MovementTypeDto {
             dto.type = entity.type
             dto.description = entity.description
             dto.image = FileStorageDto.from(entity.image!!)
+            dto.goniometryProcedure = entity.goniometryProcedure
             dto.angleRule = entity.angleRule
             dto.articulationId = entity.articulationType?.id
             return dto
@@ -44,4 +47,6 @@ class MovementTypeCreateOrUpgradeDto {
 
     @NotNull
     var angleRule: AngleRule? = null
+
+    var goniometryProcedure: GoniometryProcedure? = null
 }

@@ -1,7 +1,7 @@
 import { defineBoot } from '#q-app/wrappers';
 import axios, { type AxiosInstance } from 'axios';
-import apiConfig from 'src/api/mutator/custom-instance';
-import { getDashboardAPI } from 'src/api/generated/endpoints';
+import apiConfig from 'src/common/api/mutator/custom-instance';
+import { getDashboardAPI } from 'src/common/api/generated/endpoints';
 
 declare module 'vue' {
   interface ComponentCustomProperties {

@@ -1,5 +1,6 @@
 package com.rot.access.providers
 
+import com.rot.access.services.UserService
 import com.rot.core.context.ApplicationContext
 import com.rot.core.context.UserContext
 import com.rot.core.exceptions.ApplicationException

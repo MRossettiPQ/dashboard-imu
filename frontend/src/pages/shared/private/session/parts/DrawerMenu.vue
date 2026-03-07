@@ -1,29 +1,30 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Session } from 'src/common/models/session/Session';
-import type { TableColumn } from 'src/api/manual/models';
-import { Movement } from 'src/common/models/movement/Movement';
-import { findMovementEnum } from 'src/common/models/movement/Movement';
-import type { Procedure } from 'src/common/models/procedure/Procedure';
-import { findProcedureEnum } from 'src/common/models/procedure/Procedure';
-import type { Sensor } from 'src/common/models/sensor/Sensor';
-import { positionOptions } from 'src/common/models/sensor/Sensor';
+import type { TableColumn } from 'src/common/api/manual/models';
+import { Movement } from 'src/common/api/manual/constructors_api';
+import type {
+  ArticulationDto,
+  MovementDto,
+  SensorDto,
+  SessionDto,
+} from 'src/common/api/generated/models';
+import { MovementEnum } from 'src/common/api/generated/models';
 
 interface Props {
-  session: Session;
+  session: SessionDto;
   rightDrawer: boolean;
-  selectedSensorList: Set<Sensor>;
-  selectedProcedure?: Procedure | undefined;
-  selectedMovement?: Movement | undefined;
+  selectedSensorList: Set<SensorDto>;
+  selectedArticulation?: ArticulationDto | undefined;
+  selectedMovement?: MovementDto | undefined;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'update:rightDrawer', val: boolean): void;
-  (e: 'update:selectedProcedure', val: Procedure | undefined): void;
-  (e: 'update:selectedMovement', val: Movement | undefined): void;
-  (e: 'update:session', val: Session): void;
+  (e: 'update:selectedArticulation', val: ArticulationDto | undefined): void;
+  (e: 'update:selectedMovement', val: MovementDto | undefined): void;
+  (e: 'update:session', val: SessionDto): void;
 }>();
 
 const rightDrawer = computed({
@@ -34,16 +35,16 @@ const session = computed({
   get: () => props.session,
   set: (val) => emit('update:session', val),
 });
-const selectedProcedure = computed({
-  get: () => props.selectedProcedure,
-  set: (val) => emit('update:selectedProcedure', val),
+const selectedArticulation = computed({
+  get: () => props.selectedArticulation,
+  set: (val) => emit('update:selectedArticulation', val),
 });
 const selectedMovement = computed({
   get: () => props.selectedMovement,
   set: (val) => emit('update:selectedMovement', val),
 });
 
-const movementColumns: TableColumn<Movement>[] = [
+const movementColumns: TableColumn<MovementDto>[] = [
   {
     name: 'name',
     align: 'left',
@@ -51,7 +52,12 @@ const movementColumns: TableColumn<Movement>[] = [
     field: 'type',
     format: (val: unknown) => {
       if (!val || typeof val !== 'string') return 'Nenhum';
-      return findMovementEnum(val) ?? 'Inválido';
+
+      if (val in MovementEnum) {
+        return MovementEnum[val as keyof typeof MovementEnum];
+      }
+
+      return 'Inválido';
     },
   },
   {
@@ -60,7 +66,7 @@ const movementColumns: TableColumn<Movement>[] = [
     label: 'Leituras',
     format: (val: unknown) => {
       if (val && Array.isArray(val)) {
-        const sensors = val as Sensor[];
+        const sensors = val as SensorDto[];
         const size = sensors[0]?.measurements?.length ?? 0;
         return size.toString();
       }
@@ -78,7 +84,7 @@ const movementColumns: TableColumn<Movement>[] = [
   },
 ];
 
-const sensorColumns: TableColumn<Sensor>[] = [
+const sensorColumns: TableColumn<SensorDto>[] = [
   {
     name: 'macAddress',
     align: 'left',
@@ -93,24 +99,25 @@ const sensorColumns: TableColumn<Sensor>[] = [
   },
 ];
 
-function getTotalMeasurements(movement: Movement): number {
+function getTotalMeasurements(movement: MovementDto): number {
   if (!movement.sensors || movement.sensors.length === 0) return 0;
 
-  return movement.sensors.reduce((total, sensor) => {
+  return movement.sensors.reduce((total: number, sensor: SensorDto) => {
     return total + (sensor.measurements?.length || 0);
   }, 0);
 }
 
-function removeMovement(procedure: Procedure, rowIndex: number, event: Event) {
+function removeMovement(articulation: ArticulationDto, rowIndex: number, event: Event) {
   event.stopPropagation();
 
-  const procedureIndex = session.value.procedures.findIndex((p) => p === procedure);
+  const articulations = session.value.articulations;
+  const procedureIndex = articulations.findIndex((a: ArticulationDto) => a === articulation);
   if (procedureIndex !== -1) {
-    const movements = session.value.procedures[procedureIndex]!.movements;
+    const movements = session.value.articulations[procedureIndex]!.movements;
 
     if (rowIndex >= 0 && rowIndex < movements.length) {
       const movementToRemove = movements[rowIndex];
-      session.value.procedures[procedureIndex]!.movements.splice(rowIndex, 1);
+      session.value.articulations[procedureIndex]!.movements.splice(rowIndex, 1);
 
       if (selectedMovement.value === movementToRemove) {
         selectedMovement.value = undefined;
@@ -119,21 +126,21 @@ function removeMovement(procedure: Procedure, rowIndex: number, event: Event) {
   }
 }
 
-function duplicateMovement(procedure: Procedure, rowIndex: number, event: Event) {
+function duplicateMovement(articulation: ArticulationDto, rowIndex: number, event: Event) {
   event.stopPropagation();
 
-  const procedureIndex = session.value.procedures.findIndex((p) => p === procedure);
+  const articulations = session.value.articulations;
+  const procedureIndex = articulations.findIndex((a: ArticulationDto) => a === articulation);
   if (procedureIndex !== -1) {
-    const movements = session.value.procedures[procedureIndex]!.movements;
+    const movements = articulations[procedureIndex]!.movements;
 
     if (rowIndex >= 0 && rowIndex < movements.length) {
       const movementToDuplicate = movements[rowIndex];
       if (!movementToDuplicate) return;
 
       const duplicatedMovement = new Movement();
-      duplicatedMovement.type = movementToDuplicate.type!;
 
-      session.value.procedures[procedureIndex]!.movements.splice(
+      session.value.articulations[procedureIndex]!.movements.splice(
         rowIndex + 1,
         0,
         duplicatedMovement,
@@ -142,32 +149,30 @@ function duplicateMovement(procedure: Procedure, rowIndex: number, event: Event)
   }
 }
 
-function removeProcedure(procedure: Procedure, event: Event) {
+function removeProcedure(articulation: ArticulationDto, event: Event) {
   event.stopPropagation();
 
-  const index = session.value.procedures.findIndex((p) => p === procedure);
-  if (index === -1) return;
+  const articulations = session.value.articulations;
+  const procedureIndex = articulations.findIndex((a: ArticulationDto) => a === articulation);
+  if (procedureIndex === -1) return;
 
-  const procedureToRemove = session.value.procedures[index];
+  const procedureToRemove = session.value.articulations[procedureIndex];
 
-  session.value.procedures.splice(index, 1);
+  session.value.articulations.splice(procedureIndex, 1);
 
   // Se o atual selecionado for o removido → limpar seleção
-  if (selectedProcedure.value === procedureToRemove) {
-    selectedProcedure.value = undefined;
+  if (selectedArticulation.value === procedureToRemove) {
+    selectedArticulation.value = undefined;
     selectedMovement.value = undefined;
   }
 }
 
-function isMovementSelected(procedure: Procedure, movement: Movement): boolean {
-  return (
-    selectedProcedure.value === procedure &&
-    selectedMovement.value?.sessionIdentifier === movement.sessionIdentifier
-  );
+function isMovementSelected(procedure: ArticulationDto, movement: MovementDto): boolean {
+  return selectedArticulation.value === procedure && selectedMovement.value?.id === movement.id;
 }
 
-function onMovementSelect(procedure: Procedure, movement: Movement) {
-  emit('update:selectedProcedure', procedure);
+function onMovementSelect(procedure: ArticulationDto, movement: Movement) {
+  emit('update:selectedArticulation', procedure);
   emit('update:selectedMovement', movement);
 }
 </script>
@@ -193,7 +198,7 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
 
       <q-separator />
 
-      <q-card v-if="selectedProcedure?.type" class="column u-gap-8 no-wrap u-p-12">
+      <q-card v-if="selectedArticulation?.type" class="column u-gap-8 no-wrap u-p-12">
         <div class="row items-center u-gap-8">
           <q-icon name="assignment" color="primary" size="24px" />
           <b class="u-m-0 text-h6">Procedimento Atual</b>
@@ -203,14 +208,14 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
           <div class="row items-center justify-between">
             <span class="text-weight-medium text-grey-8">Procedimento:</span>
             <q-badge color="primary" class="text-caption">
-              {{ findProcedureEnum(selectedProcedure.type) || 'Não identificado' }}
+              {{ selectedArticulation.type?.type || 'Não identificado' }}
             </q-badge>
           </div>
 
           <div v-if="selectedMovement?.type" class="row items-center justify-between">
             <span class="text-weight-medium text-grey-8">Movimento:</span>
             <q-badge color="secondary" class="text-caption">
-              {{ findMovementEnum(selectedMovement.type) || 'Não identificado' }}
+              {{ selectedMovement.type || 'Não identificado' }}
             </q-badge>
           </div>
 
@@ -255,7 +260,7 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
         >
           <template v-slot:body-cell-position="props">
             <q-td :props="props">
-              <q-select v-model="props.row.position" :options="positionOptions" dense borderless />
+              <q-select v-model="props.row.position" :options="[]" dense borderless />
             </q-td>
           </template>
         </q-table>
@@ -263,23 +268,27 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
 
       <q-separator />
 
-      <div v-if="session.procedures.length" class="column u-gap-12 no-wrap u-h-100 u-h-min-0">
+      <div v-if="session.articulations.length" class="column u-gap-12 no-wrap u-h-100 u-h-min-0">
         <b class="u-m-0">Procedimentos</b>
         <div class="column u-gap-12 overflow-auto no-wrap u-h-100">
-          <div class="column u-gap-6" v-for="(procedure, index) in session.procedures" :key="index">
+          <div
+            class="column u-gap-6"
+            v-for="(articulation, index) in session.articulations"
+            :key="index"
+          >
             <q-table
-              v-if="procedure.type"
+              v-if="articulation.type"
               hide-pagination
               dense
-              :rows="procedure.movements"
+              :rows="articulation.movements"
               :columns="movementColumns"
               flat
               bordered
-              @row-click="(_, row) => onMovementSelect(procedure, row)"
+              @row-click="(_, row) => onMovementSelect(articulation, row)"
             >
               <template v-slot:top>
                 <b class="u-m-0">
-                  {{ findProcedureEnum(procedure.type) || 'Procedimento sem nome' }}
+                  {{ articulation.type?.type || 'Procedimento sem nome' }}
                 </b>
                 <q-space />
 
@@ -292,20 +301,20 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
                       unelevated
                       icon="delete"
                       :title="`Remover procedimento`"
-                      @click="removeProcedure(procedure, $event)"
+                      @click="removeProcedure(articulation, $event)"
                     >
-                      <q-tooltip>Remover {{ findProcedureEnum(procedure.type) }}</q-tooltip>
+                      <q-tooltip>Remover {{ articulation.type?.type }}</q-tooltip>
                     </q-btn>
                   </q-btn-group>
                 </div>
               </template>
 
               <template v-slot:body="props">
-                <q-tr :props="props" @click="onMovementSelect(procedure, props.row)">
+                <q-tr :props="props" @click="onMovementSelect(articulation, props.row)">
                   <q-td key="name" :props="props">
                     <div class="row items-center no-wrap">
                       <q-icon
-                        v-if="isMovementSelected(procedure, props.row)"
+                        v-if="isMovementSelected(articulation, props.row)"
                         name="check_circle"
                         color="positive"
                         size="16px"
@@ -325,10 +334,10 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
                         size="sm"
                         unelevated
                         icon="content_copy"
-                        @click="duplicateMovement(procedure, props.rowIndex, $event)"
+                        @click="duplicateMovement(articulation, props.rowIndex, $event)"
                         :title="`Duplicar movimento`"
                       >
-                        <q-tooltip> Duplicar {{ findMovementEnum(props.row.type) }} </q-tooltip>
+                        <q-tooltip> Duplicar {{ props.row.type }} </q-tooltip>
                       </q-btn>
                       <q-btn
                         dense
@@ -336,10 +345,10 @@ function onMovementSelect(procedure: Procedure, movement: Movement) {
                         size="sm"
                         unelevated
                         icon="delete"
-                        @click="removeMovement(procedure, props.rowIndex, $event)"
+                        @click="removeMovement(articulation, props.rowIndex, $event)"
                         :title="`Remover movimento`"
                       >
-                        <q-tooltip> Remover {{ findMovementEnum(props.row.type) }} </q-tooltip>
+                        <q-tooltip> Remover {{ props.row.type }} </q-tooltip>
                       </q-btn>
                     </q-btn-group>
                   </q-td>

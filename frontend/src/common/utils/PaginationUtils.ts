@@ -1,7 +1,7 @@
 import type { AxiosResponse } from 'axios';
-import type { Pagination } from 'src/api/manual/models';
+import type { Pagination } from 'src/common/api/manual/models';
 
-type Result<T> = AxiosResponse<{ content: Pagination<T> | null | undefined }>;
+export type Result<T> = AxiosResponse<{ content: Pagination<T> | null | undefined }>;
 
 type PaginationUtilsConstructorType<T, R> = {
   service: (params: R) => Promise<Result<T>>;
@@ -30,7 +30,7 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
   result: Pagination<T> = {
     list: [],
     page: 1,
-    pageCount: 0,
+    hasMore: false,
     count: 0,
     rpp: 0,
   };
@@ -62,7 +62,8 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
   }
 
   get totalPages(): number {
-    return this.result?.pageCount ?? 0;
+    if (this.result.rpp <= 0) return 0;
+    return Math.ceil(this.result.count / this.result.rpp);
   }
 
   get totalItems(): number {
@@ -70,15 +71,15 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
   }
 
   get hasNext(): boolean {
-    return this.totalPages > this.currentPage;
+    return this.result.hasMore;
   }
 
   get hasPrev(): boolean {
-    return this.totalPages < this.currentPage;
+    return this.currentPage > 1;
   }
 
   get hasMore(): boolean {
-    return this.result.page < this.result.pageCount;
+    return this.result.hasMore;
   }
 
   async loadFirstPage(): Promise<void> {
@@ -128,12 +129,13 @@ export default class PaginationUtils<T, R extends { page: number; rpp: number }>
           ...this.result,
           list: [],
           page: this.result?.page ?? 0,
-          pageCount: this.result?.pageCount ?? 0,
+          hasMore: this.result?.hasMore ?? false,
           count: this.result?.count ?? 0,
         };
       }
 
       const { data, status } = await this.service({ ...this.params, signal });
+      if (data == null) return;
       if (data.content == null) return;
       this.result = data.content;
       this.status = status;
