@@ -6,6 +6,7 @@ import com.rot.core.hibernate.structures.BaseEntity
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.ws.rs.DefaultValue
 
 @Entity
 @Table(
@@ -31,6 +32,10 @@ class SensorInfo : BaseEntity<SensorInfo>() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Int? = null
+
+    @DefaultValue(value = "false")
+    @Column(name = "active", nullable = false)
+    var active: Boolean = false
 
     @NotNull
     @NotEmpty

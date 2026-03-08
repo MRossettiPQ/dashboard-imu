@@ -75,6 +75,7 @@ enum class MessageType(val description: String) {
 @Schema(name = "AckMessage")
 enum class AckMessage(val description: String) {
     JOINED_ROOM("JOINED_ROOM"),
+    ERROR_ALREADY_IN_USE("ERROR_ALREADY_IN_USE"),
     STARTED_MEASUREMENTS("STARTED_MEASUREMENTS"),
     STOPPED_MEASUREMENTS("STOPPED_MEASUREMENTS"),
     REQUESTED_SENSOR_LIST("REQUESTED_SENSOR_LIST"),

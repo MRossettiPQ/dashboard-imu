@@ -9,7 +9,6 @@ const linksList: EssentialLinkProps[] = [
     caption: 'Ir para home',
     icon: 'home',
     to: { name: 'shared.home' }, // ← Rota nomeada
-    authenticated: false,
   },
   {
     title: 'Login',

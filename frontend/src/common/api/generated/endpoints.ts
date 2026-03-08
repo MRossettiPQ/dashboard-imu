@@ -17,6 +17,7 @@ import type {
   ContentPaginationMovementDto,
   ContentPaginationNetworkConfigurationDto,
   ContentPaginationPatientDto,
+  ContentPaginationSensorInfoDto,
   ContentPaginationSessionDto,
   ContentPaginationUserDto,
   ContentPatientDto,
@@ -29,6 +30,7 @@ import type {
   GetApiNetworkConfigurationsParams,
   GetApiPatientsParams,
   GetApiPatientsUuidSessionsParams,
+  GetApiSessionsSensorsAvailableParams,
   GetApiUsersParams,
   LoginDto,
   NetworkConfigurationDto,
@@ -340,6 +342,18 @@ export const getDashboardAPI = () => {
   };
 
   /**
+   * Recupera uma lista paginada de sensores disponíveis no sistema
+   * @summary Listagem paginada de sensores disponíveis
+   */
+  const getApiSessionsSensorsAvailable = (params?: GetApiSessionsSensorsAvailableParams) => {
+    return customInstance<ContentPaginationSensorInfoDto>({
+      url: `/api/sessions/sensors/available`,
+      method: 'GET',
+      params,
+    });
+  };
+
+  /**
    * Recupera uma sessão de medição através do seu UUID
    * @summary Obter sessão de medição
    */
@@ -400,6 +414,7 @@ export const getDashboardAPI = () => {
     getApiSessions,
     getApiSessionsMetadata,
     postApiSessionsRegister,
+    getApiSessionsSensorsAvailable,
     getApiSessionsUuid,
     postApiUsers,
     getApiUsers,
@@ -478,6 +493,9 @@ export type GetApiSessionsMetadataResult = NonNullable<
 >;
 export type PostApiSessionsRegisterResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getDashboardAPI>['postApiSessionsRegister']>>
+>;
+export type GetApiSessionsSensorsAvailableResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getDashboardAPI>['getApiSessionsSensorsAvailable']>>
 >;
 export type GetApiSessionsUuidResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getDashboardAPI>['getApiSessionsUuid']>>

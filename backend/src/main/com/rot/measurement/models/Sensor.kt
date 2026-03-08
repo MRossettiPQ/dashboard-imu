@@ -8,6 +8,7 @@ import com.rot.session.models.Movement
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.ws.rs.DefaultValue
 
 @Entity
 @Table(

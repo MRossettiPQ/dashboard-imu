@@ -308,14 +308,22 @@ class SocketService(
         val sensorContext = sessions[content.sensor] ?: return Log.warn("Sensor não encontrado")
         val sensorClient = server.getClient(content.sensor) ?: return Log.warn("Cliente do sensor não encontrado")
 
-        Log.info("Cliente ${client.sessionId} entrou na sala $message")
+        // REGRAR: O sensor só pode estar em uma sala por vez
+        if (sensorContext.room != null && sensorContext.room != session.room) {
+            Log.warn("Sensor ${content.sensor} rejeitado: já pertence à sala ${sensorContext.room}")
+            return request.sendAckData(AckMessage.ERROR_ALREADY_IN_USE.name) // Você pode criar esse enum no seu AckMessage
+        }
+
+        Log.info("Cliente ${client.sessionId} incluiu o sensor ${content.sensor} na sala")
 
         sensorClient.joinRoom(session.room.toString())
         sensorClient.sendEvent(MessageType.SERVER_SENSOR_JOINED_ROOM.description, MessageServerSensorJoinedRoomDto())
         sensorContext.room = session.room
 
-        val sensor = findSensorByIp(sensorContext.sensorId.toString())
-        if (sensor != null) session.sensors[content.sensor] = Pair(sensor, mutableSetOf())
+        val sensor = sensors.find { it.clientId == content.sensor }
+        if (sensor != null) {
+            session.sensors[content.sensor] = Pair(sensor, mutableSetOf())
+        }
 
         request.sendAckData(AckMessage.JOINED_ROOM.name)
     }
@@ -358,51 +366,69 @@ class SocketService(
 
     // Sensor -> Server
     fun sensorServerMeasurement(client: SocketIOClient, message: MessageSensorServerMeasurementBlock, request: AckRequest) {
-        Log.info("Register measurement listener: $message")
         val sessionId = client.sessionId
         val session = sessions[sessionId]
         val content = message.content
-        if (content == null || (session == null || session.type != UserSessionType.SENSOR)) return
 
-        val userClient = server.getClient(session.room) ?: return
-        val userSession = sessions[session.room] ?: return
+        // Validações básicas
+        if (content == null || session == null || session.type != UserSessionType.SENSOR) return
 
-        val sensor = userSession.sensors[sessionId] ?: return
-        sensor.second.addAll(content)
-        val mac = sensor.first.mac
+        // Se o sensor não está em nenhuma sala, as medições são ignoradas (não estão gravando nada)
+        val roomId = session.room ?: return
 
-        val block = MessageServerClientMeasurementBlock()
-        block.content = message.content
+        val userSession = sessions[roomId] ?: return
+        val sensorPair = userSession.sensors[sessionId] ?: return
 
-        val event = "${MessageType.SERVER_CLIENT_MEASUREMENT}_-_${mac!!.replace(":", "_")}"
-        userClient.sendEvent(event, message)
+        // Salva os dados no cachê em memória para quando o User chamar a SaveSession
+        sensorPair.second.addAll(content)
+        val mac = sensorPair.first.mac ?: return
+
+        // Prepara o evento
+        val event = "${MessageType.SERVER_CLIENT_MEASUREMENT}_-_${mac.replace(":", "_")}"
+
+        // Faz o broadcast APENAS para a sala específica em vez de direcionar direto pro Client
+        server.getRoomOperations(roomId.toString()).sendEvent(event, message)
     }
 
-    private fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSensorServerSessionSensorDto, request: AckRequest) {
+    @Transactional // Necessário para salvar o SensorInfo no banco
+    fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSensorServerSessionSensorDto, request: AckRequest) {
         Log.info("Register sensor: $message")
         val session = sessions[client.sessionId]
         val content = message.content
-        if (content == null || (session == null || session.type != UserSessionType.SENSOR)) return
 
+        // Valida se é realmente um sensor e se enviou os dados necessários
+        if (content == null || session == null || session.type != UserSessionType.SENSOR) return
         val sensorIp = content.ip ?: return
+        val sensorMac = content.mac ?: return
 
-        Log.info("Registered new sensor: $sensorIp")
+        Log.info("Registered new sensor: $sensorIp (MAC: $sensorMac)")
         session.sensorId = sensorIp
 
-        val existingSensor = findSensorByIp(sensorIp)
+        // 1. Registra ou atualiza o SensorInfo no banco usando o MAC Address
+        var sensorInfo = SensorInfo.findByMacAddress(sensorMac)
+        if (sensorInfo == null) {
+            sensorInfo = SensorInfo()
+            sensorInfo.macAddress = sensorMac
+        }
+        sensorInfo.sensorName = content.name
+        sensorInfo.active = true // Ativa para aparecer nas consultas
+        sensorInfo.save()
+
+        // 2. Atualiza os dados em memória
+        val existingSensor = sensors.find { it.mac == sensorMac || it.ip == sensorIp }
         if (existingSensor != null) {
-            existingSensor.let {
-                it.clientId = client.sessionId
-                it.name = content.name
-                it.mac = content.mac
-                it.observation = content.observation
+            existingSensor.apply {
+                this.clientId = client.sessionId
+                this.name = content.name
+                this.mac = sensorMac
+                this.ip = sensorIp
+                this.observation = content.observation
             }
-            broadcastSensorList()
+            broadcastSensorList() // Atualiza os clients que a lista mudou
             return request.sendAckData("UPDATED")
         }
 
         content.clientId = client.sessionId
-
         sensors.add(content)
         broadcastSensorList()
         request.sendAckData(AckMessage.REGISTERED.name)

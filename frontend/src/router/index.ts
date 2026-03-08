@@ -47,9 +47,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
-  Router.beforeEach(routeBeforeGuard);
 
+  // Set instance BEFORE registering guards,
+  // so the store can access the router inside beforeEach
   setRouterInstance(Router);
 
+  Router.beforeEach(routeBeforeGuard);
   return Router;
 });
