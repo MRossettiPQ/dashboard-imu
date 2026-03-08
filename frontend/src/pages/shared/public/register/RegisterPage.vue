@@ -161,7 +161,7 @@ async function register(): Promise<void> {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 100vh;
+  min-height: 0;
   overflow: hidden;
   background: #f1f5f9;
 }

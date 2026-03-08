@@ -19,7 +19,20 @@
     </q-item-section>
   </q-item>
 
-  <q-item clickable v-bind="$attrs" v-else :href="link" target="_blank" class="nav-link">
+  <q-item clickable v-bind="$attrs" v-else-if="link" :href="link" target="_blank" class="nav-link">
+    <q-item-section v-if="icon" avatar>
+      <div class="nav-link__icon-wrap">
+        <q-icon :name="icon" />
+      </div>
+    </q-item-section>
+
+    <q-item-section>
+      <q-item-label class="nav-link__title">{{ title }}</q-item-label>
+      <q-item-label caption class="nav-link__caption">{{ caption }}</q-item-label>
+    </q-item-section>
+  </q-item>
+
+  <q-item clickable v-bind="$attrs" v-else class="nav-link">
     <q-item-section v-if="icon" avatar>
       <div class="nav-link__icon-wrap">
         <q-icon :name="icon" />

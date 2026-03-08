@@ -1,11 +1,11 @@
 import { Cookies } from 'quasar';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import type { AuthStore } from 'src/common/api/manual/AuthStore';
-import { useRouter } from 'vue-router';
 import { CookieType, getCookieConfiguration } from 'src/common/utils/cookieUtils';
 import dayjs from 'dayjs';
 import { api } from 'boot/axios';
 import type { AccessDto, UserRole } from 'src/common/api/generated/models';
+import { getRouterInstance } from 'src/router';
 
 let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -42,7 +42,8 @@ export const useAuthStore = defineStore('auth', {
       this.accessTokenExpiresAt = trimDate(Cookies.get(CookieType.ACCESS_TOKEN_DATE));
       this.refreshTokenExpiresAt = trimDate(Cookies.get(CookieType.REFRESH_TOKEN_DATE));
     },
-    logOut(): void {
+    async logOut(): Promise<void> {
+      const router = getRouterInstance();
       this.user = null;
       this.accessToken = null;
       this.refreshToken = null;
@@ -55,9 +56,10 @@ export const useAuthStore = defineStore('auth', {
       Cookies.remove(CookieType.REFRESH_TOKEN_DATE);
 
       if (refreshTimeout) clearTimeout(refreshTimeout);
+      await router.push({ name: 'public.login' });
     },
     async checkPermission(roles: UserRole[]): Promise<void> {
-      const router = useRouter();
+      const router = getRouterInstance();
       const authenticated = await this.isAuthenticatedOrLoadContext();
       if (!authenticated || this.user?.role == undefined) {
         await router.push({ name: 'public.login' });
@@ -72,7 +74,6 @@ export const useAuthStore = defineStore('auth', {
       this.loadCookies();
       const now = new Date();
 
-      // Corrigido: usando > para comparar Date nativo
       if (this.accessTokenExpiresAt && this.accessTokenExpiresAt > now) {
         if (!this.user) {
           try {
@@ -85,7 +86,6 @@ export const useAuthStore = defineStore('auth', {
         return true;
       }
 
-      // Corrigido: usando > para comparar Date nativo
       if (this.refreshTokenExpiresAt && this.refreshTokenExpiresAt > now) {
         try {
           await this.refreshTokens();
@@ -102,8 +102,8 @@ export const useAuthStore = defineStore('auth', {
     async loadContext() {
       this.loadCookies();
 
-      const router = useRouter();
-      const now = new Date(); // Substituído dayjs por new Date nativo
+      const router = getRouterInstance();
+      const now = new Date();
 
       if (!this.accessTokenExpiresAt) {
         return;
@@ -112,19 +112,18 @@ export const useAuthStore = defineStore('auth', {
       try {
         this.loading = true;
 
-        // Corrigido: usando > para comparar
         if (this.accessTokenExpiresAt > now) {
           const { data } = await api.getApiAccessContext();
           this.user = data.content;
           this.scheduleRefresh();
         } else {
           console.log('Session expired, redirect to login');
-          this.logOut();
+          await this.logOut();
           await router.push({ name: 'public.login' });
         }
       } catch (e) {
         console.error('Error on loadContext', e);
-        this.logOut();
+        await this.logOut();
         await router.push({ name: 'public.login' });
       } finally {
         this.loading = false;
@@ -161,7 +160,6 @@ export const useAuthStore = defineStore('auth', {
         const refreshTime = this.accessTokenExpiresAt;
 
         if (refreshTime > now) {
-          // O delay será o tempo no futuro menos o tempo atual
           const delay = refreshTime.getTime() - now.getTime();
 
           refreshTimeout = setTimeout(() => {
@@ -172,7 +170,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async refreshTokens(): Promise<void> {
       console.log('Checking refresh token');
-      const router = useRouter();
+      const router = getRouterInstance();
       if (!this.refreshToken) throw new Error('No refresh token available');
 
       const { data } = await api.postApiAccessRefresh({ refreshToken: this.refreshToken });
@@ -182,7 +180,7 @@ export const useAuthStore = defineStore('auth', {
         this.scheduleRefresh();
       } catch (e) {
         console.error('Error refreshing token', e);
-        this.logOut();
+        await this.logOut();
         await router.push({ name: 'public.login' });
       }
     },

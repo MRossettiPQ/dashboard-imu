@@ -1,4 +1,5 @@
 import { defineRouter } from '#q-app/wrappers';
+import type { Router } from 'vue-router';
 import {
   createMemoryHistory,
   createRouter,
@@ -17,6 +18,19 @@ import { routeBeforeGuard, routes } from './routes';
  * with the Router instance.
  */
 
+let routerInstance: Router | null = null;
+
+export function setRouterInstance(router: Router): void {
+  routerInstance = router;
+}
+
+export function getRouterInstance(): Router {
+  if (!routerInstance) {
+    throw new Error('Router instance not set. Call setRouterInstance() in router/index.ts');
+  }
+  return routerInstance;
+}
+
 export default defineRouter(function (/* { store, ssrContext } */) {
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -34,5 +48,8 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
   Router.beforeEach(routeBeforeGuard);
+
+  setRouterInstance(Router);
+
   return Router;
 });

@@ -49,6 +49,7 @@ export default defineComponent({
   },
 
   setup() {
+    const miniDrawer = ref(false);
     const leftDrawerOpen = ref(false);
     const store = useAuthStore();
 
@@ -67,10 +68,8 @@ export default defineComponent({
     return {
       store,
       filteredLinkList,
+      miniDrawer,
       leftDrawerOpen,
-      toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value;
-      },
     };
   },
 });
@@ -81,16 +80,6 @@ export default defineComponent({
     <q-header class="app-header" :elevated="false">
       <div class="app-header__accent" />
       <q-toolbar class="app-header__toolbar">
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          class="app-header__menu-btn"
-          @click="toggleLeftDrawer"
-        />
-
         <q-toolbar-title class="app-header__title">
           <span class="app-header__title-bold">Dashboard</span>
           <span class="app-header__title-light">IMU</span>
@@ -100,21 +89,55 @@ export default defineComponent({
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="app-drawer">
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      bordered
+      :mini="miniDrawer"
+      :mini-width="68"
+      :width="260"
+      class="app-drawer"
+      :breakpoint="0"
+    >
       <div class="app-drawer__inner">
         <!-- Header -->
         <div class="app-drawer__header">
           <div class="app-drawer__logo">
             <q-icon name="dashboard" class="app-drawer__logo-icon" />
-            <span class="app-drawer__logo-text">IMU</span>
+            <transition name="fade">
+              <span v-show="!miniDrawer" class="app-drawer__logo-text">IMU</span>
+            </transition>
           </div>
+          <q-btn
+            v-show="!miniDrawer"
+            flat
+            dense
+            round
+            icon="chevron_left"
+            class="app-drawer__toggle"
+            @click="miniDrawer = true"
+          />
         </div>
 
         <q-separator class="app-drawer__separator" />
 
+        <!-- Expand button (mini mode) -->
+        <div v-if="miniDrawer" class="app-drawer__expand">
+          <q-btn
+            flat
+            dense
+            round
+            icon="chevron_right"
+            class="app-drawer__toggle"
+            @click="miniDrawer = false"
+          />
+        </div>
+
         <!-- Navigation -->
         <q-list class="app-drawer__nav">
-          <p class="app-drawer__section-label">Navegação</p>
+          <transition name="fade">
+            <p v-show="!miniDrawer" class="app-drawer__section-label">Navegação</p>
+          </transition>
           <essential-link v-for="link in filteredLinkList" :key="link.title" v-bind="link" />
         </q-list>
 
@@ -123,7 +146,12 @@ export default defineComponent({
         <!-- Logout -->
         <div class="app-drawer__footer">
           <q-separator class="app-drawer__separator" />
-          <essential-link v-if="store.isAuthenticated" title="Logout" icon="logout" />
+          <essential-link
+            v-if="store.isAuthenticated"
+            title="Logout"
+            icon="logout"
+            @click="store.logOut"
+          />
         </div>
       </div>
     </q-drawer>
@@ -202,24 +230,32 @@ export default defineComponent({
     flex-direction: column;
     height: 100%;
     padding: 8px 0;
+    overflow: hidden;
   }
 
   &__header {
-    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 14px;
+    min-height: 60px;
   }
 
   &__logo {
     display: flex;
     align-items: center;
     gap: 10px;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   &__logo-icon {
-    font-size: 28px;
+    font-size: 26px;
     color: $primary;
     background: rgba($primary, 0.1);
     border-radius: 10px;
     padding: 8px;
+    flex-shrink: 0;
   }
 
   &__logo-text {
@@ -229,8 +265,24 @@ export default defineComponent({
     letter-spacing: 1.5px;
   }
 
+  &__toggle {
+    color: #6b7280;
+    flex-shrink: 0;
+
+    &:hover {
+      color: $primary;
+      background: rgba($primary, 0.08);
+    }
+  }
+
+  &__expand {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+  }
+
   &__separator {
-    margin: 4px 16px;
+    margin: 4px 14px;
     opacity: 0.4;
   }
 
@@ -246,10 +298,50 @@ export default defineComponent({
     color: #9ca3af;
     padding: 8px 24px 4px;
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   &__footer {
     padding-bottom: 8px;
   }
+}
+
+/* Mini mode overrides via Quasar's mini class */
+:deep(.q-drawer--mini) {
+  .app-drawer__header {
+    justify-content: center;
+    padding: 16px 8px;
+  }
+
+  .app-drawer__separator {
+    margin: 4px 8px;
+  }
+
+  .nav-link {
+    margin: 4px 6px;
+    padding: 10px;
+    justify-content: center;
+
+    .q-item__section--avatar {
+      min-width: 0;
+      padding-right: 0;
+    }
+
+    .q-item__section--main {
+      display: none;
+    }
+  }
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
