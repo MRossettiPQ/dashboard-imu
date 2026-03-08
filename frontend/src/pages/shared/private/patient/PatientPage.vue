@@ -13,7 +13,6 @@ import { api } from 'boot/axios';
 import type { PatientDto, SessionDto } from 'src/common/api/generated/models';
 import { UserRole } from 'src/common/api/generated/models';
 import type { AxiosResponse } from 'axios';
-import BackgroundNetwork from 'components/Background/BackgroundNetwork.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -135,8 +134,6 @@ async function search() {
     <load-div v-if="loading" />
 
     <div v-else class="patient-wrapper">
-      <background-network />
-
       <div class="patient-container">
         <!-- Page header -->
         <div class="patient-page-header">
@@ -355,18 +352,18 @@ async function search() {
 .patient-wrapper {
   position: relative;
   width: 100%;
-  min-height: 0;
-  background: #f1f5f9;
-  overflow: hidden;
+  min-height: 100%; /* Garante que cubra a tela se tiver pouco conteúdo */
+  height: fit-content; /* O segredo: força o fundo a descer junto com o scroll */
+  display: flex;
+  flex-direction: column;
 }
 
 .patient-container {
   position: relative;
   z-index: 1;
   width: 100%;
-  height: 0;
-  min-height: 0;
-  padding: 24px 16px;
+  /* As linhas height: 0 e min-height: 0 foram removidas daqui! */
+  padding: 24px 16px 48px; /* Aumentei o padding final para o botão não encostar no fundo */
   display: flex;
   flex-direction: column;
   gap: 20px;

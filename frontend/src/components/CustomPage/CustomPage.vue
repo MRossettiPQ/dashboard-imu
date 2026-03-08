@@ -1,5 +1,7 @@
 <template>
   <q-page class="page">
+    <background-network />
+
     <div class="page__content bordered">
       <div class="page__inner-content scroll">
         <slot />
@@ -8,16 +10,19 @@
     </div>
   </q-page>
 </template>
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import BackgroundNetwork from 'components/Background/BackgroundNetwork.vue';
+</script>
 
 <style lang="scss" scoped>
 .page {
   display: grid;
   grid-template-rows: min-content 1fr;
   grid-template-areas: 'header' 'page-content';
-  max-height: calc(100vh - 50px);
-  min-height: 0;
-  height: 100%;
+  height: calc(100vh - 52px);
+  background: #f1f5f9;
+  max-height: calc(100vh - 52px);
+
   width: 100%;
   min-width: 0;
   padding: 0;

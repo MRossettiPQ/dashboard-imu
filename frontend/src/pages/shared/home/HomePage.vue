@@ -4,7 +4,6 @@ import PaginationUtils from 'src/common/utils/PaginationUtils';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { api } from 'boot/axios';
 import type { SensorInfoDto } from 'src/common/api/generated/models';
-import BackgroundNetwork from 'components/Background/BackgroundNetwork.vue';
 
 const loading = ref(false);
 
@@ -40,7 +39,6 @@ async function search() {
 <template>
   <custom-page>
     <div class="sensors-wrapper">
-      <background-network />
       <div class="page-header">
         <q-icon name="sensors" class="page-header__icon" />
         <h2 class="page-header__title">Sensores Disponíveis</h2>
@@ -111,7 +109,6 @@ async function search() {
 <style scoped lang="scss">
 .sensors-wrapper {
   padding: 24px 32px;
-  background: #f1f5f9;
   min-height: 0;
   width: 100%;
 }

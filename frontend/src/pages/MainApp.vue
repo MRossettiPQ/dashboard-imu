@@ -77,7 +77,6 @@ export default defineComponent({
 <template>
   <q-layout view="lHh lpR lfr">
     <q-header class="app-header" :elevated="false">
-      <div class="app-header__accent" />
       <q-toolbar class="app-header__toolbar">
         <q-toolbar-title class="app-header__title">
           <span class="app-header__title-bold">Dashboard</span>
@@ -155,7 +154,7 @@ export default defineComponent({
       </div>
     </q-drawer>
 
-    <q-page-container class="u-w-100 u-h-100">
+    <q-page-container class="u-w-100 u-h-100" style="min-height: 0; min-width: 0">
       <router-view />
     </q-page-container>
   </q-layout>

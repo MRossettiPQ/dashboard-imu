@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .neural-bg {
-  position: absolute;
+  position: fixed; /* ← Mudamos de absolute para fixed */
   inset: 0;
   width: 100%;
   height: 100%;

@@ -7,7 +7,6 @@ import { useAuthStore } from 'stores/auth-store';
 import { useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import type { RegisterDto } from 'src/common/api/generated/models';
-import BackgroundNetwork from 'components/Background/BackgroundNetwork.vue';
 
 const store = useAuthStore();
 const router = useRouter();
@@ -46,9 +45,6 @@ async function register(): Promise<void> {
 <template>
   <custom-page>
     <div class="register-wrapper">
-      <!-- Neural network SVG background -->
-      <background-network />
-
       <q-card class="register-card" flat>
         <div class="register-card__accent" />
 
@@ -163,7 +159,6 @@ async function register(): Promise<void> {
   width: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #f1f5f9;
 }
 
 .neural-bg {

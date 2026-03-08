@@ -7,7 +7,6 @@ import { useAuthStore } from 'stores/auth-store';
 import { useRouter } from 'vue-router';
 import { api } from 'boot/axios';
 import type { LoginDto } from 'src/common/api/generated/models';
-import BackgroundNetwork from 'components/Background/BackgroundNetwork.vue';
 
 const store = useAuthStore();
 const router = useRouter();
@@ -46,9 +45,6 @@ async function login(): Promise<void> {
 <template>
   <custom-page>
     <div class="login-wrapper">
-      <!-- Neural network SVG background -->
-      <background-network />
-
       <q-card class="login-card" flat>
         <div class="login-card__accent" />
 
@@ -122,7 +118,6 @@ async function login(): Promise<void> {
   width: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #f1f5f9;
 }
 
 /* ── Neural network background ── */
