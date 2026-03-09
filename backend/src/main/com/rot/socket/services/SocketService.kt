@@ -64,6 +64,13 @@ class SocketService(
     fun onStart(@Observes event: StartupEvent) {
         Log.info("Start Socket.IO - $event")
 
+        sessions.clear()
+        sensors.clear()
+        Log.info("Sessões e sensores em memória foram zerados.")
+
+        SensorInfo.update("active = false")
+        Log.info("Todos os SensorInfo foram atualizados para active = false")
+
         val config = Configuration()
         config.hostname = applicationConfig.socket().host()
         config.port = applicationConfig.socket().port()

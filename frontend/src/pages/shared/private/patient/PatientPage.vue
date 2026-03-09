@@ -352,8 +352,8 @@ async function search() {
 .patient-wrapper {
   position: relative;
   width: 100%;
-  min-height: 100%; /* Garante que cubra a tela se tiver pouco conteúdo */
-  height: fit-content; /* O segredo: força o fundo a descer junto com o scroll */
+  min-height: 100%;
+  height: fit-content;
   display: flex;
   flex-direction: column;
 }
@@ -362,8 +362,7 @@ async function search() {
   position: relative;
   z-index: 1;
   width: 100%;
-  /* As linhas height: 0 e min-height: 0 foram removidas daqui! */
-  padding: 24px 16px 48px; /* Aumentei o padding final para o botão não encostar no fundo */
+  padding: 24px 16px 48px;
   display: flex;
   flex-direction: column;
   gap: 20px;
