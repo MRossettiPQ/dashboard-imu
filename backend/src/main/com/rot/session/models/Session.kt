@@ -57,5 +57,11 @@ class Session : BaseEntity<Session>() {
     var physiotherapist: User? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
+    var sessionSensors = mutableSetOf<SessionSensor>()
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
+    var sessionNodes = mutableSetOf<SessionNode>()
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
     var articulations = mutableSetOf<Articulation>()
 }

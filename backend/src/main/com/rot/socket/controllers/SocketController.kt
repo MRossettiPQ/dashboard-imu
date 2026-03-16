@@ -3,14 +3,8 @@ package com.rot.socket.controllers
 import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
-import com.rot.measurement.dtos.MeasurementDto
-import com.rot.measurement.dtos.MeasurementDto.Companion.from
-import com.rot.measurement.dtos.SensorDto
 import com.rot.measurement.dtos.SensorInfoDto
-import com.rot.measurement.models.Measurement
-import com.rot.measurement.models.Sensor
 import com.rot.measurement.models.SensorInfo
-import com.rot.session.models.Movement
 import com.rot.socket.services.SocketService
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
@@ -19,7 +13,6 @@ import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import org.eclipse.microprofile.openapi.annotations.Operation
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
-import org.jboss.resteasy.reactive.RestPath
 import org.jboss.resteasy.reactive.RestQuery
 import org.jboss.resteasy.reactive.RestResponse
 

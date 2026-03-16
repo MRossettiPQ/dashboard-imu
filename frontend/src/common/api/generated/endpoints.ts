@@ -9,7 +9,6 @@ import type {
   ContentArticulationTypeDto,
   ContentFileStorageDto,
   ContentListArticulationTypeDto,
-  ContentListPairMeasurementDtoMeasurementDto,
   ContentMapStringObject,
   ContentNetworkConfigurationDto,
   ContentPaginationArticulationTypeDto,
@@ -26,7 +25,7 @@ import type {
   FileDownloadResponse,
   GetApiArticulationTypesParams,
   GetApiArticulationsIdMovementsParams,
-  GetApiMovementsMovementSensorsSensorMeasurementsParams,
+  GetApiMovementsSensorsSensorMeasurementsParams,
   GetApiNetworkConfigurationsParams,
   GetApiPatientsParams,
   GetApiPatientsUuidSessionsParams,
@@ -206,27 +205,15 @@ export const getDashboardAPI = () => {
   };
 
   /**
-   * Calcula o centro de variabilidade para o movimento especificado
-   * @summary Calcular variabilidade do movimento
-   */
-  const getApiMovementsIdCalculateVariability = (id: number) => {
-    return customInstance<ContentListPairMeasurementDtoMeasurementDto>({
-      url: `/api/movements/${id}/calculate-variability`,
-      method: 'GET',
-    });
-  };
-
-  /**
    * Recupera uma lista paginada de medições associadas a um movimento e sensor específicos
    * @summary Listagem paginada de medições por movimento e sensor
    */
-  const getApiMovementsMovementSensorsSensorMeasurements = (
-    movement: number,
+  const getApiMovementsSensorsSensorMeasurements = (
     sensor: number,
-    params?: GetApiMovementsMovementSensorsSensorMeasurementsParams,
+    params?: GetApiMovementsSensorsSensorMeasurementsParams,
   ) => {
     return customInstance<ContentPaginationMeasurementDto>({
-      url: `/api/movements/${movement}/sensors/${sensor}/measurements`,
+      url: `/api/movements/sensors/${sensor}/measurements`,
       method: 'GET',
       params,
     });
@@ -402,8 +389,7 @@ export const getDashboardAPI = () => {
     getApiCorePing,
     postApiFiles,
     getApiFilesUuid,
-    getApiMovementsIdCalculateVariability,
-    getApiMovementsMovementSensorsSensorMeasurements,
+    getApiMovementsSensorsSensorMeasurements,
     postApiNetworkConfigurations,
     getApiNetworkConfigurations,
     getApiNetworkConfigurationsUuid,
@@ -454,14 +440,9 @@ export type PostApiFilesResult = NonNullable<
 export type GetApiFilesUuidResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getDashboardAPI>['getApiFilesUuid']>>
 >;
-export type GetApiMovementsIdCalculateVariabilityResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getDashboardAPI>['getApiMovementsIdCalculateVariability']>>
->;
-export type GetApiMovementsMovementSensorsSensorMeasurementsResult = NonNullable<
+export type GetApiMovementsSensorsSensorMeasurementsResult = NonNullable<
   Awaited<
-    ReturnType<
-      ReturnType<typeof getDashboardAPI>['getApiMovementsMovementSensorsSensorMeasurements']
-    >
+    ReturnType<ReturnType<typeof getDashboardAPI>['getApiMovementsSensorsSensorMeasurements']>
   >
 >;
 export type PostApiNetworkConfigurationsResult = NonNullable<

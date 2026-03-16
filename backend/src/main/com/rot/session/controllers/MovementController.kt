@@ -5,8 +5,8 @@ import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
 import com.rot.measurement.dtos.MeasurementDto
 import com.rot.measurement.models.Measurement
-import com.rot.measurement.models.Sensor
 import com.rot.session.models.Movement
+import com.rot.session.models.SessionSensor
 import com.rot.session.services.SciLabServices
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
@@ -28,32 +28,32 @@ class MovementController(
     private val sciLabServices: SciLabServices
 ) {
 
-    @GET
-    @Transactional
-    @Path("/{id}/calculate-variability")
-    @Operation(
-        summary = "Calcular variabilidade do movimento",
-        description = "Calcula o centro de variabilidade para o movimento especificado"
-    )
-    @APIResponse(
-        responseCode = "200",
-        description = "Variabilidade do movimento calculada com sucesso"
-    )
-    @APIResponse(responseCode = "401", description = "Autenticação inválida")
-    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
-    @APIResponse(responseCode = "404", description = "Movimento não encontrado")
-    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
-    fun calculateVariability(
-        @RestPath("id") id: Int
-    ): RestResponse<Content<List<Pair<MeasurementDto, MeasurementDto>>>> {
-        val movement = Movement.findOrThrowById(id)
-        val result = sciLabServices.calculateVariabilityCenter(movement)
-        return ResultContent.of(result).build()
-    }
+//    @GET
+//    @Transactional
+//    @Path("/{id}/calculate-variability")
+//    @Operation(
+//        summary = "Calcular variabilidade do movimento",
+//        description = "Calcula o centro de variabilidade para o movimento especificado"
+//    )
+//    @APIResponse(
+//        responseCode = "200",
+//        description = "Variabilidade do movimento calculada com sucesso"
+//    )
+//    @APIResponse(responseCode = "401", description = "Autenticação inválida")
+//    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
+//    @APIResponse(responseCode = "404", description = "Movimento não encontrado")
+//    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+//    fun calculateVariability(
+//        @RestPath("id") id: Int
+//    ): RestResponse<Content<List<Pair<MeasurementDto, MeasurementDto>>>> {
+//        val movement = Movement.findOrThrowById(id)
+//        val result = sciLabServices.calculateVariabilityCenter(movement)
+//        return ResultContent.of(result).build()
+//    }
 
     @GET
     @Transactional
-    @Path("/{movement}/sensors/{sensor}/measurements")
+    @Path("/sensors/{sensor}/measurements")
     @Operation(
         summary = "Listagem paginada de medições por movimento e sensor",
         description = "Recupera uma lista paginada de medições associadas a um movimento e sensor específicos"
@@ -64,25 +64,19 @@ class MovementController(
     )
     @APIResponse(responseCode = "401", description = "Autenticação inválida")
     @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
-    @APIResponse(responseCode = "404", description = "Movimento não encontrado")
     @APIResponse(responseCode = "404", description = "Sensor não encontrado")
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
     fun listMeasurements(
         @RestPath("sensor") sensor: Int,
-        @RestPath("movement") movement: Int,
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,
     ): RestResponse<Content<Pagination<MeasurementDto>>> {
-        Movement.findOrThrowById(movement)
-        Sensor.findOrThrowById(sensor)
+        val sessionSensor = SessionSensor.findOrThrowById(sensor)
 
         val query = Measurement.createQuery()
-            .leftJoin(Sensor.q)
-            .on(Measurement.q.sensor().id.eq(Sensor.q.id))
-            .leftJoin(Movement.q)
-            .on(Sensor.q.movement().id.eq(Movement.q.id))
-            .where(Sensor.q.id.eq(sensor))
-            .where(Movement.q.id.eq(movement))
+            .leftJoin(SessionSensor.q)
+            .on(Measurement.q.sessionSensor().id.eq(SessionSensor.q.id))
+            .where(SessionSensor.q.id.eq(sessionSensor.id))
 
         return ResultContent.of(Measurement.fetch(query, page, rpp))
             .transform(MeasurementDto::from)

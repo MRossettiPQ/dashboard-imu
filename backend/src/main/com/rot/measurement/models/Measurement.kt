@@ -3,18 +3,8 @@ package com.rot.measurement.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Index
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
-import jakarta.validation.constraints.NotEmpty
+import com.rot.session.models.SessionSensor
+import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -24,7 +14,8 @@ import java.util.UUID
 @Table(
     name = "measurements",
     indexes = [
-        Index(name = "idx_measurement_sensor", columnList = "sensor_id"),
+        Index(name = "idx_measurement_session_sensor", columnList = "session_sensor_id"),
+        Index(name = "idx_measurement_read_order", columnList = "session_sensor_id, read_order"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -33,9 +24,10 @@ class Measurement : BaseEntity<Measurement>() {
         override val entityClass: Class<Measurement> = Measurement::class.java
         override val q: QMeasurement = QMeasurement.measurement
 
-        fun findAllBySensorId(sensorId: Int): MutableList<Measurement> {
+        fun findAllBySessionSensorId(sessionSensorId: Int): MutableList<Measurement> {
             return createQuery()
-                .where(q.sensor().id.eq(sensorId))
+                .where(q.sessionSensor().id.eq(sessionSensorId))
+                .orderBy(q.readOrder.asc())
                 .fetch()
         }
     }
@@ -44,18 +36,18 @@ class Measurement : BaseEntity<Measurement>() {
     @GeneratedValue(strategy = GenerationType.UUID)
     override var id: UUID? = null
 
-    @NotEmpty
+    @NotNull
     @Column(name = "captured_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     var capturedAt: OffsetDateTime? = null
 
-    @NotEmpty
-    @Column(name = "sensor_name", nullable = false, updatable = false)
+    @Column(name = "sensor_name", updatable = false)
     var sensorName: String? = null
 
     @NotNull
     @Column(name = "read_order", nullable = false, updatable = false)
     var readOrder: Int? = null
 
+    // --- Accelerometer (m/s²) ---
     @NotNull
     @Column(name = "accel_mss_x", nullable = false, updatable = false)
     var accelMssX: BigDecimal? = null
@@ -68,6 +60,7 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "accel_mss_z", nullable = false, updatable = false)
     var accelMssZ: BigDecimal? = null
 
+    // --- Linear Acceleration ---
     @NotNull
     @Column(name = "accel_lin_x", nullable = false, updatable = false)
     var accelLinX: BigDecimal? = null
@@ -80,6 +73,7 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "accel_lin_z", nullable = false, updatable = false)
     var accelLinZ: BigDecimal? = null
 
+    // --- Gyroscope (rad/s) ---
     @NotNull
     @Column(name = "gyro_rads_x", nullable = false, updatable = false)
     var gyroRadsX: BigDecimal? = null
@@ -92,6 +86,7 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "gyro_rads_z", nullable = false, updatable = false)
     var gyroRadsZ: BigDecimal? = null
 
+    // --- Magnetometer bias ---
     @NotNull
     @Column(name = "mag_bias_x", nullable = false, updatable = false)
     var magBiasX: BigDecimal? = null
@@ -104,6 +99,7 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "mag_bias_z", nullable = false, updatable = false)
     var magBiasZ: BigDecimal? = null
 
+    // --- Euler angles (roll, pitch, yaw) ---
     @NotNull
     @Column(name = "roll", nullable = false, updatable = false)
     var roll: BigDecimal? = null
@@ -116,6 +112,7 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "yaw", nullable = false, updatable = false)
     var yaw: BigDecimal? = null
 
+    // --- Euler (alternative representation) ---
     @NotNull
     @Column(name = "euler_x", nullable = false, updatable = false)
     var eulerX: BigDecimal? = null
@@ -128,6 +125,7 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "euler_z", nullable = false, updatable = false)
     var eulerZ: BigDecimal? = null
 
+    // --- Quaternion (for 3D orientation) ---
     @NotNull
     @Column(name = "quaternion_x", nullable = false, updatable = false)
     var quaternionX: BigDecimal? = null
@@ -144,8 +142,9 @@ class Measurement : BaseEntity<Measurement>() {
     @Column(name = "quaternion_w", nullable = false, updatable = false)
     var quaternionW: BigDecimal? = null
 
+    // --- Relationship ---
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "sensor_id", nullable = false)
-    var sensor: Sensor? = null
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_sensor_id", nullable = false)
+    var sessionSensor: SessionSensor? = null
 }

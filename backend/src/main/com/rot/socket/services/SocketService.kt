@@ -12,10 +12,12 @@ import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JwtUtils
 import com.rot.gonimetry.models.MovementType
 import com.rot.measurement.models.Measurement
-import com.rot.measurement.models.Sensor
 import com.rot.measurement.models.SensorInfo
 import com.rot.session.enums.SessionType
-import com.rot.session.models.*
+import com.rot.session.models.Articulation
+import com.rot.session.models.Movement
+import com.rot.session.models.Session
+import com.rot.session.models.SessionSensor
 import com.rot.socket.dtos.*
 import com.rot.socket.enums.AckMessage
 import com.rot.socket.enums.MessageType
@@ -61,6 +63,7 @@ class SocketService(
 
     lateinit var server: SocketIOServer
 
+    @Transactional
     fun onStart(@Observes event: StartupEvent) {
         Log.info("Start Socket.IO - $event")
 
@@ -241,7 +244,7 @@ class SocketService(
 
             // Adicionar sensores ao movimento
             for ((first, second) in sessionContext.sensors.values) {
-                val sensor = Sensor()
+                val sensor = SessionSensor()
                 val sensorInfo = SensorInfo.findByMacAddress(first.mac!!) ?: SensorInfo()
 
                 if (sensorInfo.isNewBean) {
@@ -258,7 +261,7 @@ class SocketService(
                     sensor.measurements.add(measurement)
                 }
 
-                movement.sensors.add(sensor)
+//                movement.sensors.add(sensor)
             }
 
             // Adicionar movimentos ao procedimento

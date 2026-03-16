@@ -4,7 +4,12 @@ import com.rot.core.jaxrs.Pagination
 import com.rot.core.utils.JsonUtils
 import com.rot.session.enums.SessionType
 import com.rot.session.models.Session
+import com.rot.session.models.SessionNode
+import com.rot.session.models.SessionSensor
 import com.rot.user.dtos.UserDto
+import jakarta.persistence.CascadeType
+import jakarta.persistence.FetchType
+import jakarta.persistence.OneToMany
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.*
@@ -17,6 +22,8 @@ open class SessionDto {
     var patient: UserDto? = null
     var physiotherapist: UserDto? = null
     var articulations = mutableSetOf<ArticulationDto>()
+    var sessionSensors = mutableSetOf<SessionSensorDto>()
+    var sessionNodes = mutableSetOf<SessionNodeDto>()
 
     companion object {
         fun from(entity: Session): SessionDto {
@@ -28,6 +35,8 @@ open class SessionDto {
                 patient = UserDto.from(entity.patient!!)
                 physiotherapist = UserDto.from(entity.physiotherapist!!)
                 articulations = entity.articulations.map { ArticulationDto.from(it) }.toMutableSet()
+                sessionSensors = entity.sessionSensors.map { SessionSensorDto.from(it) }.toMutableSet()
+                sessionNodes = entity.sessionNodes.map { SessionNodeDto.from(it) }.toMutableSet()
             }
         }
 

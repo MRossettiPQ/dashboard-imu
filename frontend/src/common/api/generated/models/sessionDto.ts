@@ -11,6 +11,8 @@ import type { SessionDtoObservation } from './sessionDtoObservation';
 import type { SessionDtoPatient } from './sessionDtoPatient';
 import type { SessionDtoPhysiotherapist } from './sessionDtoPhysiotherapist';
 import type { ArticulationDto } from './articulationDto';
+import type { SessionSensorDto1 } from './sessionSensorDto1';
+import type { SessionNodeDto } from './sessionNodeDto';
 
 export interface SessionDto {
   id?: SessionDtoId;
@@ -20,4 +22,6 @@ export interface SessionDto {
   patient?: SessionDtoPatient;
   physiotherapist?: SessionDtoPhysiotherapist;
   articulations: ArticulationDto[];
+  sessionSensors: SessionSensorDto1[];
+  sessionNodes: SessionNodeDto[];
 }

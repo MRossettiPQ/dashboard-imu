@@ -56,52 +56,52 @@ class SciLabServices {
         }
     }
 
-    fun calculateVariabilityCenter(movement: Movement): List<Pair<MeasurementDto, MeasurementDto>> {
-        Log.info("Starting variability center calculation")
-
-        if (movement.sensors.isEmpty()) {
-            throw ApplicationException("No sensors detected")
-        }
-
-        val sensor1 = movement.sensors.first()
-            ?: throw ApplicationException("No detected sensor position one")
-        val measurement1 = sensor1.measurements
-            .sortedBy { it.readOrder }
-            .groupBy { it.capturedAt!! }
-        val sensor2 = movement.sensors.last()
-            ?: throw ApplicationException("No detected sensor position two")
-        val measurement2 = sensor2.measurements
-            .sortedBy { it.readOrder }
-            .groupBy { it.capturedAt!! }
-
-        Log.info("Sensor ONE: ${sensor1.sensorInfo?.sensorName}, total measurements: ${sensor1.measurements.size}")
-        Log.info("Sensor TWO: ${sensor2.sensorInfo?.sensorName}, total measurements: ${sensor2.measurements.size}")
-
-        val tolerance = Duration.ofMillis(50)
-        val syncList = mutableMapOf<OffsetDateTime, Pair<List<Measurement>, List<Measurement>>>()
-        for ((time1, group1) in measurement1) {
-            // Tenta encontrar algum timestamp em measurement2 dentro da tolerância
-            val group2 = measurement2.entries
-                .find { (time2, _) -> checkTolerance(time1, time2, tolerance) }
-
-            if (group2 != null) {
-                syncList[time1] = Pair(group1, group2.value)
-            } else {
-                Log.debug("No matching timestamp found for $time1 in sensor TWO within tolerance")
-            }
-        }
-
-        val length = syncList.size
-        Log.info("Total synchronized timestamp pairs: $length")
-        val averagedPairs = syncList.map { (_, groups) ->
-            val avg1 = averageMeasurements(groups.first)
-            val avg2 = averageMeasurements(groups.second)
-            avg1 to avg2
-        }
-
-        Log.info("Diferença sensor1: ${measurement1.size - syncList.size}")
-        Log.info("Diferença sensor2: ${measurement2.size - syncList.size}")
-        Log.info("Variability center calculation completed")
-        return averagedPairs
-    }
+//    fun calculateVariabilityCenter(movement: Movement): List<Pair<MeasurementDto, MeasurementDto>> {
+//        Log.info("Starting variability center calculation")
+//
+//        if (movement.sensors.isEmpty()) {
+//            throw ApplicationException("No sensors detected")
+//        }
+//
+//        val sensor1 = movement.sensors.first()
+//            ?: throw ApplicationException("No detected sensor position one")
+//        val measurement1 = sensor1.measurements
+//            .sortedBy { it.readOrder }
+//            .groupBy { it.capturedAt!! }
+//        val sensor2 = movement.sensors.last()
+//            ?: throw ApplicationException("No detected sensor position two")
+//        val measurement2 = sensor2.measurements
+//            .sortedBy { it.readOrder }
+//            .groupBy { it.capturedAt!! }
+//
+//        Log.info("Sensor ONE: ${sensor1.sensorInfo?.sensorName}, total measurements: ${sensor1.measurements.size}")
+//        Log.info("Sensor TWO: ${sensor2.sensorInfo?.sensorName}, total measurements: ${sensor2.measurements.size}")
+//
+//        val tolerance = Duration.ofMillis(50)
+//        val syncList = mutableMapOf<OffsetDateTime, Pair<List<Measurement>, List<Measurement>>>()
+//        for ((time1, group1) in measurement1) {
+//            // Tenta encontrar algum timestamp em measurement2 dentro da tolerância
+//            val group2 = measurement2.entries
+//                .find { (time2, _) -> checkTolerance(time1, time2, tolerance) }
+//
+//            if (group2 != null) {
+//                syncList[time1] = Pair(group1, group2.value)
+//            } else {
+//                Log.debug("No matching timestamp found for $time1 in sensor TWO within tolerance")
+//            }
+//        }
+//
+//        val length = syncList.size
+//        Log.info("Total synchronized timestamp pairs: $length")
+//        val averagedPairs = syncList.map { (_, groups) ->
+//            val avg1 = averageMeasurements(groups.first)
+//            val avg2 = averageMeasurements(groups.second)
+//            avg1 to avg2
+//        }
+//
+//        Log.info("Diferença sensor1: ${measurement1.size - syncList.size}")
+//        Log.info("Diferença sensor2: ${measurement2.size - syncList.size}")
+//        Log.info("Variability center calculation completed")
+//        return averagedPairs
+//    }
 }

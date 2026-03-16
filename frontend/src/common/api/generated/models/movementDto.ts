@@ -8,12 +8,10 @@ import type { MovementDtoId } from './movementDtoId';
 import type { MovementDtoType } from './movementDtoType';
 import type { MovementDtoMovementType } from './movementDtoMovementType';
 import type { MovementDtoObservation } from './movementDtoObservation';
-import type { SensorDto } from './sensorDto';
 
 export interface MovementDto {
   id?: MovementDtoId;
   type?: MovementDtoType;
   movementType?: MovementDtoMovementType;
   observation?: MovementDtoObservation;
-  sensors: SensorDto[];
 }
