@@ -3,6 +3,8 @@ package com.rot.gonimetry.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
+import com.rot.gonimetry.enums.BodyPointEnum
+import com.rot.gonimetry.enums.BodyRegionEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
@@ -33,15 +35,15 @@ class BodyPoint : BaseEntity<BodyPoint>() {
     override var id: Int? = null
 
     @NotNull
-    @NotEmpty
-    @Column(name = "name", nullable = false, unique = true)
-    var name: String? = null
+    @Enumerated(EnumType.STRING)
+    @Column(name = "code", nullable = false, unique = true)
+    var code: BodyPointEnum? = null
 
     @Column(name = "description", columnDefinition = "TEXT")
     var description: String? = null
 
     @NotNull
-    @NotEmpty
+    @Enumerated(EnumType.STRING)
     @Column(name = "region", nullable = false)
-    var region: String? = null
+    var region: BodyRegionEnum? = null
 }
