@@ -179,7 +179,7 @@ class User : BaseEntity<User>() {
     }
 
     fun checkSameEmail() {
-        val existingUser = User.createQuery()
+        val existingUser = createQuery()
             .where(q.email.eq(this.email!!))
 
         if (!isNewBean) {

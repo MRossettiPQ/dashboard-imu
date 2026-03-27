@@ -30,6 +30,15 @@ const publicRoutes: RouteRecordRaw[] = [
       private: false,
     },
   },
+  {
+    path: 'development',
+    name: 'public.development',
+    component: () => import('pages/shared/public/development/DevelopmentPage.vue'),
+    meta: {
+      hideAuthenticated: true,
+      private: false,
+    },
+  },
 ];
 
 const privateRoutes: RouteRecordRaw[] = [
