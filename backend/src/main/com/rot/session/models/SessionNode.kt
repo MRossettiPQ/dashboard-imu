@@ -52,7 +52,4 @@ class SessionNode : BaseEntity<SessionNode>() {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "sessionNode", cascade = [CascadeType.ALL])
     var nodeSensors = mutableSetOf<NodeSensor>()
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "sessionNode", cascade = [CascadeType.ALL])
-    var movementNodes = mutableSetOf<MovementNode>()
 }

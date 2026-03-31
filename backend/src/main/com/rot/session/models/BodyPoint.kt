@@ -22,12 +22,6 @@ class BodyPoint : BaseEntity<BodyPoint>() {
     companion object : BaseCompanion<BodyPoint, Int, QBodyPoint> {
         override val entityClass: Class<BodyPoint> = BodyPoint::class.java
         override val q: QBodyPoint = QBodyPoint.bodyPoint
-
-        fun findByName(name: String): BodyPoint? {
-            return createQuery()
-                .where(q.name.eq(name))
-                .fetchFirst()
-        }
     }
 
     @Id
@@ -36,8 +30,8 @@ class BodyPoint : BaseEntity<BodyPoint>() {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "code", nullable = false, unique = true)
-    var code: BodyPointEnum? = null
+    @Column(name = "point", nullable = false, unique = true)
+    var point: BodyPointEnum? = null
 
     @Column(name = "description", columnDefinition = "TEXT")
     var description: String? = null

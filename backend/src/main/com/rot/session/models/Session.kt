@@ -61,7 +61,4 @@ class Session : BaseEntity<Session>() {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
     var sessionNodes = mutableSetOf<SessionNode>()
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "session", cascade = [CascadeType.ALL])
-    var articulations = mutableSetOf<Articulation>()
 }
