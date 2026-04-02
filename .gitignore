@@ -6,3 +6,5 @@
 *.sln
 *.iml
 .env
+.docker
+/docker

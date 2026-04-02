@@ -1,0 +1,71 @@
+name: laboratory
+
+networks:
+  laboratory-network:
+    driver: bridge
+
+x-common-settings: &common-settings
+  privileged: true
+  restart: unless-stopped
+  networks:
+    - laboratory-network
+
+services:
+  # --- BANCO DE DADOS (POSTGRES 18.0 ALPINE) ---
+  postgres:
+    container_name: postgres
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "${DATABASE_PORT}:5432"
+    volumes:
+      - ./.docker/postgres/pg_data:/var/lib/postgresql
+    <<: *common-settings
+
+  # --- BACKEND (QUARKUS DEV MODE - JDK + GRADLE ALPINE) ---
+  backend-dev:
+    container_name: backend-dev
+    image: gradle:8-jdk17-alpine
+    working_dir: /work
+    volumes:
+      - ./backend:/work:z
+      - ~/.m2:/root/.m2:z
+      - ~/.gradle:/root/.gradle:z
+    environment:
+      - QUARKUS_LAUNCH_DEVMODE=true
+      - DATABASE_HOST=postgres
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_PORT=5432
+      # Força o Quarkus a ouvir em todas as interfaces para o mDNS/DevMode
+      - QUARKUS_HTTP_HOST=0.0.0.0
+    ports:
+      - "7000:7000"
+      - "5005:5005"
+      - "5353:5353/udp" # Porta padrão mDNS
+    command: "gradle quarkusDev --no-daemon"
+    depends_on:
+      - postgres
+    <<: *common-settings
+
+  # --- FRONTEND (QUASAR DEV MODE) ---
+  frontend-dev:
+    container_name: frontend-dev
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+    environment:
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true # Necessário para Hot Reload em volumes Docker
+    ports:
+      - "8080:8080"
+    command: "sh -c 'yarn install && yarn quasar dev'"
+    depends_on:
+      - backend-dev
+    <<: *common-settings
