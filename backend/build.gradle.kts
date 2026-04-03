@@ -12,11 +12,11 @@ val jmdnsVersion: String by project
 val mdnsVersion: String by project
 val commonsIo: String by project
 
-apply(from = "pem.gradle.kts")
+//apply(from = "pem.gradle.kts")
 //apply(from = "vue.gradle.kts")
 
 plugins {
-    val kotlinVersion = "2.0.21"
+    val kotlinVersion = "2.3.10"
     kotlin("jvm") version kotlinVersion
     kotlin("kapt") version kotlinVersion
     kotlin("plugin.allopen") version kotlinVersion

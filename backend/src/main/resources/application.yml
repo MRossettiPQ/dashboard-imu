@@ -50,8 +50,8 @@ mp:
     incoming:
       measurements:
         connector: smallrye-mqtt
-        host: ${application.mqtt.host}
-        port: ${application.mqtt.port}
+#        host: ${application.mqtt.host}
+#        port: ${application.mqtt.port}
         topic: session/+/measurement
   jwt:
     verify:

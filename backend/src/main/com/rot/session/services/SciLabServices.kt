@@ -1,12 +1,8 @@
 package com.rot.session.services
 
-import com.rot.core.exceptions.ApplicationException
 import com.rot.measurement.dtos.MeasurementDto
 import com.rot.measurement.models.Measurement
-import com.rot.session.models.Movement
-import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
-import java.math.BigDecimal
 import java.time.Duration
 import java.time.OffsetDateTime
 
@@ -19,9 +15,9 @@ class SciLabServices {
     }
 
     fun averageMeasurements(measurements: List<Measurement>): MeasurementDto {
-        fun averageOf(selector: (Measurement) -> BigDecimal?): BigDecimal? {
+        fun averageOf(selector: (Measurement) -> Double?): Double? {
             val values = measurements.mapNotNull(selector)
-            return if (values.isNotEmpty()) values.reduce { acc, bd -> acc + bd } / BigDecimal(values.size) else null
+            return if (values.isNotEmpty()) values.reduce { acc, bd -> acc + bd } / Double(values.size) else null
         }
 
         return MeasurementDto().apply {
