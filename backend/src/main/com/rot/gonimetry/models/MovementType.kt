@@ -22,7 +22,7 @@ import java.math.BigDecimal
 @Table(
     name = "movement_types",
     indexes = [
-        Index(name = "idx_movementtype_type", columnList = "type"),
+        Index(name = "idx_movement_types_type", columnList = "type"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -62,14 +62,12 @@ class MovementType : BaseEntity<MovementType>() {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Basic(fetch = FetchType.LAZY)
-    @ColumnTransformer(write = "?::jsonb")
     @Column(name = "angle_rule", columnDefinition = "jsonb")
     @QueryType(PropertyType.SIMPLE)
     var angleRule: AngleRule? = null
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Basic(fetch = FetchType.LAZY)
-    @ColumnTransformer(write = "?::jsonb")
     @Column(name = "goniometry_procedure", columnDefinition = "jsonb")
     @QueryType(PropertyType.SIMPLE)
     var goniometryProcedure: GoniometryProcedure? = null

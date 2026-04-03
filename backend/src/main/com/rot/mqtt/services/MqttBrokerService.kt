@@ -5,6 +5,7 @@ import com.rot.core.utils.JsonUtils
 import com.rot.core.utils.JwtUtils
 import com.rot.measurement.dtos.MeasurementDto
 import com.rot.mqtt.dto.MqttMessage
+import com.rot.session.dtos.SensorSessionContext
 import com.rot.session.dtos.UserSessionContext
 import com.rot.session.dtos.SessionSensorDto
 import io.moquette.broker.Server
@@ -30,7 +31,8 @@ class MqttBrokerService(
     private lateinit var mqttBroker: Server
 
     // O seu cache em memória seguro para concorrência
-    val activeSessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
+    val userActiveSessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
+    val sensorActiveSessions: ConcurrentHashMap<UUID, SensorSessionContext> = ConcurrentHashMap()
 
     fun start(@Observes event: StartupEvent) {
         try {
@@ -110,7 +112,7 @@ class JwtMqttAuthenticator : IAuthenticator {
 }
 
 class MqttInterceptor(
-    private val brokerService: MqttBrokerService // Referência ao serviço principal
+    private val brokerService: MqttBrokerService
 ) : AbstractInterceptHandler() {
 
     override fun getID(): String = UUID.randomUUID().toString()
@@ -124,7 +126,7 @@ class MqttInterceptor(
             Log.error("Erro ao processar mensagem MQTT no tópico $topic", e)
         }
 
-        super.onPublish(data) // Importante manter para o Moquette rotear a mensagem para o frontend
+        super.onPublish(data)
     }
 
     fun router(topic: String, data: InterceptPublishMessage) {
@@ -145,7 +147,7 @@ class MqttInterceptor(
                 val measurements = convertPayload<MqttMessage<MutableList<MeasurementDto>>>(data)
 
                 // Salva no cache em memória do servidor
-                val sessionContext = brokerService.activeSessions[sessionId]
+                val sessionContext = brokerService.userActiveSessions[sessionId]
                 if (sessionContext != null) {
                     // Lógica para encontrar o sensor no contexto e dar .addAll(measurements)
                     // ...

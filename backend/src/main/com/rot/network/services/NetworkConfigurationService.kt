@@ -1,17 +1,13 @@
 package com.rot.network.services
 
-import com.rot.network.models.NetworkConfiguration
-import io.quarkiverse.mdns.runtime.JmDNSProducer
-import io.quarkiverse.mdns.runtime.MdnsRuntimeConfig
+import com.rot.core.config.ApplicationConfig
 import io.quarkus.arc.runtime.BeanContainer
 import io.quarkus.logging.Log
 import io.quarkus.runtime.ShutdownContext
 import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
-import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
-import jakarta.transaction.Transactional
 import org.eclipse.microprofile.config.ConfigProvider
 import java.io.IOException
 import java.net.Inet4Address
@@ -22,22 +18,42 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.rmi.UnknownHostException
 import java.util.*
-import java.util.concurrent.TimeUnit
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
 
 
 @ApplicationScoped
 class NetworkConfigurationService(
-    private val jmdns: JmDNS
+    private val config: ApplicationConfig
 ) {
 
-    fun onStart(@Observes ev: StartupEvent?) {
-        Log.info("The application is starting...")
+    private var jmdns: JmDNS? = null
+
+    fun onStart(@Observes ev: StartupEvent) {
+        try {
+            // Bind to local address
+            val address = InetAddress.getLocalHost()
+            jmdns = JmDNS.create(address)
+
+            // Create service info using your ApplicationConfig
+            val serviceType = "_${config.mdns().protocol()}._tcp.local."
+            val serviceName = config.mdns().name()
+            val port = config.backend().port()
+
+            val serviceInfo = ServiceInfo.create(serviceType, serviceName, port, "Dashboard IMU Backend")
+
+            jmdns?.registerService(serviceInfo)
+            Log.info("mDNS service registered: $serviceName.$serviceType on port $port")
+
+        } catch (e: Exception) {
+            Log.error("Failed to register mDNS service", e)
+        }
     }
 
-    fun onStop(@Observes ev: ShutdownEvent?) {
-        Log.info("The application is stopping...")
+    fun onStop(@Observes ev: ShutdownEvent) {
+        jmdns?.unregisterAllServices()
+        jmdns?.close()
+        Log.info("mDNS service unregistered")
     }
 
 //    @Transactional
@@ -75,38 +91,38 @@ class NetworkConfigurationService(
         return null
     }
 
-    fun initMdns(container: BeanContainer, config: MdnsRuntimeConfig, shutdownContext: ShutdownContext) {
-        try {
-            val producer: JmDNSProducer = container.beanInstance(JmDNSProducer::class.java)
-            val inetAddress = getIpAddress()
-            val appName = ConfigProvider.getConfig().getOptionalValue("quarkus.application.name", String::class.java)
-            val httpHost = ConfigProvider.getConfig().getOptionalValue("quarkus.http.host", String::class.java)
-            val protocol = ConfigProvider.getConfig().getOptionalValue("quarkus.http.protocol", String::class.java) ?: "http"
-            if (httpHost.orElse("localhost") != "0.0.0.0") {
-                Log.warnf("For mDNS to work properly, 'quarkus.http.host' must be set to '0.0.0.0' for the local domain URL to be accessible.")
-            }
-            val defaultName = appName.orElse(inetAddress.hostName)
-            val name = toURLFriendly(config.host().orElse(defaultName))
-            Log.infof("Registering mDNS service '%s'", name)
-            val jmdns = JmDNS.create(inetAddress, name)
-            val port = ConfigProvider.getConfig().getOptionalValue("quarkus.http.port", Int::class.java)
-            val quarkusPort = port.orElse(8080)
-            val url = "$protocol://$name.local:$quarkusPort/"
-
-            val properties: MutableMap<String, String?> = HashMap()
-            properties["URL"] = url
-            properties.putAll(config.props())
-
-            val serviceInfo = ServiceInfo.create("_http._tcp.local.", name, quarkusPort, config.weight(), config.priority(), properties)
-
-            jmdns.registerService(serviceInfo)
-            Log.infof("The application is available from: %s", url)
-//            producer.initialize(jmdns, url)
-//            shutdownContext.addShutdownTask { producer.close() }
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
-    }
+//    fun initMdns(container: BeanContainer, config: MdnsRuntimeConfig, shutdownContext: ShutdownContext) {
+//        try {
+//            val producer: JmDNSProducer = container.beanInstance(JmDNSProducer::class.java)
+//            val inetAddress = getIpAddress()
+//            val appName = ConfigProvider.getConfig().getOptionalValue("quarkus.application.name", String::class.java)
+//            val httpHost = ConfigProvider.getConfig().getOptionalValue("quarkus.http.host", String::class.java)
+//            val protocol = ConfigProvider.getConfig().getOptionalValue("quarkus.http.protocol", String::class.java) ?: "http"
+//            if (httpHost.orElse("localhost") != "0.0.0.0") {
+//                Log.warnf("For mDNS to work properly, 'quarkus.http.host' must be set to '0.0.0.0' for the local domain URL to be accessible.")
+//            }
+//            val defaultName = appName.orElse(inetAddress.hostName)
+//            val name = toURLFriendly(config.host().orElse(defaultName))
+//            Log.infof("Registering mDNS service '%s'", name)
+//            val jmdns = JmDNS.create(inetAddress, name)
+//            val port = ConfigProvider.getConfig().getOptionalValue("quarkus.http.port", Int::class.java)
+//            val quarkusPort = port.orElse(8080)
+//            val url = "$protocol://$name.local:$quarkusPort/"
+//
+//            val properties: MutableMap<String, String?> = HashMap()
+//            properties["URL"] = url
+//            properties.putAll(config.props())
+//
+//            val serviceInfo = ServiceInfo.create("_http._tcp.local.", name, quarkusPort, config.weight(), config.priority(), properties)
+//
+//            jmdns.registerService(serviceInfo)
+//            Log.infof("The application is available from: %s", url)
+////            producer.initialize(jmdns, url)
+////            shutdownContext.addShutdownTask { producer.close() }
+//        } catch (e: IOException) {
+//            throw RuntimeException(e)
+//        }
+//    }
 
     private fun toURLFriendly(input: String?): String {
         if (input.isNullOrEmpty()) {

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JwtUtils
 import com.rot.measurement.models.SensorInfo
+import com.rot.session.dtos.SensorSessionContext
 import com.rot.session.dtos.UserSessionContext
 import com.rot.session.models.Session
 import com.rot.socket.dtos.*
@@ -56,8 +57,8 @@ class SocketService(
     private val applicationConfig: ApplicationConfig
 ) {
 
-    val sessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
-    val sensors: MutableList<SessionSensorDto> = CopyOnWriteArrayList()
+    val userSessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
+    val sensorSessions: ConcurrentHashMap<UUID, SensorSessionContext> = ConcurrentHashMap()
 
     lateinit var server: SocketIOServer
 
@@ -65,8 +66,8 @@ class SocketService(
     fun onStart(@Observes event: StartupEvent) {
         Log.info("Start Socket.IO - $event")
 
-        sessions.clear()
-        sensors.clear()
+        userSessions.clear()
+        sensorSessions.clear()
         Log.info("Sessões e sensores em memória foram zerados.")
 
         SensorInfo.update("active = false")
@@ -89,18 +90,58 @@ class SocketService(
         server.addDisconnectListener(this::addDisconnectListener)
 
         // Client -> Server
-        server.addEventListener(MessageType.CLIENT_SERVER_STOP.description, String::class.java, this::clientServerCommandStop)
-        server.addEventListener(MessageType.CLIENT_SERVER_START.description, String::class.java, this::clientServerCommandStart)
-        server.addEventListener(MessageType.CLIENT_SERVER_RESTART.description, String::class.java, this::clientServerCommandStart)
-        server.addEventListener(MessageType.CLIENT_SERVER_SENSOR_LIST.description, String::class.java, this::clientServerSensorList)
-        server.addEventListener(MessageType.CLIENT_SERVER_ADD_SENSOR.description, MessageClientServerAddSensorDto::class.java, this::clientServerAddSensor)
-        server.addEventListener(MessageType.CLIENT_SERVER_REMOVE_SENSOR.description, MessageClientServerRemoveSensorDto::class.java, this::clientServerRemoveSensor)
-        server.addEventListener(MessageType.CLIENT_SERVER_CALIBRATE.description, MessageClientServerCalibrateSensorDto::class.java, this::clientServerCalibrate)
-        server.addEventListener(MessageType.CLIENT_SERVER_SAVE_SESSION.description, MessageClientServerSaveSessionDto::class.java, this::clientServerSaveSession)
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_STOP.description,
+            String::class.java,
+            this::clientServerCommandStop
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_START.description,
+            String::class.java,
+            this::clientServerCommandStart
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_RESTART.description,
+            String::class.java,
+            this::clientServerCommandStart
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_SENSOR_LIST.description,
+            String::class.java,
+            this::clientServerSensorList
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_ADD_SENSOR.description,
+            MessageClientServerAddSensorDto::class.java,
+            this::clientServerAddSensor
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_REMOVE_SENSOR.description,
+            MessageClientServerRemoveSensorDto::class.java,
+            this::clientServerRemoveSensor
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_CALIBRATE.description,
+            MessageClientServerCalibrateSensorDto::class.java,
+            this::clientServerCalibrate
+        )
+        server.addEventListener(
+            MessageType.CLIENT_SERVER_SAVE_SESSION.description,
+            MessageClientServerSaveSessionDto::class.java,
+            this::clientServerSaveSession
+        )
 
         // Sensor -> Server
-        server.addEventListener(MessageType.SENSOR_SERVER_MEASUREMENT.description, MessageSensorServerMeasurementBlock::class.java, this::sensorServerMeasurement)
-        server.addEventListener(MessageType.SENSOR_SERVER_REGISTER_SENSOR.description, MessageSensorServerSessionSensorDto::class.java, this::sensorServerRegisterSensor)
+        server.addEventListener(
+            MessageType.SENSOR_SERVER_MEASUREMENT.description,
+            MessageSensorServerMeasurementBlock::class.java,
+            this::sensorServerMeasurement
+        )
+        server.addEventListener(
+            MessageType.SENSOR_SERVER_REGISTER_SENSOR.description,
+            MessageSensorServerSessionSensorDto::class.java,
+            this::sensorServerRegisterSensor
+        )
 
         server.start()
         Log.info("Socket.IO Server iniciado na porta ${config.port}")
@@ -132,39 +173,44 @@ class SocketService(
             token = handshakeData.getSingleUrlParam("token")
         }
 
-        val type = UserSessionType.valueOf(typeStr)
-        val userSessionContext = UserSessionContext()
-        if (type == UserSessionType.USER && !token.isNullOrBlank()) {
-            val decoded = JwtUtils.decode(token.replace("Bearer ", ""))
-            if (decoded == null || decoded.issuer != applicationConfig.security().issuer()) {
-                Log.warn("Conexão recusada para IP ${client.remoteAddress}")
+        when (UserSessionType.valueOf(typeStr)) {
+            UserSessionType.USER if !token.isNullOrBlank() -> {
+                val userSessionContext = UserSessionContext()
+
+                val decoded = JwtUtils.decode(token.replace("Bearer ", ""))
+                if (decoded == null || decoded.issuer != applicationConfig.security().issuer()) {
+                    Log.warn("Conexão recusada para IP ${client.remoteAddress}")
+                    return client.disconnect()
+                }
+
+                val user = User.createQuery()
+                    .where(User.q.id.eq(UUID.fromString(decoded.getClaim("reference"))))
+                    .where(User.q.username.eq(decoded.name))
+                    .fetchFirst()
+
+                if (user == null) {
+                    Log.warn("Usuário não encontrado para IP ${client.remoteAddress} - ${decoded.name}")
+                    return client.disconnect()
+                }
+
+                userSessionContext.room = sessionId
+                userSessionContext.userId = user.id
+
+                client.joinRoom(sessionId.toString())
+
+                sendSensorList(client)
+
+                userSessions[sessionId] = userSessionContext
+            }
+            UserSessionType.SENSOR -> {
+                val sensorSessionContext = SensorSessionContext()
+                sensorSessions[sessionId] = sensorSessionContext
+            }
+            else -> {
+                Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usuário")
                 return client.disconnect()
             }
-
-            val user = User.createQuery()
-                .where(User.q.id.eq(UUID.fromString(decoded.getClaim("reference"))))
-                .where(User.q.username.eq(decoded.name))
-                .fetchFirst()
-
-            if (user == null) {
-                Log.warn("Usuário não encontrado para IP ${client.remoteAddress} - ${decoded.name}")
-                return client.disconnect()
-            }
-
-            userSessionContext.room = sessionId
-            userSessionContext.userId = user.id
-            userSessionContext.type = UserSessionType.USER
-
-            client.joinRoom(sessionId.toString())
-
-            sendSensorList(client)
-        } else if (type == UserSessionType.SENSOR) {
-            userSessionContext.type = UserSessionType.SENSOR
-        } else {
-            Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usuário")
-            return client.disconnect()
         }
-        sessions[sessionId] = userSessionContext
 
         // Você pode emitir um evento de boas-vindas, se quiser
         Log.info("Novo cliente conectado! Sessão: $sessionId, IP: $remoteAddress")
@@ -174,11 +220,12 @@ class SocketService(
     fun addDisconnectListener(client: SocketIOClient) {
         Log.warn("Cliente desconectado: ${client.sessionId}")
         val sessionId = client.sessionId
-        val sessionContext = sessions[sessionId] ?: return
+        val userContext = userSessions[sessionId]
+        val sensorContext = sensorSessions[sessionId]
 
-        if (sessionContext.type == UserSessionType.USER) {
+        if (userContext != null) {
             // Remover sensores da sala desse usuário
-            val roomId = sessionContext.room.toString()
+            val roomId = userContext.room.toString()
             val rom = server.getRoomOperations(roomId)
             Log.warn("Remover clients da sessão")
             rom.clients.forEach { sensorClient ->
@@ -188,32 +235,31 @@ class SocketService(
                 }
             }
         }
+//        else if (sensorContext != null) {
+//            removeSensor(userContext.sensorId)
+//        }
+//
+//        if (userContext.room != null && userContext.type == UserSessionType.SENSOR) {
+//            runCatching {
+//                val rom = server.getRoomOperations(userContext.room.toString())
+//                rom?.sendEvent(MessageType.SERVER_SENSOR_REMOVED_ROOM.description, "Sensor ${userContext.sensorId} saiu da sala.")
+//            }
+//        }
+//
+//        if (userContext.room != null) {
+//            client.leaveRoom(userContext.room.toString())
+//        }
 
-        if (sessionContext.type == UserSessionType.SENSOR) {
-            removeSensor(sessionContext.sensorId)
-        }
-
-        if (sessionContext.room != null && sessionContext.type == UserSessionType.SENSOR) {
-            runCatching {
-                val rom = server.getRoomOperations(sessionContext.room.toString())
-                rom?.sendEvent(MessageType.SERVER_SENSOR_REMOVED_ROOM.description, "Sensor ${sessionContext.sensorId} saiu da sala.")
-            }
-        }
-
-        if (sessionContext.room != null) {
-            client.leaveRoom(sessionContext.room.toString())
-        }
-
-        sessions.remove(sessionId)
+        userSessions.remove(sessionId)
     }
 
     // Client -> Server
     @Transactional(value = Transactional.TxType.REQUIRES_NEW)
     fun clientServerSaveSession(client: SocketIOClient, message: MessageClientServerSaveSessionDto, request: AckRequest) {
         Log.info("Cliente ${client.sessionId} pediu para salvar a sessão $message")
-        val sessionContext = sessions[client.sessionId]
+        val sessionContext = userSessions[client.sessionId]
         val content = message.content
-        if (sessionContext == null || sessionContext.type != UserSessionType.USER || content == null) return
+        if (sessionContext == null || content == null) return
 
         // Solicitar para parar medições (caso ainda não tenha parado)
         sendStopRoom(sessionContext.room.toString())
@@ -238,11 +284,11 @@ class SocketService(
     }
 
     fun clientServerRemoveSensor(client: SocketIOClient, message: MessageClientServerRemoveSensorDto, request: AckRequest) {
-        val session = sessions[client.sessionId]
+        val session = userSessions[client.sessionId]
         val content = message.content
-        if (session == null || session.type != UserSessionType.USER || content == null) return
+        if (session == null || content == null) return
 
-        val sensorContext = sessions[content.sensor]
+        val sensorContext = userSessions[content.sensor]
         if (sensorContext != null) {
             val sensorClient = server.getClient(content.sensor)
             sensorClient.leaveRoom(content.sensor.toString())
@@ -255,11 +301,11 @@ class SocketService(
     }
 
     fun clientServerCalibrate(client: SocketIOClient, message: MessageClientServerCalibrateSensorDto, request: AckRequest) {
-        val session = sessions[client.sessionId]
+        val session = userSessions[client.sessionId]
         val content = message.content
-        if (session == null || session.type != UserSessionType.USER || content == null) return
+        if (session == null || content == null) return
 
-        val sensorContext = sessions[content.sensor]
+        val sensorContext = sensorSessions[content.sensor]
         if (sensorContext != null) {
             val sensorClient = server.getClient(content.sensor)
             sensorClient.sendEvent(MessageType.SERVER_SENSOR_CALIBRATE.description, MessageCalibrateCommandDto())
@@ -270,11 +316,11 @@ class SocketService(
     }
 
     fun clientServerAddSensor(client: SocketIOClient, message: MessageClientServerAddSensorDto, request: AckRequest) {
-        val session = sessions[client.sessionId]
+        val session = userSessions[client.sessionId]
         val content = message.content
-        if (session == null || session.type != UserSessionType.USER || content == null) return
+        if (session == null || content == null) return
 
-        val sensorContext = sessions[content.sensor] ?: return Log.warn("Sensor não encontrado")
+        val sensorContext = userSessions[content.sensor] ?: return Log.warn("Sensor não encontrado")
         val sensorClient = server.getClient(content.sensor) ?: return Log.warn("Cliente do sensor não encontrado")
 
         // REGRAR: O sensor só pode estar em uma sala por vez
@@ -289,27 +335,26 @@ class SocketService(
         sensorClient.sendEvent(MessageType.SERVER_SENSOR_JOINED_ROOM.description, MessageServerSensorJoinedRoomDto())
         sensorContext.room = session.room
 
-        val sensor = sensors.find { it.clientId == content.sensor }
-        if (sensor != null) {
-            session.sensors[content.sensor] = Pair(sensor, mutableSetOf())
-        }
+//        val sensor = sensors.find { it.clientId == content.sensor }
+//        if (sensor != null) {
+//            session.sensors[content.sensor] = Pair(sensor, mutableSetOf())
+//        }
 
         request.sendAckData(AckMessage.JOINED_ROOM.name)
     }
 
     fun clientServerCommandStart(client: SocketIOClient, message: String, request: AckRequest) {
         Log.info("Command to start measurements: $message")
-        val session = sessions[client.sessionId]
-        if (session == null || session.type != UserSessionType.USER) return
+        val session = userSessions[client.sessionId] ?: return
 
         // Limpar medições em cache ao iniciar novas medições
-        runCatching {
-            session.sensors
-                .values
-                .forEach {
-                    it.second.clear()
-                }
-        }
+//        runCatching {
+//            session.sensors
+//                .values
+//                .forEach {
+//                    it.second.clear()
+//                }
+//        }
 
         sendStartRoom(session.room.toString())
         request.sendAckData(AckMessage.STARTED_MEASUREMENTS.name)
@@ -317,8 +362,7 @@ class SocketService(
 
     fun clientServerCommandStop(client: SocketIOClient, message: String, request: AckRequest) {
         Log.info("Command to stop measurements: $message")
-        val session = sessions[client.sessionId]
-        if (session == null || session.type != UserSessionType.USER) return
+        val session = userSessions[client.sessionId] ?: return
 
         sendStopRoom(session.room.toString())
         request.sendAckData(AckMessage.STOPPED_MEASUREMENTS.name)
@@ -326,8 +370,7 @@ class SocketService(
 
     private fun clientServerSensorList(client: SocketIOClient, message: String, request: AckRequest) {
         Log.info("Request sensor list: $message")
-        val session = sessions[client.sessionId]
-        if (session == null || session.type != UserSessionType.USER) return
+        val session = userSessions[client.sessionId] ?: return
 
         sendSensorList(client)
         request.sendAckData(AckMessage.REQUESTED_SENSOR_LIST.name)
@@ -336,42 +379,42 @@ class SocketService(
     // Sensor -> Server
     fun sensorServerMeasurement(client: SocketIOClient, message: MessageSensorServerMeasurementBlock, request: AckRequest) {
         val sessionId = client.sessionId
-        val session = sessions[sessionId]
+        val session = userSessions[sessionId]
         val content = message.content
 
         // Validações básicas
-        if (content == null || session == null || session.type != UserSessionType.SENSOR) return
+        if (content == null || session == null) return
 
         // Se o sensor não está em nenhuma sala, as medições são ignoradas (não estão gravando nada)
         val roomId = session.room ?: return
 
-        val userSession = sessions[roomId] ?: return
+        val userSession = userSessions[roomId] ?: return
         val sensorPair = userSession.sensors[sessionId] ?: return
 
         // Salva os dados no cachê em memória para quando o User chamar a SaveSession
-        sensorPair.second.addAll(content)
-        val mac = sensorPair.first.mac ?: return
+//        sensorPair.second.addAll(content)
+//        val mac = sensorPair.first.mac ?: return
 
         // Prepara o evento
-        val event = "${MessageType.SERVER_CLIENT_MEASUREMENT}_-_${mac.replace(":", "_")}"
+//        val event = "${MessageType.SERVER_CLIENT_MEASUREMENT}_-_${mac.replace(":", "_")}"
 
         // Faz o broadcast APENAS para a sala específica em vez de direcionar direto pro Client
-        server.getRoomOperations(roomId.toString()).sendEvent(event, message)
+//        server.getRoomOperations(roomId.toString()).sendEvent(event, message)
     }
 
     @Transactional // Necessário para salvar o SensorInfo no banco
     fun sensorServerRegisterSensor(client: SocketIOClient, message: MessageSensorServerSessionSensorDto, request: AckRequest) {
         Log.info("Register sensor: $message")
-        val session = sessions[client.sessionId]
+        val session = userSessions[client.sessionId]
         val content = message.content
 
         // Valida se é realmente um sensor e se enviou os dados necessários
-        if (content == null || session == null || session.type != UserSessionType.SENSOR) return
+        if (content == null || session == null) return
         val sensorIp = content.ip ?: return
         val sensorMac = content.mac ?: return
 
         Log.info("Registered new sensor: $sensorIp (MAC: $sensorMac)")
-        session.sensorId = sensorIp
+//        session.sensorId = sensorIp
 
         // 1. Registra ou atualiza o SensorInfo no banco usando o MAC Address
         var sensorInfo = SensorInfo.findByMacAddress(sensorMac)
@@ -384,21 +427,21 @@ class SocketService(
         sensorInfo.save()
 
         // 2. Atualiza os dados em memória
-        val existingSensor = sensors.find { it.mac == sensorMac || it.ip == sensorIp }
-        if (existingSensor != null) {
-            existingSensor.apply {
-                this.clientId = client.sessionId
-                this.name = content.name
-                this.mac = sensorMac
-                this.ip = sensorIp
-                this.observation = content.observation
-            }
-            broadcastSensorList() // Atualiza os clients que a lista mudou
-            return request.sendAckData("UPDATED")
-        }
-
-        content.clientId = client.sessionId
-        sensors.add(content)
+//        val existingSensor = sensors.find { it.mac == sensorMac || it.ip == sensorIp }
+//        if (existingSensor != null) {
+//            existingSensor.apply {
+//                this.clientId = client.sessionId
+//                this.name = content.name
+//                this.mac = sensorMac
+//                this.ip = sensorIp
+//                this.observation = content.observation
+//            }
+//            broadcastSensorList() // Atualiza os clients que a lista mudou
+//            return request.sendAckData("UPDATED")
+//        }
+//
+//        content.clientId = client.sessionId
+//        sensors.add(content)
         broadcastSensorList()
         request.sendAckData(AckMessage.REGISTERED.name)
     }
@@ -414,23 +457,23 @@ class SocketService(
         rom.sendEvent(MessageType.SERVER_SENSOR_STOP.description, MessageServerSensorStopCommandDto())
     }
 
-    private fun findSensorByIp(ip: String): SessionSensorDto? {
-        return sensors.find { it.ip == ip }
-    }
-
-    private fun removeSensor(ip: String? = null): Boolean {
-        return sensors.removeIf { it.ip == ip }
-    }
+//    private fun findSensorByIp(ip: String): SessionSensorDto? {
+//        return sensors.find { it.ip == ip }
+//    }
+//
+//    private fun removeSensor(ip: String? = null): Boolean {
+//        return sensors.removeIf { it.ip == ip }
+//    }
 
     private fun sendSensorList(client: SocketIOClient) = runCatching {
         val message = MessageServerClientSensorListDto()
-        message.content = sensors
+//        message.content = sensors
         client.sendEvent(MessageType.SERVER_CLIENT_SENSOR_LIST.description, message)
     }
 
     private fun broadcastSensorList() = runCatching {
         val message = MessageServerClientSensorListDto()
-        message.content = sensors
+//        message.content = sensors
         server.broadcastOperations.sendEvent(MessageType.SERVER_CLIENT_SENSOR_LIST.description, message)
     }
 

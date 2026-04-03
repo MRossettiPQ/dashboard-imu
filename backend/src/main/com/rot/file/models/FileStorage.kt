@@ -26,7 +26,7 @@ import java.util.*
 @Table(
     name = "files",
     indexes = [
-        Index(name = "idx_file_filename", columnList = "file_name"),
+        Index(name = "idx_files_file_name", columnList = "file_name"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

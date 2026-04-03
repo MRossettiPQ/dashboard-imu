@@ -11,11 +11,11 @@ import jakarta.validation.constraints.NotNull
 @Table(
     name = "node_sensors",
     indexes = [
-        Index(name = "idx_node_sensor_node", columnList = "session_node_id"),
-        Index(name = "idx_node_sensor_sensor", columnList = "session_sensor_id"),
+        Index(name = "idx_node_sensors_node", columnList = "session_node_id"),
+        Index(name = "idx_node_sensors_sensor", columnList = "session_sensor_id"),
     ],
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_node_sensor", columnNames = ["session_node_id", "session_sensor_id"])
+        UniqueConstraint(name = "uk_node_sensors", columnNames = ["session_node_id", "session_sensor_id"])
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

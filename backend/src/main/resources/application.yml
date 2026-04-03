@@ -50,9 +50,11 @@ mp:
     incoming:
       measurements:
         connector: smallrye-mqtt
-#        host: ${application.mqtt.host}
-#        port: ${application.mqtt.port}
+        host: ${application.mqtt.host}
+        port: ${application.mqtt.port}
         topic: session/+/measurement
+        reconnect-attempts: 10
+        reconnect-interval-seconds: 5
   jwt:
     verify:
       publickey:
@@ -62,8 +64,6 @@ mp:
 quarkus:
   application:
     name: ${application.mdns.name}
-  mdns:
-    enabled: true
   package:
     jar:
       type: fast-jar
@@ -80,7 +80,7 @@ quarkus:
     host: ${application.backend.host}
     port: ${application.backend.port}
     cors:
-      ~: true
+      enabled: true
       origins: "*"
     record-request-start-time: true
     limits:
@@ -91,10 +91,8 @@ quarkus:
   log:
     console:
       format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"
-      charset: UTF-8
     file:
       format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"
-      charset: UTF-8
   cache:
     caffeine:
       permission-cache:
@@ -108,12 +106,15 @@ quarkus:
   hibernate-orm:
     log:
       sql: false
+    mapping:
+      format:
+        global: ignore
     jdbc:
       timezone: America/Sao_Paulo
       statement-batch-size: 100
       statement-fetch-size: 100
-    database:
-      generation: update
+    schema-management:
+      strategy: update
     packages: com.rot, com.blazebit.persistence.impl.function.entity
     implicit-naming-strategy: com.rot.core.hibernate.implementation.ImplicitNamingStrategyImpl
     second-level-caching-enabled: false

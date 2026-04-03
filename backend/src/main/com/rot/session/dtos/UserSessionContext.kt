@@ -13,3 +13,8 @@ class UserSessionContext {
 
     var sensors: MutableMap<UUID, SessionSensorDto> = mutableMapOf()
 }
+
+class SensorSessionContext: SessionSensorDto() {
+    var room: UUID? = null
+    var available: Boolean = true
+}

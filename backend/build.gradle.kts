@@ -3,16 +3,14 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 val queryDslVersion: String by project
 val blazePersistenceVersion: String by project
-val quarkusHibernateTypes: String by project
 val reflectionsVersion: String by project
 val socketIoVersion: String by project
 val moquetteVersion: String by project
 val jacksonVersion: String by project
 val jmdnsVersion: String by project
-val mdnsVersion: String by project
 val commonsIo: String by project
 
-//apply(from = "pem.gradle.kts")
+apply(from = "pem.gradle.kts")
 //apply(from = "vue.gradle.kts")
 
 plugins {
@@ -70,7 +68,6 @@ dependencies {
     implementation("io.quarkus:quarkus-hibernate-validator")
     implementation("io.quarkus:quarkus-flyway")
     implementation("org.reflections:reflections:$reflectionsVersion")
-    implementation("io.quarkiverse.hibernatetypes:quarkus-hibernate-types:$quarkusHibernateTypes")
     implementation("io.quarkus:quarkus-mailer")
 
     // === QUERYDSL ===
@@ -83,7 +80,7 @@ dependencies {
     // === BLAZE PERSISTENCE ===
     implementation("com.blazebit:blaze-persistence-integration-quarkus-3:$blazePersistenceVersion")
     implementation("com.blazebit:blaze-persistence-integration-querydsl-expressions-jakarta:$blazePersistenceVersion")
-    runtimeOnly("com.blazebit:blaze-persistence-integration-hibernate-6.2:$blazePersistenceVersion")
+    runtimeOnly("com.blazebit:blaze-persistence-integration-hibernate-7.1:$blazePersistenceVersion")
 
     // === SMALLRYE ===
     implementation("io.quarkus:quarkus-smallrye-jwt")
@@ -102,7 +99,6 @@ dependencies {
 
     // === MDNS ===
     implementation("org.jmdns:jmdns:$jmdnsVersion")
-    implementation("io.quarkiverse.mdns:quarkus-mdns:$mdnsVersion")
 
     implementation("commons-io:commons-io:$commonsIo")
 

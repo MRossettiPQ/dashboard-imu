@@ -7,13 +7,14 @@ import jakarta.persistence.*
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.ws.rs.DefaultValue
+import org.hibernate.annotations.ColumnDefault
 
 @Entity
 @Table(
     name = "sensor_infos",
     indexes = [
-        Index(name = "idx_sensor_info_mac_address", columnList = "mac_address"),
-        Index(name = "idx_sensor_info_sensor_name", columnList = "sensor_name"),
+        Index(name = "idx_sensor_infos_mac_address", columnList = "mac_address"),
+        Index(name = "idx_sensor_infos_sensor_name", columnList = "sensor_name"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -33,7 +34,7 @@ class SensorInfo : BaseEntity<SensorInfo>() {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Int? = null
 
-    @DefaultValue(value = "false")
+    @ColumnDefault(value = "false")
     @Column(name = "active", nullable = false)
     var active: Boolean = false
 

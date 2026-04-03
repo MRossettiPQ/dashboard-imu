@@ -26,13 +26,13 @@ import kotlin.jvm.Transient
 @Table(
     name = "users",
     indexes = [
-        Index(name = "idx_user_active", columnList = "active"),
-        Index(name = "idx_user_username", columnList = "username"),
-        Index(name = "idx_user_email", columnList = "email"),
+        Index(name = "idx_users_active", columnList = "active"),
+        Index(name = "idx_users_username", columnList = "username"),
+        Index(name = "idx_users_email", columnList = "email"),
     ],
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_user_username", columnNames = ["username"]),
-        UniqueConstraint(name = "uk_user_email", columnNames = ["email"])
+        UniqueConstraint(name = "uk_users_username", columnNames = ["username"]),
+        UniqueConstraint(name = "uk_users_email", columnNames = ["email"])
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

@@ -13,7 +13,7 @@ import jakarta.validation.constraints.NotNull
 @Table(
     name = "articulation_types",
     indexes = [
-        Index(name = "idx_articulationtype_type", columnList = "type"),
+        Index(name = "idx_articulation_types_type", columnList = "type"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

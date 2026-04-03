@@ -61,7 +61,8 @@ class RemovedRoomDto {
     val message: MessageType = MessageType.SERVER_SENSOR_REMOVED_ROOM
 }
 
-class SessionSensorDto {
+open class SessionSensorDto {
+    var id: UUID? = null
     var clientId: UUID? = null
     var ip: String? = null
     var name: String? = null

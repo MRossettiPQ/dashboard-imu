@@ -30,7 +30,7 @@ class SessionController(
     private val sessionService: SessionService
 ) {
 
-    @GET
+    @POST
     @Transactional
     @Path("/create")
     @Operation(

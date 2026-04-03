@@ -14,8 +14,8 @@ import java.util.*
 @Table(
     name = "patients",
     indexes = [
-        Index(name = "idx_patient_cpf", columnList = "cpf"),
-        Index(name = "idx_patient_active", columnList = "active"),
+        Index(name = "idx_patients_cpf", columnList = "cpf"),
+        Index(name = "idx_patients_active", columnList = "active"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

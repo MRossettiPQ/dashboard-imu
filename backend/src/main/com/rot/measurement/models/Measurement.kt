@@ -14,8 +14,8 @@ import java.util.UUID
 @Table(
     name = "measurements",
     indexes = [
-        Index(name = "idx_measurement_session_sensor", columnList = "session_sensor_id"),
-        Index(name = "idx_measurement_read_order", columnList = "session_sensor_id, read_order"),
+        Index(name = "idx_measurements_session_sensor", columnList = "session_sensor_id"),
+        Index(name = "idx_measurements_read_order", columnList = "session_sensor_id, read_order"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

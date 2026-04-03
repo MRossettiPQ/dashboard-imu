@@ -17,7 +17,7 @@ class SciLabServices {
     fun averageMeasurements(measurements: List<Measurement>): MeasurementDto {
         fun averageOf(selector: (Measurement) -> Double?): Double? {
             val values = measurements.mapNotNull(selector)
-            return if (values.isNotEmpty()) values.reduce { acc, bd -> acc + bd } / Double(values.size) else null
+            return if (values.isNotEmpty()) values.reduce { acc, bd -> acc + bd } / values.size.toDouble() else null
         }
 
         return MeasurementDto().apply {

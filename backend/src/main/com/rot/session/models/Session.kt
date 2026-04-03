@@ -17,9 +17,9 @@ import java.util.*
 @Table(
     name = "sessions",
     indexes = [
-        Index(name = "idx_session_type", columnList = "type"),
-        Index(name = "idx_session_patient", columnList = "patient_id"),
-        Index(name = "idx_session_physiotherapist", columnList = "physiotherapist_id"),
+        Index(name = "idx_sessions_type", columnList = "type"),
+        Index(name = "idx_sessions_patient", columnList = "patient_id"),
+        Index(name = "idx_sessions_physiotherapist", columnList = "physiotherapist_id"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)

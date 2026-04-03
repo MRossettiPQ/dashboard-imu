@@ -25,7 +25,7 @@ class MqttReactiveConsumer {
 //    var emitter: MutinyEmitter<Double?>? = null
 
     @Incoming("measurements")
-    fun consume(message: Message<ByteArray>): CompletionStage<Void> {
+    fun consumeMeasurements(message: Message<ByteArray>): CompletionStage<Void> {
         val payloadBytes = message.payload
         val metadata = message.getMetadata(MqttMessageMetadata::class.java).orElse(null)
         val topic = metadata?.topic ?: ""

@@ -25,7 +25,8 @@ class SocketController(
     @Path("/")
     fun list(): RestResponse<Content<MutableMap<String, Any?>>> {
         val metadata = mutableMapOf<String, Any?>()
-        metadata["sessions"] = socketService.sessions
+        metadata["userSessions"] = socketService.userSessions
+        metadata["sensorSessions"] = socketService.sensorSessions
 
         return ResultContent.of(metadata)
             .build()
@@ -49,7 +50,7 @@ class SocketController(
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,
     ): RestResponse<Content<Pagination<SensorInfoDto>>> {
-        val availableSensors = socketService.sensors.mapNotNull { it.mac }
+        val availableSensors = socketService.sensorSessions.mapNotNull { (_, value) -> value.mac }
         val query = SensorInfo.createQuery()
             .where(SensorInfo.q.active.isTrue)
             .where(SensorInfo.q.macAddress.`in`(availableSensors))
