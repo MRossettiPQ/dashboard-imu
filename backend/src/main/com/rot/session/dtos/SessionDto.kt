@@ -21,7 +21,6 @@ open class SessionDto {
     var observation: String? = null
     var patient: UserDto? = null
     var physiotherapist: UserDto? = null
-    var articulations = mutableSetOf<ArticulationDto>()
     var sessionSensors = mutableSetOf<SessionSensorDto>()
     var sessionNodes = mutableSetOf<SessionNodeDto>()
 
@@ -34,7 +33,6 @@ open class SessionDto {
                 observation = entity.observation
                 patient = UserDto.from(entity.patient!!)
                 physiotherapist = UserDto.from(entity.physiotherapist!!)
-                articulations = entity.articulations.map { ArticulationDto.from(it) }.toMutableSet()
                 sessionSensors = entity.sessionSensors.map { SessionSensorDto.from(it) }.toMutableSet()
                 sessionNodes = entity.sessionNodes.map { SessionNodeDto.from(it) }.toMutableSet()
             }
@@ -44,4 +42,10 @@ open class SessionDto {
             return pagination.transform { from(it) }
         }
     }
+}
+
+open class CreateSessionDto {
+    lateinit var patientId: UUID
+    var type: SessionType = SessionType.REAL
+    var observation: String? = null
 }

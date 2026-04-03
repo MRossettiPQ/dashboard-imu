@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.utils.JsonUtils
 import com.rot.measurement.models.SensorInfo
-import com.rot.session.enums.BodySegmentEnum
 import java.util.*
 
 open class SensorInfoDto {

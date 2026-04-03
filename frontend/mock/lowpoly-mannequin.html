@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motion Puppet — Sensor Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #1a1b2e;
+    --bg2: #232440;
+    --panel: #1e1f36;
+    --panel-border: #2d2e4a;
+    --accent: #5ee7b7;
+    --accent2: #818cf8;
+    --accent3: #f9a8d4;
+    --accent4: #fbbf24;
+    --text: #e8e8f0;
+    --text-dim: #7b7d9e;
+    --danger: #fb7185;
+    --card: rgba(255,255,255,0.04);
+    --card-hover: rgba(255,255,255,0.07);
+    --radius: 12px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+  }
+
+  #canvas-container {
+    flex: 1;
+    position: relative;
+  }
+  canvas { display: block; }
+
+  #overlay-info {
+    position: absolute;
+    top: 20px; left: 20px;
+    pointer-events: none;
+  }
+  #overlay-info .title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #overlay-info .sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .floor-badge {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* ── Panel ── */
+  #panel {
+    width: 370px;
+    background: var(--panel);
+    border-left: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .tab-row {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .tab-btn:not(.active):hover {
+    background: var(--card-hover);
+    color: var(--text);
+  }
+
+  .panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .panel-scroll::-webkit-scrollbar { width: 4px; }
+  .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+  .panel-scroll::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Section headers */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin: 4px 0 2px;
+  }
+
+  /* ── Joint Card ── */
+  .joint-card {
+    background: var(--card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 14px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .joint-card:hover { background: var(--card-hover); border-color: var(--panel-border); }
+  .joint-card.highlight { border-color: var(--accent); box-shadow: 0 0 20px rgba(94,231,183,0.08); }
+
+  .joint-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .joint-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .joint-icon.upper { background: rgba(129,140,248,0.2); color: var(--accent2); }
+  .joint-icon.lower { background: rgba(94,231,183,0.2); color: var(--accent); }
+  .joint-icon.core { background: rgba(249,168,212,0.2); color: var(--accent3); }
+
+  .joint-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    flex: 1;
+  }
+  .joint-card-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text-dim);
+    border: 1px solid var(--panel-border);
+  }
+
+  .axis-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .axis-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .axis-dot.x { background: var(--danger); }
+  .axis-dot.y { background: var(--accent); }
+  .axis-dot.z { background: var(--accent2); }
+
+  .axis-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--bg2);
+    outline: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .axis-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    cursor: grab;
+    border: 2px solid var(--bg);
+    transition: transform 0.15s;
+  }
+  .axis-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .axis-slider.x::-webkit-slider-thumb { background: var(--danger); }
+  .axis-slider.y::-webkit-slider-thumb { background: var(--accent); }
+  .axis-slider.z::-webkit-slider-thumb { background: var(--accent2); }
+
+  .axis-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 46px;
+    text-align: right;
+  }
+
+  /* ── Nodes / Sensors cards ── */
+  .config-card {
+    background: var(--card);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .config-card label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .config-card select, .config-card input[type=text] {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    outline: none;
+    margin-bottom: 8px;
+  }
+  .config-card select:focus, .config-card input:focus { border-color: var(--accent); }
+
+  .node-sensor-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .node-sensor-row .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── Playback ── */
+  .playback-bar {
+    padding: 14px 18px;
+    border-top: 1px solid var(--panel-border);
+    background: var(--panel);
+  }
+  .playback-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .play-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .play-btn:hover { transform: scale(1.1); box-shadow: 0 0 16px rgba(94,231,183,0.3); }
+  .play-btn.playing { background: var(--danger); }
+
+  #timeline {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--bg2);
+    outline: none;
+    cursor: pointer;
+  }
+  #timeline::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    cursor: grab;
+  }
+
+  #frame-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    min-width: 70px;
+    text-align: right;
+  }
+
+  .playback-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .pb-btn {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pb-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pb-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Data area */
+  textarea.data-area {
+    width: 100%;
+    height: 100px;
+    background: var(--bg2);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 10px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+  }
+  textarea.data-area:focus { border-color: var(--accent); }
+  textarea.data-area::placeholder { color: var(--text-dim); }
+
+  .load-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .load-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(94,231,183,0.25); }
+
+  .status-msg {
+    font-size: 11px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: none;
+  }
+  .status-msg.success { display: block; background: rgba(94,231,183,0.1); color: var(--accent); }
+  .status-msg.error { display: block; background: rgba(251,113,133,0.1); color: var(--danger); }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .speed-row input {
+    width: 60px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--panel-border);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+    outline: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container">
+  <div id="overlay-info">
+    <div class="title">Motion Puppet</div>
+    <div class="sub">Arrastar para rotacionar · Scroll para zoom · Clique-direito para pan</div>
+  </div>
+  <div class="floor-badge">Three.js · Sensor Viewer</div>
+</div>
+
+<div id="panel">
+  <div class="panel-header">
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="joints">Articulações</button>
+      <button class="tab-btn" data-tab="config">Nós & Sensores</button>
+      <button class="tab-btn" data-tab="data">Dados</button>
+    </div>
+  </div>
+
+  <div class="panel-scroll">
+    <div class="tab-content active" id="tab-joints"></div>
+
+    <div class="tab-content" id="tab-config">
+      <div class="section-label">Sensores Registrados</div>
+      <div id="sensors-list"></div>
+      <div class="section-label" style="margin-top:8px;">Nós Configurados</div>
+      <div id="nodes-list"></div>
+    </div>
+
+    <div class="tab-content" id="tab-data">
+      <div class="section-label">Estrutura Esperada</div>
+      <div class="config-card" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);line-height:1.6;">
+        Sensores:<br>
+        <span style="color:var(--accent)">sensors</span>: [{id, name, ip, mac, measurements: [Measurement]}]<br><br>
+        Nós:<br>
+        <span style="color:var(--accent2)">nodes</span>: [{name, type, sensorNodes: [{sensorId, local}]}]<br><br>
+        Cada Measurement usa readOrder como índice temporal.
+      </div>
+
+      <div class="section-label" style="margin-top:6px;">Cole o JSON</div>
+      <textarea class="data-area" id="json-input" placeholder='{ "sensors": [...], "nodes": [...] }'></textarea>
+      <button class="load-btn" id="btn-load">Carregar Dados</button>
+      <div class="status-msg" id="status-msg"></div>
+
+      <div class="section-label" style="margin-top:6px;">Velocidade</div>
+      <div class="speed-row">
+        <span>Intervalo:</span>
+        <input type="number" id="speed-input" value="60" min="10" max="1000" step="10">
+        <span>ms/frame</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="playback-bar">
+    <div class="playback-top">
+      <button class="play-btn" id="btn-play">▶</button>
+      <input type="range" id="timeline" min="0" max="0" value="0">
+      <span id="frame-info">0 / 0</span>
+    </div>
+    <div class="playback-btns">
+      <button class="pb-btn" id="btn-prev">◀ Prev</button>
+      <button class="pb-btn" id="btn-next">Next ▶</button>
+      <button class="pb-btn danger" id="btn-reset">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js",
+    "GLTFLoader": "https://unpkg.com/three@0.128.0/examples/jsm/loaders/GLTFLoader.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'GLTFLoader';
+
+// ══════════════════════════════════════════
+//  ORBIT CONTROLS (minimal)
+// ══════════════════════════════════════════
+class OrbitControls {
+  constructor(cam, el) {
+    this.cam = cam; this.el = el;
+    this.target = new THREE.Vector3();
+    this.sph = new THREE.Spherical();
+    this.sphD = new THREE.Spherical();
+    this.scale = 1;
+    this.panOff = new THREE.Vector3();
+    this.rs = new THREE.Vector2(); this.re = new THREE.Vector2(); this.rd = new THREE.Vector2();
+    this.ps = new THREE.Vector2();
+    this.mouseL = false; this.mouseR = false;
+    const off = new THREE.Vector3().copy(cam.position).sub(this.target);
+    this.sph.setFromVector3(off);
+    el.addEventListener('mousedown', e => {
+      if (e.button===0){this.mouseL=true;this.rs.set(e.clientX,e.clientY);}
+      if (e.button===2){this.mouseR=true;this.ps.set(e.clientX,e.clientY);}
+    });
+    el.addEventListener('mousemove', e => {
+      if(this.mouseL){
+        this.re.set(e.clientX,e.clientY);
+        this.rd.subVectors(this.re,this.rs);
+        this.sphD.theta -= 2*Math.PI*this.rd.x/el.clientHeight*0.8;
+        this.sphD.phi -= 2*Math.PI*this.rd.y/el.clientHeight*0.8;
+        this.rs.copy(this.re);
+      }
+      if(this.mouseR){
+        const dx=(e.clientX-this.ps.x)*0.005, dy=(e.clientY-this.ps.y)*0.005;
+        const r=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0);
+        const u=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
+        this.panOff.addScaledVector(r,-dx).addScaledVector(u,dy);
+        this.ps.set(e.clientX,e.clientY);
+      }
+    });
+    el.addEventListener('mouseup', ()=>{this.mouseL=false;this.mouseR=false;});
+    el.addEventListener('mouseleave', ()=>{this.mouseL=false;this.mouseR=false;});
+    el.addEventListener('wheel', e=>{
+      e.preventDefault();
+      this.scale *= e.deltaY>0 ? 1.08 : 0.92;
+    },{passive:false});
+    el.addEventListener('contextmenu', e=>e.preventDefault());
+  }
+  update(){
+    const off=new THREE.Vector3().copy(this.cam.position).sub(this.target);
+    this.sph.setFromVector3(off);
+    this.sph.theta+=this.sphD.theta;
+    this.sph.phi+=this.sphD.phi;
+    this.sph.phi=Math.max(0.1,Math.min(Math.PI-0.1,this.sph.phi));
+    this.sph.radius*=this.scale;
+    this.sph.radius=Math.max(1.5,Math.min(15,this.sph.radius));
+    this.target.add(this.panOff);
+    off.setFromSpherical(this.sph);
+    this.cam.position.copy(this.target).add(off);
+    this.cam.lookAt(this.target);
+    this.sphD.set(0,0,0); this.scale=1; this.panOff.set(0,0,0);
+  }
+}
+
+// ══════════════════════════════════════════
+//  SCENE
+// ══════════════════════════════════════════
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1b2e);
+scene.fog = new THREE.FogExp2(0x1a1b2e, 0.035);
+
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 100);
+camera.position.set(2.5, 2.5, 4.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.1, 0);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x404060, 0.7));
+const sun = new THREE.DirectionalLight(0xfff5e8, 0.85);
+sun.position.set(4, 8, 5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024,1024);
+scene.add(sun);
+scene.add(new THREE.DirectionalLight(0x5ee7b7, 0.25).translateX(-3).translateY(2));
+scene.add(new THREE.DirectionalLight(0x818cf8, 0.2).translateZ(-4).translateY(3));
+
+// Ground
+const gndGeo = new THREE.CircleGeometry(10, 48);
+const gndMat = new THREE.MeshStandardMaterial({ color: 0x15162a, roughness: 0.95 });
+const gnd = new THREE.Mesh(gndGeo, gndMat);
+gnd.rotation.x = -Math.PI/2; gnd.receiveShadow = true;
+scene.add(gnd);
+scene.add(new THREE.GridHelper(16, 32, 0x252648, 0x1e1f3a));
+
+// ══════════════════════════════════════════
+//  GLB MODEL LOADING
+// ══════════════════════════════════════════
+const allJoints = {};
+
+// Pré-popular o dicionário
+const jointNames = [
+  'hip', 'spine', 'neck', 'head', 
+  'left_shoulder', 'right_shoulder', 
+  'left_arm', 'right_arm', 
+  'left_forearm', 'right_forearm', 
+  'left_hand', 'right_hand',
+  'left_thigh', 'right_thigh', 
+  'left_shin', 'right_shin', 
+  'left_foot', 'right_foot'
+];
+jointNames.forEach(name => {
+  allJoints[name] = new THREE.Group();
+});
+
+const loader = new GLTFLoader();
+
+loader.load('Man.glb', function (gltf) {
+  const model = gltf.scene;
+  model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  scene.add(model);
+
+  // TRONCO E CABEÇA
+  allJoints['hip'] = model.getObjectByName('Hips') || allJoints['hip'];
+  allJoints['spine'] = model.getObjectByName('Torso') || allJoints['spine']; // Em Mixamo costuma ser Spine, Spine1, Spine2
+  allJoints['neck'] = model.getObjectByName('Neck') || allJoints['neck'];
+  allJoints['head'] = model.getObjectByName('Head') || allJoints['head'];
+
+  // MEMBROS SUPERIORES
+  // Dependendo do seu .glb, o ombro pode se chamar 'ShoulderL' ou 'ClavicleL'
+  allJoints['left_shoulder'] = model.getObjectByName('ShoulderL') || allJoints['left_shoulder'];
+  allJoints['right_shoulder'] = model.getObjectByName('ShoulderR') || allJoints['right_shoulder'];
+  
+  allJoints['left_arm'] = model.getObjectByName('UpperArmL') || allJoints['left_arm'];
+  allJoints['right_arm'] = model.getObjectByName('UpperArmR') || allJoints['right_arm'];
+  
+  allJoints['left_forearm'] = model.getObjectByName('LowerArmL') || allJoints['left_forearm'];
+  allJoints['right_forearm'] = model.getObjectByName('LowerArmR') || allJoints['right_forearm'];
+  
+  allJoints['left_hand'] = model.getObjectByName('HandL') || allJoints['left_hand'];
+  allJoints['right_hand'] = model.getObjectByName('HandR') || allJoints['right_hand'];
+
+  // MEMBROS INFERIORES
+  allJoints['left_thigh'] = model.getObjectByName('UpperLegL') || allJoints['left_thigh'];
+  allJoints['right_thigh'] = model.getObjectByName('UpperLegR') || allJoints['right_thigh'];
+  
+  allJoints['left_shin'] = model.getObjectByName('LowerLegL') || allJoints['left_shin'];
+  allJoints['right_shin'] = model.getObjectByName('LowerLegR') || allJoints['right_shin'];
+  
+  allJoints['left_foot'] = model.getObjectByName('FootL') || allJoints['left_foot'];
+  allJoints['right_foot'] = model.getObjectByName('FootR') || allJoints['right_foot'];
+
+// 1º PASSO: Força os ossos dos pés a voltarem a ser filhos das canelas
+  const rightKnee = model.getObjectByName('LowerLegR');
+  const rightAnkle = model.getObjectByName('FootR');
+  if (rightKnee && rightAnkle) {
+    rightKnee.attach(rightAnkle);
+  }
+
+  const leftKnee = model.getObjectByName('LowerLegL');
+  const leftAnkle = model.getObjectByName('FootL');
+  if (leftKnee && leftAnkle) {
+    leftKnee.attach(leftAnkle);
+  }
+
+  // 2º PASSO: AGORA SIM, SALVAR A POSE ORIGINAL DE CADA OSSO
+  Object.values(allJoints).forEach(joint => {
+    if (joint && joint.isObject3D) {
+      // Clona o quaternion (rotação 3D) inicial do osso (já com a hierarquia corrigida)
+      joint.userData.initialQuat = joint.quaternion.clone();
+    }
+  });
+
+  console.log("Modelo Man.glb carregado. Quaternions iniciais salvos!");
+});
+
+// ══════════════════════════════════════════
+//  JOINT UI DEFINITIONS
+// ══════════════════════════════════════════
+const jointDefs = [
+  { name:'head', label:'Cabeça', cat:'core', icon:'H' },
+  { name:'neck', label:'Pescoço', cat:'core', icon:'N' },
+  { name:'spine', label:'Coluna', cat:'core', icon:'S' },
+  { name:'hip', label:'Quadril', cat:'core', icon:'Q' },
+  
+  { name:'left_shoulder', label:'Ombro Esq', cat:'upper', icon:'OE' },
+  { name:'right_shoulder', label:'Ombro Dir', cat:'upper', icon:'OD' },
+  { name:'left_arm', label:'Braço Esq', cat:'upper', icon:'BE' },
+  { name:'right_arm', label:'Braço Dir', cat:'upper', icon:'BD' },
+  { name:'left_forearm', label:'Antebraço Esq', cat:'upper', icon:'AE' },
+  { name:'right_forearm', label:'Antebraço Dir', cat:'upper', icon:'AD' },
+  { name:'left_hand', label:'Mão Esq', cat:'upper', icon:'ME' },
+  { name:'right_hand', label:'Mão Dir', cat:'upper', icon:'MD' },
+  
+  { name:'left_thigh', label:'Coxa Esq', cat:'lower', icon:'CXE' },
+  { name:'right_thigh', label:'Coxa Dir', cat:'lower', icon:'CXD' },
+  { name:'left_shin', label:'Canela Esq', cat:'lower', icon:'CNE' },
+  { name:'right_shin', label:'Canela Dir', cat:'lower', icon:'CND' },
+  { name:'left_foot', label:'Pé Esq', cat:'lower', icon:'PE' },
+  { name:'right_foot', label:'Pé Dir', cat:'lower', icon:'PD' },
+];
+
+const tabJoints = document.getElementById('tab-joints');
+const catLabels = { core: 'Tronco', upper: 'Braços', lower: 'Pernas' };
+const grouped = {};
+jointDefs.forEach(d => { if (!grouped[d.cat]) grouped[d.cat] = []; grouped[d.cat].push(d); });
+
+Object.entries(grouped).forEach(([cat, defs]) => {
+  const lbl = document.createElement('div');
+  lbl.className = 'section-label'; lbl.textContent = catLabels[cat]; tabJoints.appendChild(lbl);
+
+  defs.forEach(def => {
+    const card = document.createElement('div');
+    card.className = 'joint-card'; card.id = `jc-${def.name}`;
+
+    let html = `<div class="joint-card-header"><div class="joint-icon ${def.cat}">${def.icon}</div><span class="joint-card-title">${def.label}</span><span class="joint-card-badge">${def.name}</span></div>`;
+
+    ['x','y','z'].forEach(axis => {
+      html += `<div class="axis-row"><div class="axis-dot ${axis}"></div><input type="range" class="axis-slider ${axis}" id="sl-${def.name}-${axis}" min="-180" max="180" value="0" step="0.1"><span class="axis-val" id="vl-${def.name}-${axis}">0.0°</span></div>`;
+    });
+
+    card.innerHTML = html; tabJoints.appendChild(card);
+
+    ['x','y','z'].forEach(axis => {
+      const sl = document.getElementById(`sl-${def.name}-${axis}`);
+      const vl = document.getElementById(`vl-${def.name}-${axis}`);
+      
+      sl.addEventListener('input', () => {
+        vl.textContent = parseFloat(sl.value).toFixed(1) + '°';
+        
+        // Coletar valores dos 3 sliders daquele osso
+        const slX = document.getElementById(`sl-${def.name}-x`);
+        const slY = document.getElementById(`sl-${def.name}-y`);
+        const slZ = document.getElementById(`sl-${def.name}-z`);
+        
+        const rx = THREE.MathUtils.degToRad(slX ? parseFloat(slX.value) : 0);
+        const ry = THREE.MathUtils.degToRad(slY ? parseFloat(slY.value) : 0);
+        const rz = THREE.MathUtils.degToRad(slZ ? parseFloat(slZ.value) : 0);
+        
+        const joint = allJoints[def.name];
+        if (joint) {
+          if (joint.userData.initialQuat) {
+            // Cria quaternion do sensor e multiplica pela pose base
+            const sensorQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'XYZ'));
+            joint.quaternion.copy(joint.userData.initialQuat).multiply(sensorQuat);
+          } else {
+            joint.rotation.set(rx, ry, rz);
+          }
+        }
+        
+        card.classList.add('highlight');
+        clearTimeout(card._ht);
+        card._ht = setTimeout(() => card.classList.remove('highlight'), 600);
+      });
+    });
+  });
+});
+
+// ══════════════════════════════════════════
+//  TAB SWITCHING & UI REST
+// ══════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+  });
+});
+
+let sensors = []; let nodes = []; let frames = []; let maxFrame = 0;
+
+function buildFrames() {
+  const sensorIndex = {};
+  sensors.forEach(s => { const byOrder = {}; (s.measurements || []).forEach(m => { byOrder[m.readOrder] = m; }); sensorIndex[s.id] = byOrder; });
+
+  const allOrders = new Set();
+  sensors.forEach(s => { (s.measurements || []).forEach(m => allOrders.add(m.readOrder)); });
+  const sortedOrders = [...allOrders].sort((a,b) => a - b);
+
+  frames = [];
+  sortedOrders.forEach(order => {
+    const frame = {};
+    nodes.forEach(node => {
+      const jointName = node.type;
+      if (!allJoints[jointName]) return;
+      const measurements = [];
+      (node.sensorNodes || []).forEach(sn => {
+        const meas = sensorIndex[sn.sensorId]?.[order];
+        if (meas) measurements.push({ ...meas, local: sn.local });
+      });
+
+      if (measurements.length === 0) return;
+      let rx = 0, ry = 0, rz = 0, count = 0;
+      measurements.forEach(m => {
+        rx += parseFloat(m.roll ?? m.eulerX ?? 0);
+        ry += parseFloat(m.pitch ?? m.eulerY ?? 0);
+        rz += parseFloat(m.yaw ?? m.eulerZ ?? 0);
+        count++;
+      });
+      if (count > 0) { frame[jointName] = { rx: rx/count, ry: ry/count, rz: rz/count }; }
+    });
+    frames.push(frame);
+  });
+  maxFrame = frames.length;
+}
+
+function applyFrame(idx) {
+  if (idx < 0 || idx >= frames.length) return;
+  const frame = frames[idx];
+
+  Object.entries(frame).forEach(([jointName, angles]) => {
+    const joint = allJoints[jointName];
+    if (!joint) return;
+    
+    const rx = THREE.MathUtils.degToRad(angles.rx);
+    const ry = THREE.MathUtils.degToRad(angles.ry);
+    const rz = THREE.MathUtils.degToRad(angles.rz);
+    
+    // APLICANDO QUATERNION AO INVÉS DE ROTAÇÃO ABSOLUTA
+    if (joint.userData.initialQuat) {
+      const sensorQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'XYZ'));
+      joint.quaternion.copy(joint.userData.initialQuat).multiply(sensorQuat);
+    } else {
+      joint.rotation.set(rx, ry, rz);
+    }
+
+    ['x','y','z'].forEach((axis, i) => {
+      const deg = [angles.rx, angles.ry, angles.rz][i];
+      const sl = document.getElementById(`sl-${jointName}-${axis}`);
+      const vl = document.getElementById(`vl-${jointName}-${axis}`);
+      if (sl) { sl.value = deg; vl.textContent = deg.toFixed(1) + '°'; }
+    });
+  });
+
+  timeline.value = idx; frameInfo.textContent = `${idx + 1} / ${maxFrame}`;
+}
+
+function renderConfigUI() {
+  const sensorsList = document.getElementById('sensors-list'); const nodesList = document.getElementById('nodes-list');
+  if (sensors.length === 0) { sensorsList.innerHTML = '<div class="config-card" style="font-size:11px;color:var(--text-dim);">Nenhum sensor carregado.</div>'; } 
+  else { sensorsList.innerHTML = sensors.map(s => `<div class="config-card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-weight:700;font-size:12px;">${s.name || 'Sensor'}</span><span style="font-family:'JetBrains Mono';font-size:9px;color:var(--text-dim);">ID: ${s.id}</span></div><div style="font-size:10px;color:var(--accent);margin-top:4px;">${(s.measurements||[]).length} medições</div></div>`).join(''); }
+
+  if (nodes.length === 0) { nodesList.innerHTML = '<div class="config-card" style="font-size:11px;color:var(--text-dim);">Nenhum nó configurado.</div>'; } 
+  else { nodesList.innerHTML = nodes.map(n => `<div class="config-card" style="margin-bottom:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;font-size:12px;">${n.name}</span><span style="font-family:'JetBrains Mono';font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(129,140,248,0.15);color:var(--accent2);">${n.type}</span></div>${(n.sensorNodes||[]).map(sn => { const sensor = sensors.find(s => s.id === sn.sensorId || s.id === String(sn.sensorId)); return `<div class="node-sensor-row"><div class="dot"></div><span style="color:var(--text);">${sn.local}</span><span style="color:var(--text-dim);margin-left:auto;font-size:10px;">${sensor ? sensor.name : 'sensor #'+sn.sensorId}</span></div>`; }).join('')}</div>`).join(''); }
+}
+
+const timeline = document.getElementById('timeline'); const frameInfo = document.getElementById('frame-info');
+const btnPlay = document.getElementById('btn-play'); const btnReset = document.getElementById('btn-reset');
+const btnPrev = document.getElementById('btn-prev'); const btnNext = document.getElementById('btn-next');
+const statusMsg = document.getElementById('status-msg'); const speedInput = document.getElementById('speed-input');
+
+let isPlaying = false; let playFrame = 0; let playTimer = null;
+
+function startPlay() { if (maxFrame === 0) return; isPlaying = true; btnPlay.textContent = '⏸'; btnPlay.classList.add('playing'); playTimer = setInterval(() => { applyFrame(playFrame); playFrame = (playFrame + 1) % maxFrame; }, parseInt(speedInput.value) || 60); }
+function stopPlay() { isPlaying = false; btnPlay.textContent = '▶'; btnPlay.classList.remove('playing'); if (playTimer) clearInterval(playTimer); }
+
+btnPlay.addEventListener('click', () => { isPlaying ? stopPlay() : startPlay(); });
+
+btnReset.addEventListener('click', () => {
+  stopPlay(); playFrame = 0;
+  
+  // Reseta os ossos para a Pose Original
+  Object.values(allJoints).forEach(j => {
+    if (j && j.isObject3D) {
+      if (j.userData.initialQuat) {
+        j.quaternion.copy(j.userData.initialQuat);
+      } else {
+        j.rotation.set(0,0,0);
+      }
+    }
+  });
+  
+  jointDefs.forEach(def => {
+    ['x','y','z'].forEach(axis => {
+      const sl = document.getElementById(`sl-${def.name}-${axis}`);
+      const vl = document.getElementById(`vl-${def.name}-${axis}`);
+      if(sl) { sl.value=0; vl.textContent='0.0°'; }
+    });
+  });
+  timeline.value = 0; frameInfo.textContent = `0 / ${maxFrame}`;
+});
+
+btnPrev.addEventListener('click', () => { if(maxFrame===0) return; playFrame = Math.max(0, playFrame-1); applyFrame(playFrame); });
+btnNext.addEventListener('click', () => { if(maxFrame===0) return; playFrame = Math.min(maxFrame-1, playFrame+1); applyFrame(playFrame); });
+timeline.addEventListener('input', () => { playFrame = parseInt(timeline.value); applyFrame(playFrame); });
+speedInput.addEventListener('change', () => { if(isPlaying) { stopPlay(); startPlay(); } });
+
+document.getElementById('btn-load').addEventListener('click', () => {
+  try {
+    const raw = JSON.parse(document.getElementById('json-input').value);
+    sensors = raw.sensors || []; nodes = raw.nodes || [];
+    buildFrames(); timeline.max = Math.max(0, maxFrame - 1); timeline.value = 0; playFrame = 0; frameInfo.textContent = `0 / ${maxFrame}`;
+    renderConfigUI(); statusMsg.className = 'status-msg success'; statusMsg.textContent = `✓ Carregado.`; setTimeout(() => { statusMsg.className = 'status-msg'; }, 4000);
+  } catch(e) { statusMsg.className = 'status-msg error'; statusMsg.textContent = `✗ Erro no JSON.`; setTimeout(() => { statusMsg.className = 'status-msg'; }, 5000); console.error(e); }
+});
+
+renderConfigUI();
+
+function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+animate();
+
+window.addEventListener('resize', () => { camera.aspect = container.clientWidth / container.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(container.clientWidth, container.clientHeight); });
+</script>
+</script>
+</body>
+</html>

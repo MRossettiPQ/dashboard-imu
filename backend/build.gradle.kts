@@ -98,6 +98,7 @@ dependencies {
 
     // === MQTT ===
     implementation("io.moquette:moquette-broker:$moquetteVersion")
+    implementation("io.quarkus:quarkus-messaging-mqtt")
 
     // === MDNS ===
     implementation("org.jmdns:jmdns:$jmdnsVersion")

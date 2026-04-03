@@ -82,8 +82,14 @@ interface ApplicationConfig {
         @WithName("port")
         fun port(): Int
 
+        @WithName("socket-port")
+        fun socketPort(): Int
+
         @WithName("host")
         fun host(): String
+
+        @WithName("password")
+        fun password(): String
     }
 
     interface SocketConfig {

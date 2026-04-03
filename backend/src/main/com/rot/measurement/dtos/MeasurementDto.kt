@@ -6,6 +6,7 @@ import com.rot.measurement.models.Measurement
 import java.math.BigDecimal
 import java.time.OffsetDateTime
 import java.util.*
+import kotlin.properties.Delegates
 
 
 open class MeasurementDto {
@@ -13,25 +14,25 @@ open class MeasurementDto {
     var readOrder: Int = 0
     lateinit var capturedAt: OffsetDateTime
     lateinit var sensorName: String
-    lateinit var accelMssX: BigDecimal
-    lateinit var accelMssY: BigDecimal
-    lateinit var accelMssZ: BigDecimal
-    lateinit var accelLinX: BigDecimal
-    lateinit var accelLinY: BigDecimal
-    lateinit var accelLinZ: BigDecimal
-    lateinit var gyroRadsX: BigDecimal
-    lateinit var gyroRadsY: BigDecimal
-    lateinit var gyroRadsZ: BigDecimal
-    lateinit var roll: BigDecimal
-    lateinit var pitch: BigDecimal
-    lateinit var yaw: BigDecimal
-    lateinit var eulerX: BigDecimal
-    lateinit var eulerY: BigDecimal
-    lateinit var eulerZ: BigDecimal
-    lateinit var quaternionX: BigDecimal
-    lateinit var quaternionY: BigDecimal
-    lateinit var quaternionZ: BigDecimal
-    lateinit var quaternionW: BigDecimal
+    var accelMssX by Delegates.notNull<Double>()
+    var accelMssY by Delegates.notNull<Double>()
+    var accelMssZ by Delegates.notNull<Double>()
+    var accelLinX by Delegates.notNull<Double>()
+    var accelLinY by Delegates.notNull<Double>()
+    var accelLinZ by Delegates.notNull<Double>()
+    var gyroRadsX by Delegates.notNull<Double>()
+    var gyroRadsY by Delegates.notNull<Double>()
+    var gyroRadsZ by Delegates.notNull<Double>()
+    var roll by Delegates.notNull<Double>()
+    var pitch by Delegates.notNull<Double>()
+    var yaw by Delegates.notNull<Double>()
+    var eulerX by Delegates.notNull<Double>()
+    var eulerY by Delegates.notNull<Double>()
+    var eulerZ by Delegates.notNull<Double>()
+    var quaternionX by Delegates.notNull<Double>()
+    var quaternionY by Delegates.notNull<Double>()
+    var quaternionZ by Delegates.notNull<Double>()
+    var quaternionW by Delegates.notNull<Double>()
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
@@ -60,8 +61,8 @@ open class MeasurementDto {
 }
 
 data class Quaternion(
-    val w: BigDecimal,
-    val x: BigDecimal,
-    val y: BigDecimal,
-    val z: BigDecimal
+    val w: Double,
+    val x: Double,
+    val y: Double,
+    val z: Double
 )

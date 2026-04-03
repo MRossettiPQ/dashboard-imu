@@ -24,6 +24,8 @@ application:
   mqtt:
     host: ${MQTT_HOST:localhost}
     port: ${MQTT_PORT:7002}
+    socket-port: ${MQTT_SOCKET_PORT:7003}
+    password: ${MQTT_PASSWORD:12345678}
   mdns:
     protocol: ${MDNS_PROTOCOL:http}
     name: ${MDNS_NAME:dashboard}
@@ -44,6 +46,13 @@ smallrye:
         location: classpath:security/private.pem
 
 mp:
+  messaging:
+    incoming:
+      measurements:
+        connector: smallrye-mqtt
+        host: ${application.mqtt.host}
+        port: ${application.mqtt.port}
+        topic: session/+/measurement
   jwt:
     verify:
       publickey:
@@ -101,6 +110,8 @@ quarkus:
       sql: false
     jdbc:
       timezone: America/Sao_Paulo
+      statement-batch-size: 100
+      statement-fetch-size: 100
     database:
       generation: update
     packages: com.rot, com.blazebit.persistence.impl.function.entity

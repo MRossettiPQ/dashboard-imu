@@ -3,7 +3,7 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
-import com.rot.gonimetry.models.BodyPoint
+import com.rot.gonimetry.enums.BodyRegionEnum
 import com.rot.session.enums.BodySideEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
@@ -14,10 +14,10 @@ import jakarta.validation.constraints.NotNull
     name = "session_nodes",
     indexes = [
         Index(name = "idx_session_node_session", columnList = "session_id"),
-        Index(name = "idx_session_node_body_point", columnList = "body_point_id"),
+//        Index(name = "idx_session_node_body_point", columnList = "body_point_id"),
     ],
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_session_node_point_side", columnNames = ["session_id", "body_point_id", "side"])
+        UniqueConstraint(name = "uk_session_node_point_side", columnNames = ["session_id", "side"])
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -41,14 +41,14 @@ class SessionNode : BaseEntity<SessionNode>() {
     var side: BodySideEnum = BodySideEnum.RIGHT
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", nullable = false)
-    var session: Session? = null
+    @Enumerated(EnumType.STRING)
+    @Column(name = "body_region", nullable = false)
+    var region: BodyRegionEnum = BodyRegionEnum.KNEE
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "body_point_id", nullable = false)
-    var bodyPoint: BodyPoint? = null
+    @JoinColumn(name = "session_id", nullable = false)
+    var session: Session? = null
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "sessionNode", cascade = [CascadeType.ALL])
     var nodeSensors = mutableSetOf<NodeSensor>()

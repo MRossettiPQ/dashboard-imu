@@ -3,6 +3,7 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
+import com.rot.session.enums.SessionStatus
 import com.rot.session.enums.SessionType
 import com.rot.user.models.User
 import jakarta.persistence.*
@@ -26,6 +27,12 @@ class Session : BaseEntity<Session>() {
     companion object : BaseCompanion<Session, UUID, QSession> {
         override val entityClass: Class<Session> = Session::class.java
         override val q: QSession = QSession.session
+
+        fun findByPhysiotherapistId(patientId: UUID): Session? {
+            return createQuery()
+                .where(q.patient().id.eq(patientId))
+                .fetchFirst()
+        }
     }
 
     @Id
@@ -41,6 +48,11 @@ class Session : BaseEntity<Session>() {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     var type: SessionType = SessionType.REAL
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    var status: SessionStatus = SessionStatus.CREATED
 
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "observation", columnDefinition = "TEXT")

@@ -4,8 +4,10 @@ import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.ResultContent
 import com.rot.gonimetry.dtos.ArticulationTypeDto
 import com.rot.gonimetry.models.ArticulationType
+import com.rot.session.dtos.CreateSessionDto
 import com.rot.session.dtos.SessionDto
 import com.rot.session.models.Session
+import com.rot.session.services.SessionService
 import io.quarkus.security.Authenticated
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
@@ -24,7 +26,31 @@ import java.util.*
 @Path("/api/sessions")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-class SessionController {
+class SessionController(
+    private val sessionService: SessionService
+) {
+
+    @GET
+    @Transactional
+    @Path("/create")
+    @Operation(
+        summary = "Registrar uma nova sessão de medição",
+        description = "Cria uma nova sessão de medição e retorna os seus dados"
+    )
+    @APIResponse(
+        responseCode = "200",
+        description = "Sessão registrada com sucesso",
+    )
+    @APIResponse(responseCode = "401", description = "Autenticação inválida")
+    @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
+    @APIResponse(responseCode = "500", description = "Erro interno do servidor")
+    fun create(@Valid body: CreateSessionDto): RestResponse<Content<SessionDto>> {
+        val session = sessionService.create(body)
+        return ResultContent.of(session)
+            .withStatusCode(Response.Status.OK)
+            .transform(SessionDto::from)
+            .build()
+    }
 
     @GET
     @Transactional

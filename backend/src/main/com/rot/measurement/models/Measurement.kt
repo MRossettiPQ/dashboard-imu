@@ -30,6 +30,16 @@ class Measurement : BaseEntity<Measurement>() {
                 .orderBy(q.readOrder.asc())
                 .fetch()
         }
+
+        fun saveMeasurementsBatch(measurements: List<Measurement>) {
+            measurements.forEachIndexed { index, measurement ->
+                measurement.persist()
+                if (index > 0 && index % 100 == 0) {
+                    flush()
+                    getSession().clear()
+                }
+            }
+        }
     }
 
     @Id
@@ -50,97 +60,97 @@ class Measurement : BaseEntity<Measurement>() {
     // --- Accelerometer (m/s²) ---
     @NotNull
     @Column(name = "accel_mss_x", nullable = false, updatable = false)
-    var accelMssX: BigDecimal? = null
+    var accelMssX: Double? = null
 
     @NotNull
     @Column(name = "accel_mss_y", nullable = false, updatable = false)
-    var accelMssY: BigDecimal? = null
+    var accelMssY: Double? = null
 
     @NotNull
     @Column(name = "accel_mss_z", nullable = false, updatable = false)
-    var accelMssZ: BigDecimal? = null
+    var accelMssZ: Double? = null
 
     // --- Linear Acceleration ---
     @NotNull
     @Column(name = "accel_lin_x", nullable = false, updatable = false)
-    var accelLinX: BigDecimal? = null
+    var accelLinX: Double? = null
 
     @NotNull
     @Column(name = "accel_lin_y", nullable = false, updatable = false)
-    var accelLinY: BigDecimal? = null
+    var accelLinY: Double? = null
 
     @NotNull
     @Column(name = "accel_lin_z", nullable = false, updatable = false)
-    var accelLinZ: BigDecimal? = null
+    var accelLinZ: Double? = null
 
     // --- Gyroscope (rad/s) ---
     @NotNull
     @Column(name = "gyro_rads_x", nullable = false, updatable = false)
-    var gyroRadsX: BigDecimal? = null
+    var gyroRadsX: Double? = null
 
     @NotNull
     @Column(name = "gyro_rads_y", nullable = false, updatable = false)
-    var gyroRadsY: BigDecimal? = null
+    var gyroRadsY: Double? = null
 
     @NotNull
     @Column(name = "gyro_rads_z", nullable = false, updatable = false)
-    var gyroRadsZ: BigDecimal? = null
+    var gyroRadsZ: Double? = null
 
     // --- Magnetometer bias ---
     @NotNull
     @Column(name = "mag_bias_x", nullable = false, updatable = false)
-    var magBiasX: BigDecimal? = null
+    var magBiasX: Double? = null
 
     @NotNull
     @Column(name = "mag_bias_y", nullable = false, updatable = false)
-    var magBiasY: BigDecimal? = null
+    var magBiasY: Double? = null
 
     @NotNull
     @Column(name = "mag_bias_z", nullable = false, updatable = false)
-    var magBiasZ: BigDecimal? = null
+    var magBiasZ: Double? = null
 
     // --- Euler angles (roll, pitch, yaw) ---
     @NotNull
     @Column(name = "roll", nullable = false, updatable = false)
-    var roll: BigDecimal? = null
+    var roll: Double? = null
 
     @NotNull
     @Column(name = "pitch", nullable = false, updatable = false)
-    var pitch: BigDecimal? = null
+    var pitch: Double? = null
 
     @NotNull
     @Column(name = "yaw", nullable = false, updatable = false)
-    var yaw: BigDecimal? = null
+    var yaw: Double? = null
 
     // --- Euler (alternative representation) ---
     @NotNull
     @Column(name = "euler_x", nullable = false, updatable = false)
-    var eulerX: BigDecimal? = null
+    var eulerX: Double? = null
 
     @NotNull
     @Column(name = "euler_y", nullable = false, updatable = false)
-    var eulerY: BigDecimal? = null
+    var eulerY: Double? = null
 
     @NotNull
     @Column(name = "euler_z", nullable = false, updatable = false)
-    var eulerZ: BigDecimal? = null
+    var eulerZ: Double? = null
 
     // --- Quaternion (for 3D orientation) ---
     @NotNull
     @Column(name = "quaternion_x", nullable = false, updatable = false)
-    var quaternionX: BigDecimal? = null
+    var quaternionX: Double? = null
 
     @NotNull
     @Column(name = "quaternion_y", nullable = false, updatable = false)
-    var quaternionY: BigDecimal? = null
+    var quaternionY: Double? = null
 
     @NotNull
     @Column(name = "quaternion_z", nullable = false, updatable = false)
-    var quaternionZ: BigDecimal? = null
+    var quaternionZ: Double? = null
 
     @NotNull
     @Column(name = "quaternion_w", nullable = false, updatable = false)
-    var quaternionW: BigDecimal? = null
+    var quaternionW: Double? = null
 
     // --- Relationship ---
     @NotNull

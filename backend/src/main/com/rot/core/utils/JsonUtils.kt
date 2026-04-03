@@ -51,6 +51,14 @@ object JsonUtils {
         return mapper
     }
 
+    fun toJsonByteArray(value: Any?): ByteArray {
+        return try {
+            MAPPER.writeValueAsBytes(value)
+        } catch (e: IOException) {
+            throw RuntimeException("Erro ao converter objeto para ByteArray JSON", e)
+        }
+    }
+
     fun isValidJson(json: String): Boolean {
         return try {
             MAPPER.readTree(json)

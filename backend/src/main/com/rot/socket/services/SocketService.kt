@@ -10,14 +10,9 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JwtUtils
-import com.rot.gonimetry.models.MovementType
-import com.rot.measurement.models.Measurement
 import com.rot.measurement.models.SensorInfo
-import com.rot.session.enums.SessionType
-import com.rot.session.models.Articulation
-import com.rot.session.models.Movement
+import com.rot.session.dtos.UserSessionContext
 import com.rot.session.models.Session
-import com.rot.session.models.SessionSensor
 import com.rot.socket.dtos.*
 import com.rot.socket.enums.AckMessage
 import com.rot.socket.enums.MessageType
@@ -33,6 +28,8 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 class CustomJacksonJsonSupport : JacksonJsonSupport() {
     init {
@@ -58,8 +55,9 @@ class CustomJacksonJsonSupport : JacksonJsonSupport() {
 class SocketService(
     private val applicationConfig: ApplicationConfig
 ) {
-    val sessions: MutableMap<UUID, SessionContext> = mutableMapOf()
-    val sensors: MutableList<SessionSensorDto> = mutableListOf()
+
+    val sessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
+    val sensors: MutableList<SessionSensorDto> = CopyOnWriteArrayList()
 
     lateinit var server: SocketIOServer
 
@@ -135,7 +133,7 @@ class SocketService(
         }
 
         val type = UserSessionType.valueOf(typeStr)
-        val sessionContext = SessionContext()
+        val userSessionContext = UserSessionContext()
         if (type == UserSessionType.USER && !token.isNullOrBlank()) {
             val decoded = JwtUtils.decode(token.replace("Bearer ", ""))
             if (decoded == null || decoded.issuer != applicationConfig.security().issuer()) {
@@ -153,20 +151,20 @@ class SocketService(
                 return client.disconnect()
             }
 
-            sessionContext.room = sessionId
-            sessionContext.userId = user.id
-            sessionContext.type = UserSessionType.USER
+            userSessionContext.room = sessionId
+            userSessionContext.userId = user.id
+            userSessionContext.type = UserSessionType.USER
 
             client.joinRoom(sessionId.toString())
 
             sendSensorList(client)
         } else if (type == UserSessionType.SENSOR) {
-            sessionContext.type = UserSessionType.SENSOR
+            userSessionContext.type = UserSessionType.SENSOR
         } else {
             Log.warn("Conexão recusada para IP ${client.remoteAddress} - não é sensor e nem usuário")
             return client.disconnect()
         }
-        sessions[sessionId] = sessionContext
+        sessions[sessionId] = userSessionContext
 
         // Você pode emitir um evento de boas-vindas, se quiser
         Log.info("Novo cliente conectado! Sessão: $sessionId, IP: $remoteAddress")
@@ -233,46 +231,7 @@ class SocketService(
                 session = session.save()
             }
 
-            val articulation = session.articulations.firstOrNull() ?: Articulation()
-//            articulation.type = content.procedure
 
-            // Criar movimento sempre que solicitar para salvar
-            val movement = Movement()
-            movement.type = content.movementType
-            movement.observation = content.movementObservation
-            movement.movementType = MovementType.findByType(content.movementType)
-
-            // Adicionar sensores ao movimento
-            for ((first, second) in sessionContext.sensors.values) {
-                val sensor = SessionSensor()
-                val sensorInfo = SensorInfo.findByMacAddress(first.mac!!) ?: SensorInfo()
-
-                if (sensorInfo.isNewBean) {
-                    sensorInfo.macAddress = first.mac
-                    sensorInfo.sensorName = first.name
-                }
-
-                sensor.ip = first.ip
-                sensor.sensorInfo = sensorInfo
-                sensor.observation = first.observation
-
-                for (measurement in second.sortedBy { it.readOrder }) {
-                    val measurement = Measurement.fromDto(measurement)
-                    sensor.measurements.add(measurement)
-                }
-
-//                movement.sensors.add(sensor)
-            }
-
-            // Adicionar movimentos ao procedimento
-            articulation.movements.add(movement)
-
-            // Adicionar procedimentos a sessão
-            session.articulations.add(articulation)
-            session.type = SessionType.REAL
-            session.observation = content.observation
-            session = session.save()
-            sessionContext.id = session.id
         }
 
         request.sendAckData(AckMessage.SAVED_SESSION.name)

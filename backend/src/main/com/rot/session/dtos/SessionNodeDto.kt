@@ -2,10 +2,8 @@ package com.rot.session.dtos
 
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.utils.JsonUtils
-import com.rot.gonimetry.models.BodyPoint
 import com.rot.session.enums.BodySideEnum
 import com.rot.session.enums.SessionType
-import com.rot.session.models.MovementNode
 import com.rot.session.models.NodeSensor
 import com.rot.session.models.Session
 import com.rot.session.models.SessionNode
@@ -30,9 +28,7 @@ open class SessionNodeDto {
     var observation: String? = null
     var side: BodySideEnum = BodySideEnum.RIGHT
     var session: Session? = null
-    var bodyPoint: BodyPointDto? = null
     var nodeSensors = mutableSetOf<NodeSensorDto>()
-    var movementNodes = mutableSetOf<MovementNodeDto>()
 
     companion object {
         fun from(entity: SessionNode): SessionNodeDto {
@@ -41,9 +37,7 @@ open class SessionNodeDto {
                 observation = entity.observation
                 side = entity.side
                 session = entity.session
-                bodyPoint = BodyPointDto.from(entity.bodyPoint!!)
                 nodeSensors = entity.nodeSensors.map { NodeSensorDto.from(it) }.toMutableSet()
-                movementNodes = entity.movementNodes.map { MovementNodeDto.from(it) }.toMutableSet()
             }
         }
 

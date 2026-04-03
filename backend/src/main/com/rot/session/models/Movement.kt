@@ -15,7 +15,7 @@ import java.util.*
 @Table(
     name = "movements",
     indexes = [
-        Index(name = "idx_movement_articulation", columnList = "articulation_id"),
+//        Index(name = "idx_movement_articulation", columnList = "articulation_id"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -53,12 +53,4 @@ class Movement : BaseEntity<Movement>() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "movement_type_id", nullable = false)
     var movementType: MovementType? = null
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "articulation_id", nullable = false)
-    var articulation: Articulation? = null
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "movement", cascade = [CascadeType.ALL])
-    var movementNodes = mutableSetOf<MovementNode>()
 }

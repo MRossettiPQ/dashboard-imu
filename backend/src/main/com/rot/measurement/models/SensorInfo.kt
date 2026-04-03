@@ -12,8 +12,8 @@ import jakarta.ws.rs.DefaultValue
 @Table(
     name = "sensor_infos",
     indexes = [
-        Index(name = "idx_sensorinfo_macaddress", columnList = "mac_address"),
-        Index(name = "idx_sensorinfo_sensorname", columnList = "sensor_name"),
+        Index(name = "idx_sensor_info_mac_address", columnList = "mac_address"),
+        Index(name = "idx_sensor_info_sensor_name", columnList = "sensor_name"),
     ]
 )
 @Config(listAccessors = true, entityAccessors = true, mapAccessors = true)
@@ -39,7 +39,7 @@ class SensorInfo : BaseEntity<SensorInfo>() {
 
     @NotNull
     @NotEmpty
-    @Column(name = "mac_address")
+    @Column(name = "mac_address", unique = true, nullable = false)
     var macAddress: String? = null
 
     @NotNull

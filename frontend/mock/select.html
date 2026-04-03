@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seletor de Sensor - Corpo Humano</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+
+    .sensor-selector-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .body-container {
+      position: relative;
+      width: 300px;
+      height: 500px;
+      margin: 20px 0;
+      background-color: #fff;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      /* Para usar sua própria imagem de fundo, descomente e ajuste as linhas abaixo: */
+      /* background-image: url('caminho/para/imagem-corpo.png'); */
+      /* background-size: contain; */
+      /* background-repeat: no-repeat; */
+      /* background-position: center; */
+    }
+
+    /* Silhueta simulada apenas para referência visual caso não tenha imagem */
+    .body-silhouette {
+      position: absolute;
+      top: 5%;
+      bottom: 5%;
+      left: 30%;
+      right: 30%;
+      background-color: #e0e0e0;
+      border-radius: 50px;
+      z-index: 1;
+    }
+
+    .sensor-point {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #3498db;
+      border: 2px solid white;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent; /* Oculta o texto base do botão */
+    }
+
+    .sensor-point:hover {
+      background-color: #2980b9;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    .sensor-point.is-selected {
+      background-color: #e74c3c;
+      border-color: #c0392b;
+      transform: translate(-50%, -50%) scale(1.3);
+      box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+    }
+
+    /* Tooltip do nome do sensor */
+    .tooltip {
+      visibility: hidden;
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    .sensor-point:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .selection-info {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #e8f4fd;
+      border-radius: 6px;
+      color: #2c3e50;
+      min-width: 250px;
+      text-align: center;
+      border: 1px solid #b6d4fe;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="sensor-selector-wrapper">
+      <h2>Onde o giroscópio está?</h2>
+      
+      <div class="body-container">
+        <div class="body-silhouette"></div>
+
+        <button
+          v-for="sensor in sensorDefs"
+          :key="sensor.name"
+          class="sensor-point"
+          :class="{ 'is-selected': selectedSensor === sensor.name }"
+          :style="{ top: sensor.top, left: sensor.left }"
+          @click="selectSensor(sensor)"
+          :title="sensor.label"
+        >
+          <span class="tooltip">{{ sensor.label }}</span>
+        </button>
+      </div>
+
+      <div class="selection-info">
+        <p v-if="selectedSensor"><strong>Local selecionado:</strong> {{ getSelectedLabel() }}</p>
+        <p v-else><em>Nenhum local selecionado</em></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+      setup() {
+        const selectedSensor = ref(null);
+
+        // Atualizado para segmentos corporais em vez de articulações
+        const sensorDefs = ref([
+          // Cabeça e Tronco
+          { name: 'head', label: 'Cabeça', cat: 'core', top: '5%', left: '50%' },
+          { name: 'hip', label: 'Quadril', cat: 'core', top: '48%', left: '50%' },
+
+          // Membros Superiores (Braços)
+          { name: 'left_shoulder', label: 'Ombro Esq', cat: 'upper', top: '20%', left: '32%' },
+          { name: 'right_shoulder', label: 'Ombro Dir', cat: 'upper', top: '20%', left: '68%' },
+          { name: 'left_arm', label: 'Braço Esq', cat: 'upper', top: '32%', left: '22%' },
+          { name: 'right_arm', label: 'Braço Dir', cat: 'upper', top: '32%', left: '78%' },
+          { name: 'left_forearm', label: 'Antebraço Esq', cat: 'upper', top: '46%', left: '15%' },
+          { name: 'right_forearm', label: 'Antebraço Dir', cat: 'upper', top: '46%', left: '85%' },
+          { name: 'left_hand', label: 'Mão Esq', cat: 'upper', top: '58%', left: '10%' },
+          { name: 'right_hand', label: 'Mão Dir', cat: 'upper', top: '58%', left: '90%' },
+
+          // Membros Inferiores (Pernas)
+          { name: 'left_thigh', label: 'Coxa Esq', cat: 'lower', top: '62%', left: '42%' },
+          { name: 'right_thigh', label: 'Coxa Dir', cat: 'lower', top: '62%', left: '58%' },
+          { name: 'left_shin', label: 'Canela Esq', cat: 'lower', top: '80%', left: '42%' },
+          { name: 'right_shin', label: 'Canela Dir', cat: 'lower', top: '80%', left: '58%' },
+          { name: 'left_foot', label: 'Pé Esq', cat: 'lower', top: '95%', left: '42%' },
+          { name: 'right_foot', label: 'Pé Dir', cat: 'lower', top: '95%', left: '58%' },
+        ]);
+
+        const selectSensor = (sensor) => {
+          selectedSensor.value = sensor.name;
+        };
+
+        const getSelectedLabel = () => {
+          const sensor = sensorDefs.value.find(s => s.name === selectedSensor.value);
+          return sensor ? sensor.label : '';
+        };
+
+        return {
+          selectedSensor,
+          sensorDefs,
+          selectSensor,
+          getSelectedLabel
+        };
+      }
+    }).mount('#app');
+  </script>
+
+</body>
+</html>

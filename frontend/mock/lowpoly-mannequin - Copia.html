@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Low Poly Mannequin — Sensor Control</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0e17;
+    --panel: #111827;
+    --panel-border: #1e293b;
+    --accent: #22d3ee;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --danger: #f87171;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+  }
+
+  #canvas-container {
+    flex: 1;
+    position: relative;
+  }
+
+  canvas { display: block; }
+
+  #overlay-info {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    pointer-events: none;
+    line-height: 1.6;
+  }
+  #overlay-info span { color: var(--accent); }
+
+  /* ── Side Panel ── */
+  #panel {
+    width: 340px;
+    background: var(--panel);
+    border-left: 1px solid var(--panel-border);
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #panel::-webkit-scrollbar { width: 4px; }
+  #panel::-webkit-scrollbar-track { background: transparent; }
+  #panel::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .panel-subtitle {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .joint-group {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    transition: border-color 0.2s;
+  }
+  .joint-group:hover { border-color: var(--accent); }
+  .joint-group.active { border-color: var(--accent); box-shadow: 0 0 12px rgba(34,211,238,0.1); }
+
+  .joint-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .joint-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .joint-badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(34,211,238,0.15); color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+
+  .axis-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .axis-label { font-size: 10px; font-weight: 700; width: 14px; text-align: center; }
+  .axis-label.x { color: var(--danger); }
+  .axis-label.y { color: var(--accent3); }
+  .axis-label.z { color: var(--accent2); }
+
+  .axis-slider {
+    flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--panel-border); outline: none; cursor: pointer;
+  }
+  .axis-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; cursor: grab; }
+  .axis-slider.x::-webkit-slider-thumb { background: var(--danger); }
+  .axis-slider.y::-webkit-slider-thumb { background: var(--accent3); }
+  .axis-slider.z::-webkit-slider-thumb { background: var(--accent2); }
+
+  .axis-value { font-size: 10px; color: var(--text-dim); width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  .btn { flex: 1; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--panel-border); border-radius: 6px; background: transparent; color: var(--text); cursor: pointer; transition: all 0.2s; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: rgba(34,211,238,0.15); border-color: var(--accent); color: var(--accent); }
+  .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .separator { height: 1px; background: var(--panel-border); margin: 4px 0; }
+  .playback-row { display: flex; align-items: center; gap: 8px; }
+
+  #playback-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--panel-border); outline: none; cursor: pointer; }
+  #playback-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: grab; }
+  #frame-label { font-size: 10px; color: var(--text-dim); min-width: 60px; text-align: right; }
+
+  textarea.data-input { width: 100%; height: 80px; background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 8px; resize: vertical; outline: none; }
+  textarea.data-input:focus { border-color: var(--accent); }
+  textarea.data-input::placeholder { color: var(--text-dim); }
+
+  .floor-label { position: absolute; bottom: 16px; left: 16px; font-size: 9px; color: var(--text-dim); pointer-events: none; letter-spacing: 1px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div id="canvas-container">
+  <div id="overlay-info">
+    <span>■</span> 3D MANNEQUIN (GLB)<br>
+    Arrastar para rotacionar · Scroll para zoom
+  </div>
+  <div class="floor-label">THREE.JS · GLTF VIEWER</div>
+</div>
+
+<div id="panel">
+  <div class="panel-title">Articulações</div>
+  <div class="panel-subtitle">Controle por eixo (graus) · -180° a 180°</div>
+  <div id="joints-container"></div>
+
+  <div class="separator"></div>
+
+  <div class="panel-title">Playback</div>
+  <div class="panel-subtitle">Reproduzir array de Measurement</div>
+
+  <div class="btn-row">
+    <button class="btn" id="btn-play">▶ Play</button>
+    <button class="btn danger" id="btn-reset">↺ Reset</button>
+  </div>
+
+  <div class="playback-row" style="margin-top:8px;">
+    <input type="range" id="playback-slider" min="0" max="0" value="0">
+    <span id="frame-label">0 / 0</span>
+  </div>
+
+  <div class="separator"></div>
+
+  <div class="panel-title">Dados</div>
+  <div class="panel-subtitle">Cole JSON de Measurement[] aqui</div>
+  <textarea class="data-input" id="data-input" placeholder='[{"roll":0,"pitch":0,"yaw":0,"eulerX":0,"eulerY":0,"eulerZ":0, "sensorName":"left_shin", ...}]'></textarea>
+  <button class="btn" id="btn-load-data" style="margin-top:4px;">Carregar Dados</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js",
+    "GLTFLoader": "https://unpkg.com/three@0.128.0/examples/jsm/loaders/GLTFLoader.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'GLTFLoader';
+
+// ── OrbitControls inline (r128 compatible) ──
+class OrbitControls {
+  constructor(camera, domElement) {
+    this.camera = camera; this.domElement = domElement; this.target = new THREE.Vector3();
+    this.spherical = new THREE.Spherical(); this.sphericalDelta = new THREE.Spherical();
+    this.scale = 1; this.panOffset = new THREE.Vector3(); this.rotateStart = new THREE.Vector2();
+    this.rotateEnd = new THREE.Vector2(); this.rotateDelta = new THREE.Vector2();
+    this.isMouseDown = false; this.rotateSpeed = 0.8; this.zoomSpeed = 1.2; this.panSpeed = 0.5;
+    this.isPanning = false; this.panStart = new THREE.Vector2();
+
+    const offset = new THREE.Vector3(); offset.copy(camera.position).sub(this.target); this.spherical.setFromVector3(offset);
+
+    domElement.addEventListener('mousedown', (e) => {
+      if (e.button === 0) { this.isMouseDown = true; this.rotateStart.set(e.clientX, e.clientY); } 
+      else if (e.button === 2) { this.isPanning = true; this.panStart.set(e.clientX, e.clientY); }
+    });
+    domElement.addEventListener('mousemove', (e) => {
+      if (this.isMouseDown) {
+        this.rotateEnd.set(e.clientX, e.clientY); this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart);
+        this.sphericalDelta.theta -= 2 * Math.PI * this.rotateDelta.x / domElement.clientHeight * this.rotateSpeed;
+        this.sphericalDelta.phi -= 2 * Math.PI * this.rotateDelta.y / domElement.clientHeight * this.rotateSpeed;
+        this.rotateStart.copy(this.rotateEnd);
+      }
+      if (this.isPanning) {
+        const dx = (e.clientX - this.panStart.x) * this.panSpeed * 0.01; const dy = (e.clientY - this.panStart.y) * this.panSpeed * 0.01;
+        const right = new THREE.Vector3(); right.setFromMatrixColumn(this.camera.matrix, 0);
+        const up = new THREE.Vector3(); up.setFromMatrixColumn(this.camera.matrix, 1);
+        this.panOffset.addScaledVector(right, -dx); this.panOffset.addScaledVector(up, dy); this.panStart.set(e.clientX, e.clientY);
+      }
+    });
+    domElement.addEventListener('mouseup', () => { this.isMouseDown = false; this.isPanning = false; });
+    domElement.addEventListener('mouseleave', () => { this.isMouseDown = false; this.isPanning = false; });
+    domElement.addEventListener('wheel', (e) => {
+      e.preventDefault(); if (e.deltaY > 0) this.scale *= 1 / Math.pow(0.95, this.zoomSpeed); else this.scale *= Math.pow(0.95, this.zoomSpeed);
+    }, { passive: false });
+    domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  update() {
+    const offset = new THREE.Vector3(); offset.copy(this.camera.position).sub(this.target);
+    this.spherical.setFromVector3(offset); this.spherical.theta += this.sphericalDelta.theta;
+    this.spherical.phi += this.sphericalDelta.phi; this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi));
+    this.spherical.radius *= this.scale; this.spherical.radius = Math.max(2, Math.min(20, this.spherical.radius));
+    this.target.add(this.panOffset); offset.setFromSpherical(this.spherical);
+    this.camera.position.copy(this.target).add(offset); this.camera.lookAt(this.target);
+    this.sphericalDelta.set(0, 0, 0); this.scale = 1; this.panOffset.set(0, 0, 0);
+  }
+}
+
+// ── Scene Setup ──
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0e17);
+scene.fog = new THREE.FogExp2(0x0a0e17, 0.04);
+
+const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+camera.position.set(0, 1.5, 4);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.0, 0);
+
+// ── Lights ──
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(5, 8, 5);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+const fillLight = new THREE.DirectionalLight(0x22d3ee, 0.5);
+fillLight.position.set(-3, 2, -2);
+scene.add(fillLight);
+
+// ── Ground ──
+const groundGeo = new THREE.PlaneGeometry(30, 30);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x0d1117, roughness: 0.9 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+scene.add(new THREE.GridHelper(20, 40, 0x1a2332, 0x131b28));
+
+// ── Variável Global de Juntas ──
+const joints = {};
+
+// ── CARREGAR O MODELO EXTERNO GLB ──
+const loader = new GLTFLoader();
+
+// IMPORTANTE: O arquivo Man.glb precisa estar na mesma pasta deste HTML, 
+// ou você precisará colocar o caminho correto (ex: './models/Man.glb')
+loader.load('Man.glb', function (gltf) {
+  const model = gltf.scene;
+  
+  // Habilita sombra em todas as meshes do modelo
+  model.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  // Ajusta o modelo caso ele seja muito grande ou pequeno
+  // model.scale.set(1, 1, 1); 
+  
+  scene.add(model);
+
+  console.group("🦴 Ossos encontrados no Man.glb:");
+  model.traverse((child) => {
+    if (child.isBone) {
+      console.log(child.name);
+    }
+  });
+  console.groupEnd();
+
+  // === MAPEAMENTO DE OSSOS (BONES) ===
+  joints['hip'] = model.getObjectByName('Hips') || new THREE.Group();
+  joints['spine'] = model.getObjectByName('Torso') || new THREE.Group(); 
+  joints['neck'] = model.getObjectByName('Neck') || new THREE.Group();
+  joints['head'] = model.getObjectByName('Head') || new THREE.Group();
+
+  // Braço Esquerdo
+  joints['left_shoulder'] = model.getObjectByName('UpperArmL') || new THREE.Group();
+  joints['left_elbow'] = model.getObjectByName('LowerArmL') || new THREE.Group();
+
+  // Braço Direito
+  joints['right_shoulder'] = model.getObjectByName('UpperArmR') || new THREE.Group();
+  joints['right_elbow'] = model.getObjectByName('LowerArmR') || new THREE.Group();
+
+  // Perna Esquerda
+  joints['left_hip'] = model.getObjectByName('UpperLegL') || new THREE.Group();
+  joints['left_knee'] = model.getObjectByName('LowerLegL') || new THREE.Group();
+  joints['left_ankle'] = model.getObjectByName('FootL') || new THREE.Group();
+
+  // Perna Direita
+  joints['right_hip'] = model.getObjectByName('UpperLegR') || new THREE.Group();
+  joints['right_knee'] = model.getObjectByName('LowerLegR') || new THREE.Group();
+  joints['right_ankle'] = model.getObjectByName('FootR') || new THREE.Group();
+
+  console.log("Modelo Man.glb carregado com sucesso!");
+
+}, undefined, function (error) {
+  console.error("Erro ao carregar o arquivo Man.glb. Verifique se ele está na mesma pasta do HTML.", error);
+});
+
+
+// ── Joint Definitions for UI ──
+const jointDefs = [
+  { name: 'head', label: 'Cabeça', axes: 'xyz' },
+  { name: 'neck', label: 'Pescoço', axes: 'xyz' },
+  { name: 'spine', label: 'Coluna', axes: 'xyz' },
+  { name: 'hip', label: 'Quadril', axes: 'xyz' },
+  { name: 'left_shoulder', label: 'Ombro Esq', axes: 'xyz' },
+  { name: 'left_elbow', label: 'Cotovelo Esq', axes: 'xyz' },
+  { name: 'right_shoulder', label: 'Ombro Dir', axes: 'xyz' },
+  { name: 'right_elbow', label: 'Cotovelo Dir', axes: 'xyz' },
+  { name: 'left_hip', label: 'Quadril Esq', axes: 'xyz' },
+  { name: 'left_knee', label: 'Joelho Esq', axes: 'xyz' },
+  { name: 'left_ankle', label: 'Tornozelo Esq', axes: 'xyz' },
+  { name: 'right_hip', label: 'Quadril Dir', axes: 'xyz' },
+  { name: 'right_knee', label: 'Joelho Dir', axes: 'xyz' },
+  { name: 'right_ankle', label: 'Tornozelo Dir', axes: 'xyz' },
+];
+
+// ── Build UI ──
+const jointsContainer = document.getElementById('joints-container');
+
+const sensorJointMap = {
+  'left_shin': 'left_knee', 'right_shin': 'right_knee',
+  'left_thigh': 'left_hip', 'right_thigh': 'right_hip',
+  'left_forearm': 'left_elbow', 'right_forearm': 'right_elbow',
+  'left_upper_arm': 'left_shoulder', 'right_upper_arm': 'right_shoulder',
+  'torso': 'spine', 'head': 'head', 'pelvis': 'hip',
+};
+
+jointDefs.forEach(def => {
+  const group = document.createElement('div');
+  group.className = 'joint-group'; group.id = `jg-${def.name}`;
+
+  let html = `<div class="joint-header"><span class="joint-name">${def.label}</span><span class="joint-badge">${def.name}</span></div>`;
+
+  ['x', 'y', 'z'].forEach(axis => {
+    html += `<div class="axis-row"><span class="axis-label ${axis}">${axis.toUpperCase()}</span>
+      <input type="range" class="axis-slider ${axis}" id="slider-${def.name}-${axis}" min="-180" max="180" value="0" step="0.1">
+      <span class="axis-value" id="val-${def.name}-${axis}">0.0°</span></div>`;
+  });
+
+  group.innerHTML = html; jointsContainer.appendChild(group);
+
+  ['x', 'y', 'z'].forEach(axis => {
+    const slider = document.getElementById(`slider-${def.name}-${axis}`);
+    const valLabel = document.getElementById(`val-${def.name}-${axis}`);
+    slider.addEventListener('input', () => {
+      const deg = parseFloat(slider.value);
+      valLabel.textContent = deg.toFixed(1) + '°';
+      const rad = THREE.MathUtils.degToRad(deg);
+      
+      // Aplicar rotação ao osso (se já estiver carregado e mapeado)
+      if (joints[def.name] && joints[def.name].isBone) {
+        joints[def.name].rotation[axis] = rad;
+      } else if (joints[def.name]) {
+        joints[def.name].rotation[axis] = rad;
+      }
+      
+      group.classList.add('active');
+      clearTimeout(group._activeTimeout);
+      group._activeTimeout = setTimeout(() => group.classList.remove('active'), 500);
+    });
+  });
+});
+
+// ── Measurement Data & Playback ──
+let measurementData = []; let isPlaying = false; let playbackFrame = 0; let playbackSpeed = 60; let playInterval = null;
+
+const btnPlay = document.getElementById('btn-play'); const btnReset = document.getElementById('btn-reset');
+const playbackSlider = document.getElementById('playback-slider'); const frameLabel = document.getElementById('frame-label');
+const dataInput = document.getElementById('data-input'); const btnLoadData = document.getElementById('btn-load-data');
+
+function applyMeasurement(m) {
+  const jointName = sensorJointMap[m.sensorName] || m.sensorName;
+  const joint = joints[jointName];
+  if (!joint || !joint.isObject3D) return;
+
+  const rx = THREE.MathUtils.degToRad(parseFloat(m.roll || m.eulerX || 0));
+  const ry = THREE.MathUtils.degToRad(parseFloat(m.pitch || m.eulerY || 0));
+  const rz = THREE.MathUtils.degToRad(parseFloat(m.yaw || m.eulerZ || 0));
+
+  joint.rotation.set(rx, ry, rz);
+
+  ['x', 'y', 'z'].forEach((axis, i) => {
+    const deg = [rx, ry, rz][i] * (180 / Math.PI);
+    const slider = document.getElementById(`slider-${jointName}-${axis}`);
+    const valLabel = document.getElementById(`val-${jointName}-${axis}`);
+    if (slider) { slider.value = deg; valLabel.textContent = deg.toFixed(1) + '°'; }
+  });
+}
+
+function applyFrame(frameIndex) {
+  if (frameIndex < 0 || frameIndex >= measurementData.length) return;
+  const frame = measurementData[frameIndex];
+  if (Array.isArray(frame)) { frame.forEach(m => applyMeasurement(m)); } else { applyMeasurement(frame); }
+  playbackSlider.value = frameIndex; frameLabel.textContent = `${frameIndex + 1} / ${measurementData.length}`;
+}
+
+function startPlayback() {
+  if (measurementData.length === 0) return;
+  isPlaying = true; btnPlay.textContent = '⏸ Pause'; btnPlay.classList.add('active');
+  playInterval = setInterval(() => {
+    applyFrame(playbackFrame); playbackFrame++;
+    if (playbackFrame >= measurementData.length) playbackFrame = 0;
+  }, playbackSpeed);
+}
+
+function stopPlayback() {
+  isPlaying = false; btnPlay.textContent = '▶ Play'; btnPlay.classList.remove('active');
+  if (playInterval) clearInterval(playInterval);
+}
+
+btnPlay.addEventListener('click', () => { if (isPlaying) stopPlayback(); else startPlayback(); });
+
+btnReset.addEventListener('click', () => {
+  stopPlayback(); playbackFrame = 0;
+  Object.values(joints).forEach(j => { if(j.isObject3D) j.rotation.set(0, 0, 0); });
+  jointDefs.forEach(def => {
+    ['x', 'y', 'z'].forEach(axis => {
+      const slider = document.getElementById(`slider-${def.name}-${axis}`);
+      const valLabel = document.getElementById(`val-${def.name}-${axis}`);
+      if (slider) { slider.value = 0; valLabel.textContent = '0.0°'; }
+    });
+  });
+  playbackSlider.value = 0; frameLabel.textContent = '0 / 0';
+});
+
+playbackSlider.addEventListener('input', () => { playbackFrame = parseInt(playbackSlider.value); applyFrame(playbackFrame); });
+
+btnLoadData.addEventListener('click', () => {
+  try {
+    const raw = JSON.parse(dataInput.value);
+    if (Array.isArray(raw) && raw.length > 0) {
+      if (raw[0].readOrder !== undefined) {
+        const grouped = {};
+        raw.forEach(m => {
+          const key = m.readOrder;
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(m);
+        });
+        measurementData = Object.keys(grouped).sort((a, b) => parseInt(a) - parseInt(b)).map(k => grouped[k]);
+      } else { measurementData = raw; }
+      playbackSlider.max = measurementData.length - 1; playbackSlider.value = 0; playbackFrame = 0;
+      frameLabel.textContent = `0 / ${measurementData.length}`;
+      dataInput.style.borderColor = '#34d399'; setTimeout(() => { dataInput.style.borderColor = ''; }, 1500);
+    }
+  } catch (e) {
+    dataInput.style.borderColor = '#f87171'; setTimeout(() => { dataInput.style.borderColor = ''; }, 1500);
+    console.error('Erro ao parsear JSON:', e);
+  }
+});
+
+window.applyGyroData = function(sensorName, roll, pitch, yaw) { applyMeasurement({ sensorName, roll, pitch, yaw }); };
+
+// ── Animation Loop ──
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
+</script>
+</body>
+</html>

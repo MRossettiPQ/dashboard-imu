@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Studio — Editor de Imagens</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a26;
+    --border: #2a2a3f;
+    --accent: #00f5c4;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --text: #e8e8f0;
+    --text-dim: #6b6b8a;
+    --danger: #ef4444;
+    --success: #10b981;
+    --panel-w: 260px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-badge {
+    background: var(--accent);
+    color: #000;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .cv-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: background 0.3s;
+  }
+  .status-dot.ready { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .status-dot.loading { background: var(--accent3); animation: pulse 1s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .header-actions { display: flex; gap: 8px; }
+
+  /* LAYOUT */
+  .app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    width: var(--panel-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .panel-section {
+    border-bottom: 1px solid var(--border);
+    padding: 14px;
+  }
+
+  .panel-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  /* TOOL GRID */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .tool-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+
+  .tool-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,245,196,0.06);
+  }
+
+  .tool-btn.active {
+    border-color: var(--accent);
+    background: rgba(0,245,196,0.12);
+    color: var(--accent);
+  }
+
+  .tool-btn svg { width: 18px; height: 18px; }
+
+  /* PROCESS BUTTONS */
+  .process-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .proc-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s;
+    width: 100%;
+    text-align: left;
+  }
+
+  .proc-btn:hover:not(:disabled) {
+    border-color: var(--accent2);
+    background: rgba(124,58,237,0.12);
+    color: #c4b5fd;
+  }
+
+  .proc-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .proc-btn .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* SLIDERS */
+  .slider-group { display: flex; flex-direction: column; gap: 10px; }
+
+  .slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .slider-label span:last-child { color: var(--accent); }
+
+  input[type=range] {
+    width: 100%;
+    height: 3px;
+    -webkit-appearance: none;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  /* CANVAS AREA */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, #1a1a26 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .canvas-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .canvas-toolbar-info {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .canvas-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 20px;
+    position: relative;
+  }
+
+  .canvas-inner {
+    position: relative;
+    display: inline-block;
+    box-shadow: 0 0 0 1px var(--border), 0 20px 60px rgba(0,0,0,0.6);
+  }
+
+  canvas {
+    display: block;
+    max-width: 100%;
+  }
+
+  #overlayCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+
+  #interactCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    cursor: crosshair;
+  }
+
+  .drop-zone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    cursor: pointer;
+  }
+
+  .drop-icon {
+    width: 72px; height: 72px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+
+  .drop-zone:hover .drop-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 20px rgba(0,245,196,0.15);
+  }
+
+  .drop-text {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .drop-text strong { color: var(--text); display: block; font-size: 15px; margin-bottom: 4px; }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    width: 220px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  /* HISTORY */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-dim);
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .history-item:hover { background: var(--surface2); color: var(--text); }
+  .history-item.current { border-color: var(--accent); color: var(--accent); background: rgba(0,245,196,0.06); }
+
+  .history-item svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* INFO */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .info-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  .info-card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .info-card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  /* CROP RECT */
+  .crop-rect {
+    position: absolute;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    pointer-events: none;
+  }
+
+  .crop-corner {
+    position: absolute;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+
+  .crop-corner.tl { top: -1px; left: -1px; }
+  .crop-corner.tr { top: -1px; right: -1px; }
+  .crop-corner.bl { bottom: -1px; left: -1px; }
+  .crop-corner.br { bottom: -1px; right: -1px; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 7px 14px;
+    border-radius: 5px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover { background: #00ddb0; }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-dim);
+  }
+
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+  /* CROP CONTROLS */
+  .crop-controls {
+    display: flex;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* NOTIFICATION */
+  .notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    z-index: 999;
+    animation: slideUp 0.2s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  }
+
+  @keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(10px); } }
+
+  input[type=file] { display: none; }
+
+  .color-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <span class="logo-badge">CV</span>
+      Studio
+    </div>
+
+    <div class="cv-status">
+      <div class="status-dot" :class="cvStatus"></div>
+      <span>{{ cvStatusText }}</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-ghost" @click="triggerUpload" :disabled="!cvReady">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        ABRIR
+      </button>
+      <button class="btn btn-primary" @click="downloadResult" :disabled="!hasImage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        SALVAR
+      </button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <!-- TOOLS -->
+      <div class="panel-section">
+        <div class="panel-title">Ferramentas</div>
+        <div class="tool-grid">
+          <button class="tool-btn" :class="{active: activeTool==='select'}" @click="setTool('select')" title="Selecionar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 1-4 7z"/></svg>
+            CURSOR
+          </button>
+          <button class="tool-btn" :class="{active: activeTool==='crop'}" @click="setTool('crop')" title="Recortar" :disabled="!hasImage">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 2 6 6 2 6"/><polyline points="18 22 18 18 22 18"/><rect x="6" y="6" width="12" height="12"/></svg>
+            RECORTE
+          </button>
+          <button class="tool-btn" :class="{active: activeTool==='zoom'}" @click="setTool('zoom')" title="Zoom">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            ZOOM
+          </button>
+        </div>
+      </div>
+
+      <!-- PROCESSAR -->
+      <div class="panel-section">
+        <div class="panel-title">Processamento CV</div>
+        <div class="process-grid">
+          <button class="proc-btn" @click="applyGrayscale" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#888"></div>
+            Escala de Cinza
+          </button>
+          <button class="proc-btn" @click="applyContours" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#00f5c4"></div>
+            Detectar Contornos
+          </button>
+          <button class="proc-btn" @click="applyCannyEdge" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#7c3aed"></div>
+            Canny Edges
+          </button>
+          <button class="proc-btn" @click="applyBlur" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#3b82f6"></div>
+            Desfoque Gaussiano
+          </button>
+          <button class="proc-btn" @click="applyDenoise" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#10b981"></div>
+            Remover Ruído
+          </button>
+          <button class="proc-btn" @click="applyThreshold" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#f59e0b"></div>
+            Limiarização
+          </button>
+          <button class="proc-btn" @click="applyDilate" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#ec4899"></div>
+            Dilatação
+          </button>
+          <button class="proc-btn" @click="applyErode" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#f97316"></div>
+            Erosão
+          </button>
+          <button class="proc-btn" @click="applyFlip" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#06b6d4"></div>
+            Espelhar H
+          </button>
+          <button class="proc-btn" @click="applyRotate90" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#a855f7"></div>
+            Rotacionar 90°
+          </button>
+          <button class="proc-btn" @click="applyEqualizeHist" :disabled="!hasImage || !cvReady">
+            <div class="color-dot dot" style="background:#eab308"></div>
+            Equalizar Histog.
+          </button>
+          <button class="proc-btn" @click="resetToOriginal" :disabled="!hasImage">
+            <div class="color-dot dot" style="background:var(--danger)"></div>
+            Resetar
+          </button>
+        </div>
+      </div>
+
+      <!-- PARÂMETROS -->
+      <div class="panel-section">
+        <div class="panel-title">Parâmetros</div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Blur Kernel</span>
+              <span>{{ params.blurKernel }}</span>
+            </div>
+            <input type="range" min="1" max="31" step="2" v-model.number="params.blurKernel">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Canny Min</span>
+              <span>{{ params.cannyMin }}</span>
+            </div>
+            <input type="range" min="0" max="255" v-model.number="params.cannyMin">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Canny Max</span>
+              <span>{{ params.cannyMax }}</span>
+            </div>
+            <input type="range" min="0" max="255" v-model.number="params.cannyMax">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Threshold</span>
+              <span>{{ params.threshold }}</span>
+            </div>
+            <input type="range" min="0" max="255" v-model.number="params.threshold">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Morph Kernel</span>
+              <span>{{ params.morphKernel }}</span>
+            </div>
+            <input type="range" min="1" max="21" step="2" v-model.number="params.morphKernel">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANVAS AREA -->
+    <div class="canvas-area">
+      <div class="canvas-toolbar">
+        <button class="btn btn-ghost" style="font-size:9px;padding:5px 10px;" @click="undo" :disabled="historyIndex <= 0">
+          ↩ UNDO
+        </button>
+        <button class="btn btn-ghost" style="font-size:9px;padding:5px 10px;" @click="redo" :disabled="historyIndex >= history.length-1">
+          ↪ REDO
+        </button>
+        <div class="canvas-toolbar-info" v-if="hasImage">
+          {{ imgInfo.w }}×{{ imgInfo.h }}px &nbsp;|&nbsp; {{ imgInfo.channels }}ch &nbsp;|&nbsp; zoom: {{ Math.round(zoom*100) }}%
+        </div>
+      </div>
+
+      <div class="canvas-wrapper" ref="canvasWrapper"
+        @dragover.prevent @drop.prevent="handleDrop"
+        @mousemove="onMouseMove" @wheel.prevent="onWheel">
+
+        <div v-if="!hasImage" class="drop-zone" @click="triggerUpload">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div class="drop-text">
+            <strong>Arraste uma imagem aqui</strong>
+            ou clique para selecionar · JPG, PNG, BMP, WEBP
+          </div>
+        </div>
+
+        <div v-show="hasImage" class="canvas-inner" ref="canvasContainer"
+          :style="{transform:`scale(${zoom})`, transformOrigin:'center center'}">
+          <canvas ref="mainCanvas" id="mainCanvas"></canvas>
+          <canvas ref="overlayCanvas" id="overlayCanvas"></canvas>
+          <canvas ref="interactCanvas" id="interactCanvas"
+            @mousedown="onCanvasMouseDown"
+            @mousemove="onCanvasMouseMove"
+            @mouseup="onCanvasMouseUp"
+            @mouseleave="onCanvasMouseLeave">
+          </canvas>
+
+          <!-- CROP OVERLAY -->
+          <div v-if="activeTool==='crop' && cropRect && cropRect.w && cropRect.h" class="crop-rect"
+            :style="{
+              left: Math.min(cropRect.x, cropRect.x+cropRect.w)+'px',
+              top: Math.min(cropRect.y, cropRect.y+cropRect.h)+'px',
+              width: Math.abs(cropRect.w)+'px',
+              height: Math.abs(cropRect.h)+'px'
+            }">
+            <div class="crop-corner tl"></div>
+            <div class="crop-corner tr"></div>
+            <div class="crop-corner bl"></div>
+            <div class="crop-corner br"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CROP ACTIONS -->
+      <div v-if="activeTool==='crop' && cropRect && cropRect.w && cropRect.h" class="crop-controls">
+        <button class="btn btn-primary" @click="applyCrop">✓ APLICAR RECORTE</button>
+        <button class="btn btn-ghost" @click="cancelCrop">✕ CANCELAR</button>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-left:8px;">
+          {{ Math.abs(Math.round(cropRect.w)) }}×{{ Math.abs(Math.round(cropRect.h)) }}px
+        </span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="panel-section">
+        <div class="panel-title">Informações</div>
+        <div v-if="hasImage" class="info-grid">
+          <div class="info-card">
+            <div class="info-card-label">Largura</div>
+            <div class="info-card-value">{{ imgInfo.w }}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-label">Altura</div>
+            <div class="info-card-value">{{ imgInfo.h }}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-label">Canais</div>
+            <div class="info-card-value">{{ imgInfo.channels }}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-label">Cursor</div>
+            <div class="info-card-value" style="font-size:9px;">{{ cursor.x }},{{ cursor.y }}</div>
+          </div>
+        </div>
+        <div v-else style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);">
+          Nenhuma imagem
+        </div>
+      </div>
+
+      <div class="panel-section" style="flex:1">
+        <div class="panel-title">Histórico</div>
+        <div class="history-list">
+          <div v-for="(item, i) in history" :key="i"
+            class="history-item"
+            :class="{current: i === historyIndex}"
+            @click="jumpToHistory(i)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+            {{ item.label }}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" v-if="hasImage">
+        <div class="panel-title">Ações</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="btn btn-ghost" style="font-size:10px;" @click="copyToClipboard">
+            📋 Copiar Imagem
+          </button>
+          <button class="btn btn-danger" style="font-size:10px;" @click="clearAll">
+            🗑 Fechar Imagem
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION -->
+  <div v-if="notification" class="notification">{{ notification }}</div>
+
+  <input type="file" ref="fileInput" accept="image/*" @change="handleFileSelect">
+</div>
+
+<!-- OpenCV.js WASM -->
+<script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()"></script>
+
+<script>
+let cvReady = false;
+
+function onOpenCvReady() {
+  cvReady = true;
+  if (window.__vueApp) {
+    window.__vueApp.cvReady = true;
+    window.__vueApp.cvStatus = 'ready';
+    window.__vueApp.cvStatusText = 'OpenCV Pronto';
+  }
+}
+
+const { createApp, ref, reactive, computed, onMounted, nextTick } = Vue;
+
+createApp({
+  setup() {
+    const cvReadyRef = ref(false);
+    const cvStatus = ref('loading');
+    const cvStatusText = ref('Carregando OpenCV...');
+
+    const hasImage = ref(false);
+    const activeTool = ref('select');
+    const zoom = ref(1);
+
+    const mainCanvas = ref(null);
+    const overlayCanvas = ref(null);
+    const interactCanvas = ref(null);
+    const canvasWrapper = ref(null);
+    const canvasContainer = ref(null);
+    const fileInput = ref(null);
+
+    const notification = ref('');
+    let notifTimer = null;
+
+    const params = reactive({
+      blurKernel: 5,
+      cannyMin: 50,
+      cannyMax: 150,
+      threshold: 127,
+      morphKernel: 5
+    });
+
+    const imgInfo = reactive({ w: 0, h: 0, channels: 0 });
+    const cursor = reactive({ x: 0, y: 0 });
+
+    // HISTORY
+    const history = ref([]);
+    const historyIndex = ref(-1);
+
+    // CROP
+    const cropRect = reactive({ x: 0, y: 0, w: 0, h: 0 });
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+
+    // Original src mat
+    let originalImageData = null;
+
+    function notify(msg, dur = 2000) {
+      notification.value = msg;
+      clearTimeout(notifTimer);
+      notifTimer = setTimeout(() => notification.value = '', dur);
+    }
+
+    function triggerUpload() {
+      fileInput.value.click();
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) loadImageFile(file);
+      e.target.value = '';
+    }
+
+    function handleDrop(e) {
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadImageFile(file);
+    }
+
+    function loadImageFile(file) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = mainCanvas.value;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        overlayCanvas.value.width = img.width;
+        overlayCanvas.value.height = img.height;
+        interactCanvas.value.width = img.width;
+        interactCanvas.value.height = img.height;
+
+        imgInfo.w = img.width;
+        imgInfo.h = img.height;
+        imgInfo.channels = 4;
+
+        hasImage.value = true;
+        history.value = [{ label: 'Original', data: canvas.toDataURL() }];
+        historyIndex.value = 0;
+
+        // Fit zoom
+        nextTick(() => {
+          const wrapper = canvasWrapper.value;
+          const scaleX = (wrapper.clientWidth - 60) / img.width;
+          const scaleY = (wrapper.clientHeight - 60) / img.height;
+          zoom.value = Math.min(1, Math.min(scaleX, scaleY));
+        });
+
+        URL.revokeObjectURL(url);
+        notify(`✓ Imagem carregada: ${img.width}×${img.height}px`);
+      };
+      img.src = url;
+    }
+
+    function pushHistory(label) {
+      const dataURL = mainCanvas.value.toDataURL();
+      // Remove forward history
+      history.value = history.value.slice(0, historyIndex.value + 1);
+      history.value.push({ label, data: dataURL });
+      historyIndex.value = history.value.length - 1;
+    }
+
+    function restoreFromHistory(idx) {
+      const item = history.value[idx];
+      if (!item) return;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = mainCanvas.value;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        overlayCanvas.value.width = img.width;
+        overlayCanvas.value.height = img.height;
+        interactCanvas.value.width = img.width;
+        interactCanvas.value.height = img.height;
+        imgInfo.w = img.width;
+        imgInfo.h = img.height;
+      };
+      img.src = item.data;
+    }
+
+    function undo() {
+      if (historyIndex.value > 0) {
+        historyIndex.value--;
+        restoreFromHistory(historyIndex.value);
+        notify('↩ Desfeito');
+      }
+    }
+
+    function redo() {
+      if (historyIndex.value < history.value.length - 1) {
+        historyIndex.value++;
+        restoreFromHistory(historyIndex.value);
+        notify('↪ Refeito');
+      }
+    }
+
+    function jumpToHistory(idx) {
+      historyIndex.value = idx;
+      restoreFromHistory(idx);
+    }
+
+    // CV OPERATIONS
+    function getMainMat() {
+      return cv.imread(mainCanvas.value);
+    }
+
+    function putMat(mat) {
+      cv.imshow(mainCanvas.value, mat);
+      imgInfo.w = mainCanvas.value.width;
+      imgInfo.h = mainCanvas.value.height;
+      mat.delete();
+    }
+
+    function applyGrayscale() {
+      try {
+        const src = getMainMat();
+        const gray = new cv.Mat();
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        const rgba = new cv.Mat();
+        cv.cvtColor(gray, rgba, cv.COLOR_GRAY2RGBA);
+        imgInfo.channels = 1;
+        cv.imshow(mainCanvas.value, rgba);
+        src.delete(); gray.delete(); rgba.delete();
+        pushHistory('Escala de Cinza');
+        notify('✓ Escala de cinza aplicada');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyContours() {
+      try {
+        const src = getMainMat();
+        const gray = new cv.Mat();
+        const edges = new cv.Mat();
+        const contours = new cv.MatVector();
+        const hierarchy = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        cv.Canny(gray, edges, params.cannyMin, params.cannyMax);
+        cv.findContours(edges, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+
+        const result = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC4);
+        for (let i = 0; i < contours.size(); i++) {
+          const color = new cv.Scalar(
+            Math.random()*155+100,
+            Math.random()*155+100,
+            Math.random()*155+100,
+            255
+          );
+          cv.drawContours(result, contours, i, color, 1, cv.LINE_8, hierarchy, 0);
+        }
+
+        cv.imshow(mainCanvas.value, result);
+        src.delete(); gray.delete(); edges.delete();
+        contours.delete(); hierarchy.delete(); result.delete();
+
+        pushHistory('Contornos');
+        notify(`✓ ${contours.size ? '~' : ''}Contornos detectados`);
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyCannyEdge() {
+      try {
+        const src = getMainMat();
+        const gray = new cv.Mat();
+        const edges = new cv.Mat();
+        const result = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        cv.Canny(gray, edges, params.cannyMin, params.cannyMax);
+        cv.cvtColor(edges, result, cv.COLOR_GRAY2RGBA);
+
+        cv.imshow(mainCanvas.value, result);
+        src.delete(); gray.delete(); edges.delete(); result.delete();
+
+        pushHistory('Canny Edges');
+        notify('✓ Canny Edge Detection aplicado');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyBlur() {
+      try {
+        const src = getMainMat();
+        const dst = new cv.Mat();
+        const k = params.blurKernel % 2 === 0 ? params.blurKernel + 1 : params.blurKernel;
+        const ksize = new cv.Size(k, k);
+        cv.GaussianBlur(src, dst, ksize, 0, 0, cv.BORDER_DEFAULT);
+        putMat(dst);
+        src.delete();
+        pushHistory(`Blur (k=${k})`);
+        notify(`✓ Desfoque gaussiano k=${k}`);
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyDenoise() {
+      try {
+        const src = getMainMat();
+        const gray = new cv.Mat();
+        const denoised = new cv.Mat();
+        const result = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        // Use medianBlur as a denoising approach (fastNlMeans not always available in WASM build)
+        cv.medianBlur(gray, denoised, 5);
+        cv.cvtColor(denoised, result, cv.COLOR_GRAY2RGBA);
+        cv.imshow(mainCanvas.value, result);
+
+        src.delete(); gray.delete(); denoised.delete(); result.delete();
+        pushHistory('Remover Ruído');
+        notify('✓ Ruído removido (Median Filter)');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyThreshold() {
+      try {
+        const src = getMainMat();
+        const gray = new cv.Mat();
+        const thresh = new cv.Mat();
+        const result = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        cv.threshold(gray, thresh, params.threshold, 255, cv.THRESH_BINARY);
+        cv.cvtColor(thresh, result, cv.COLOR_GRAY2RGBA);
+        cv.imshow(mainCanvas.value, result);
+
+        src.delete(); gray.delete(); thresh.delete(); result.delete();
+        pushHistory(`Threshold (${params.threshold})`);
+        notify(`✓ Limiarização t=${params.threshold}`);
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyDilate() {
+      try {
+        const src = getMainMat();
+        const dst = new cv.Mat();
+        const k = params.morphKernel % 2 === 0 ? params.morphKernel + 1 : params.morphKernel;
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(k, k));
+        cv.dilate(src, dst, kernel);
+        putMat(dst);
+        src.delete(); kernel.delete();
+        pushHistory(`Dilatação (k=${k})`);
+        notify('✓ Dilatação aplicada');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyErode() {
+      try {
+        const src = getMainMat();
+        const dst = new cv.Mat();
+        const k = params.morphKernel % 2 === 0 ? params.morphKernel + 1 : params.morphKernel;
+        const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(k, k));
+        cv.erode(src, dst, kernel);
+        putMat(dst);
+        src.delete(); kernel.delete();
+        pushHistory(`Erosão (k=${k})`);
+        notify('✓ Erosão aplicada');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyFlip() {
+      try {
+        const src = getMainMat();
+        const dst = new cv.Mat();
+        cv.flip(src, dst, 1);
+        putMat(dst);
+        src.delete();
+        pushHistory('Espelhar H');
+        notify('✓ Imagem espelhada');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyRotate90() {
+      try {
+        const src = getMainMat();
+        const dst = new cv.Mat();
+        cv.rotate(src, dst, cv.ROTATE_90_CLOCKWISE);
+        putMat(dst);
+        src.delete();
+        pushHistory('Rotacionar 90°');
+        notify('✓ Rotacionado 90°');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function applyEqualizeHist() {
+      try {
+        const src = getMainMat();
+        const gray = new cv.Mat();
+        const eq = new cv.Mat();
+        const result = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        cv.equalizeHist(gray, eq);
+        cv.cvtColor(eq, result, cv.COLOR_GRAY2RGBA);
+        cv.imshow(mainCanvas.value, result);
+
+        src.delete(); gray.delete(); eq.delete(); result.delete();
+        pushHistory('Equalizar Histograma');
+        notify('✓ Histograma equalizado');
+      } catch(e) { notify('Erro: '+e.message); }
+    }
+
+    function resetToOriginal() {
+      if (history.value.length > 0) {
+        jumpToHistory(0);
+        notify('✓ Imagem resetada ao original');
+      }
+    }
+
+    // CROP
+    function setTool(tool) {
+      activeTool.value = tool;
+      cropRect.x = 0; cropRect.y = 0; cropRect.w = 0; cropRect.h = 0;
+    }
+
+    function getCanvasCoords(e) {
+      const canvas = interactCanvas.value;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    function onCanvasMouseDown(e) {
+      if (activeTool.value === 'crop') {
+        const pos = getCanvasCoords(e);
+        dragStart = pos;
+        cropRect.x = pos.x; cropRect.y = pos.y;
+        cropRect.w = 0; cropRect.h = 0;
+        isDragging = true;
+      }
+    }
+
+    function onCanvasMouseMove(e) {
+      const pos = getCanvasCoords(e);
+      cursor.x = Math.round(pos.x);
+      cursor.y = Math.round(pos.y);
+
+      if (activeTool.value === 'crop' && isDragging) {
+        cropRect.w = pos.x - dragStart.x;
+        cropRect.h = pos.y - dragStart.y;
+      }
+    }
+
+    function onCanvasMouseUp(e) {
+      isDragging = false;
+    }
+
+    function onCanvasMouseLeave(e) {
+      isDragging = false;
+    }
+
+    function applyCrop() {
+      try {
+        const x = Math.round(Math.min(cropRect.x, cropRect.x + cropRect.w));
+        const y = Math.round(Math.min(cropRect.y, cropRect.y + cropRect.h));
+        const w = Math.round(Math.abs(cropRect.w));
+        const h = Math.round(Math.abs(cropRect.h));
+
+        if (w < 5 || h < 5) { notify('Seleção muito pequena'); return; }
+
+        const src = getMainMat();
+        const rect = new cv.Rect(x, y, Math.min(w, src.cols - x), Math.min(h, src.rows - y));
+        const cropped = src.roi(rect);
+        const dst = new cv.Mat();
+        cropped.copyTo(dst);
+        putMat(dst);
+        src.delete();
+
+        cropRect.w = 0; cropRect.h = 0;
+        activeTool.value = 'select';
+        pushHistory(`Recorte (${w}×${h})`);
+        notify(`✓ Recorte aplicado: ${w}×${h}px`);
+      } catch(e) { notify('Erro no recorte: '+e.message); }
+    }
+
+    function cancelCrop() {
+      cropRect.w = 0; cropRect.h = 0;
+      activeTool.value = 'select';
+    }
+
+    // ZOOM
+    function onWheel(e) {
+      if (e.ctrlKey || e.metaKey) {
+        zoom.value = Math.max(0.1, Math.min(5, zoom.value - e.deltaY * 0.001));
+      }
+    }
+
+    function onMouseMove(e) {}
+
+    // DOWNLOAD
+    function downloadResult() {
+      const link = document.createElement('a');
+      link.download = 'cv-studio-result.png';
+      link.href = mainCanvas.value.toDataURL('image/png');
+      link.click();
+      notify('✓ Imagem salva!');
+    }
+
+    async function copyToClipboard() {
+      mainCanvas.value.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          notify('✓ Imagem copiada para área de transferência');
+        } catch { notify('Não foi possível copiar (use HTTPS)'); }
+      });
+    }
+
+    function clearAll() {
+      hasImage.value = false;
+      history.value = [];
+      historyIndex.value = -1;
+      activeTool.value = 'select';
+      zoom.value = 1;
+      notify('Imagem fechada');
+    }
+
+    onMounted(() => {
+      window.__vueApp = {
+        set cvReady(v) { cvReadyRef.value = v; },
+        set cvStatus(v) { cvStatus.value = v; },
+        set cvStatusText(v) { cvStatusText.value = v; }
+      };
+      if (cvReady) {
+        cvReadyRef.value = true;
+        cvStatus.value = 'ready';
+        cvStatusText.value = 'OpenCV Pronto';
+      }
+    });
+
+    return {
+      cvReady: cvReadyRef, cvStatus, cvStatusText,
+      hasImage, activeTool, zoom,
+      mainCanvas, overlayCanvas, interactCanvas,
+      canvasWrapper, canvasContainer, fileInput,
+      notification, params, imgInfo, cursor,
+      history, historyIndex, cropRect,
+      triggerUpload, handleFileSelect, handleDrop,
+      undo, redo, jumpToHistory,
+      applyGrayscale, applyContours, applyCannyEdge,
+      applyBlur, applyDenoise, applyThreshold,
+      applyDilate, applyErode, applyFlip,
+      applyRotate90, applyEqualizeHist, resetToOriginal,
+      setTool, onCanvasMouseDown, onCanvasMouseMove,
+      onCanvasMouseUp, onCanvasMouseLeave,
+      applyCrop, cancelCrop,
+      onWheel, onMouseMove,
+      downloadResult, copyToClipboard, clearAll
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

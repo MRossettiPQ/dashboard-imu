@@ -2,29 +2,35 @@ package com.rot.mqtt.services
 
 import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JsonUtils
-import com.rot.mqtt.dto.MqttMessage
+import com.rot.core.utils.JwtUtils
 import com.rot.measurement.dtos.MeasurementDto
+import com.rot.mqtt.dto.MqttMessage
+import com.rot.session.dtos.UserSessionContext
+import com.rot.session.dtos.SessionSensorDto
 import io.moquette.broker.Server
 import io.moquette.broker.config.MemoryConfig
+import io.moquette.broker.security.IAuthenticator
 import io.moquette.interception.AbstractInterceptHandler
-import io.moquette.interception.messages.InterceptConnectMessage
-import io.moquette.interception.messages.InterceptDisconnectMessage
 import io.moquette.interception.messages.InterceptPublishMessage
-import io.moquette.interception.messages.InterceptSubscribeMessage
+import io.netty.buffer.Unpooled
+import io.netty.handler.codec.mqtt.MqttMessageBuilders
+import io.netty.handler.codec.mqtt.MqttQoS
 import io.quarkus.logging.Log
 import io.quarkus.runtime.ShutdownEvent
 import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
-import java.io.IOException
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 @ApplicationScoped
 class MqttBrokerService(
     private val applicationConfig: ApplicationConfig
 ) {
-
     private lateinit var mqttBroker: Server
+
+    // O seu cache em memória seguro para concorrência
+    val activeSessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
 
     fun start(@Observes event: StartupEvent) {
         try {
@@ -33,10 +39,23 @@ class MqttBrokerService(
             val property = Properties()
             property.setProperty("host", applicationConfig.mqtt().host())
             property.setProperty("port", applicationConfig.mqtt().port().toString())
-            mqttBroker.startServer(MemoryConfig(property))
-            mqttBroker.addInterceptHandler(MqttInterceptor())
-            Log.info("MQTT Broker iniciado na porta ${applicationConfig.mqtt().port()}")
-        } catch (e: IOException) {
+            property.setProperty("websocket_port", applicationConfig.mqtt().socketPort().toString())
+            property.setProperty("allow_anonymous", "true")
+
+            val authenticator = JwtMqttAuthenticator()
+            mqttBroker.startServer(
+                MemoryConfig(property),
+                emptyList(),
+                null,
+                authenticator,
+                null
+            )
+
+            // Passamos a referência do Service para o Interceptor poder acessar o cache
+            mqttBroker.addInterceptHandler(MqttInterceptor(this))
+
+            Log.info("MQTT Broker TCP na porta ${applicationConfig.mqtt().port()} e WS na porta ${applicationConfig.mqtt().socketPort()}")
+        } catch (e: Exception) {
             Log.error("Falha ao iniciar o broker MQTT - ${e.message}")
         }
     }
@@ -47,62 +66,100 @@ class MqttBrokerService(
             Log.info("🛑 MQTT Broker parado")
         }
     }
+
+    fun sendCommandToSensor(macAddress: String, command: String) {
+        val payload = JsonUtils.toJsonByteArray(mapOf("command" to command))
+
+        val message = MqttMessageBuilders.publish()
+            .topicName("sensor/$macAddress/command")
+            .retained(false)
+            .qos(MqttQoS.AT_MOST_ONCE)
+            .payload(Unpooled.copiedBuffer(payload))
+            .build()
+
+        mqttBroker.internalPublish(message, "backend-system")
+    }
 }
 
-class MqttInterceptor : AbstractInterceptHandler() {
-    private fun getBytes(data: InterceptPublishMessage): ByteArray {
-        // Obtém o ByteBuf
-        val byteBuf = data.payload
+class JwtMqttAuthenticator : IAuthenticator {
+    override fun checkValid(clientId: String?, username: String?, password: ByteArray?): Boolean {
+        if (password == null) {
+            Log.warn("Tentativa de conexão MQTT recusada: Senha/Token ausente (ClientID: $clientId)")
+            return false
+        }
 
-        // Cria um array de bytes com o tamanho do ByteBuf
-        val bytes = ByteArray(byteBuf.readableBytes())
+        // Converte os bytes da senha para String e limpa o "Bearer " se existir
+        val token = String(password).replace("Bearer ", "")
 
-        // Copia o conteúdo do ByteBuf para o array de bytes
-        byteBuf.getBytes(byteBuf.readerIndex(), bytes)
-        return bytes
+        return try {
+            // Usa o seu JwtUtils já existente para decodificar e validar
+            val decoded = JwtUtils.decode(token)
+
+            if (decoded != null) {
+                Log.debug("Conexão MQTT autorizada para: ${decoded.name}")
+                true
+            } else {
+                Log.warn("Tentativa de conexão MQTT recusada: Token inválido")
+                false
+            }
+        } catch (e: Exception) {
+            Log.error("Erro ao processar JWT no MQTT", e)
+            false
+        }
+    }
+}
+
+class MqttInterceptor(
+    private val brokerService: MqttBrokerService // Referência ao serviço principal
+) : AbstractInterceptHandler() {
+
+    override fun getID(): String = UUID.randomUUID().toString()
+
+    override fun onPublish(data: InterceptPublishMessage) {
+        val topic = data.topicName
+
+        try {
+            router(topic, data)
+        } catch (e: Exception) {
+            Log.error("Erro ao processar mensagem MQTT no tópico $topic", e)
+        }
+
+        super.onPublish(data) // Importante manter para o Moquette rotear a mensagem para o frontend
+    }
+
+    fun router(topic: String, data: InterceptPublishMessage) {
+        when {
+            // 1. Registro de um novo sensor ao ligar
+            topic == "sensor/register" -> {
+                val sensorDto = convertPayload<SessionSensorDto>(data)
+                Log.info("Sensor registrado: ${sensorDto.sensorInfo?.macAddress}")
+                // Aqui você salvaria no banco/lista de sensores disponíveis
+            }
+
+            // 2. Recebimento de medições roteadas por Sessão
+            topic.startsWith("session/") && topic.endsWith("/measurement") -> {
+                // Extrai o ID da sessão da string do tópico (ex: "session/123-abc/measurement")
+                val sessionIdStr = topic.split("/")[1]
+                val sessionId = UUID.fromString(sessionIdStr)
+
+                val measurements = convertPayload<MqttMessage<MutableList<MeasurementDto>>>(data)
+
+                // Salva no cache em memória do servidor
+                val sessionContext = brokerService.activeSessions[sessionId]
+                if (sessionContext != null) {
+                    // Lógica para encontrar o sensor no contexto e dar .addAll(measurements)
+                    // ...
+
+                    // Lógica de Flush: Se cache passar de 1000 itens, salva no DB em Batch.
+                }
+            }
+        }
     }
 
     private inline fun <reified T> convertPayload(data: InterceptPublishMessage): T {
-        val bytes: ByteArray = getBytes(data)
+        val byteBuf = data.payload
+        val bytes = ByteArray(byteBuf.readableBytes())
+        byteBuf.getBytes(byteBuf.readerIndex(), bytes)
         return JsonUtils.toObject<T>(bytes)
-    }
-
-    override fun getID(): String {
-        return UUID.randomUUID().toString()
-    }
-
-    // Chamado quando um cliente se conecta
-    override fun onConnect(data: InterceptConnectMessage) {
-        Log.info("Cliente conectado: ID=${data.clientID}, Usuário=${data.username}")
-        return super.onConnect(data)
-    }
-
-    // Chamado quando um cliente publica uma mensagem
-    override fun onPublish(data: InterceptPublishMessage) {
-        Log.info("Publicação recebida: Tópico=${data.topicName} - Cliente: ${data.username} - clientID: ${data.clientID}")
-
-        val converted = when (data.topicName.lowercase()) {
-            "message" -> convertPayload<MqttMessage<String>>(data)
-            "join-room" -> convertPayload<MqttMessage<String>>(data)
-            "leave-room" -> convertPayload<MqttMessage<String>>(data)
-            "command" -> convertPayload<MqttMessage<String>>(data)
-            "measurement" -> convertPayload<MqttMessage<MutableList<MeasurementDto>>>(data)
-            else -> convertPayload<MqttMessage<String>>(data)
-        }
-
-        println(JsonUtils.toJsonString(converted))
-        return super.onPublish(data)
-    }
-
-    // Chamado quando um cliente assina um tópico
-    override fun onSubscribe(data: InterceptSubscribeMessage) {
-        Log.info("Assinatura: Cliente=${data.clientID}, Tópico=${data.topicFilter}")
-        return super.onSubscribe(data)
-    }
-
-    // Chamado quando um cliente se desconecta
-    override fun onDisconnect(data: InterceptDisconnectMessage) {
-        Log.info("Cliente desconectado: ID=${data.clientID}")
-        return super.onDisconnect(data)
     }
 }
