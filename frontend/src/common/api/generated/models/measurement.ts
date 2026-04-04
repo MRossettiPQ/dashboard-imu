@@ -44,7 +44,7 @@ export interface Measurement {
   updatedAt?: MeasurementUpdatedAt;
   updatedBy?: MeasurementUpdatedBy;
   deletedAt?: MeasurementDeletedAt;
-  extraData: MeasurementExtraData;
+  extraData?: MeasurementExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: MeasurementId;

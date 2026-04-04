@@ -6,7 +6,7 @@ import com.rot.network.models.NetworkConfiguration
 import jakarta.validation.constraints.NotEmpty
 import java.util.*
 
-class NetworkConfigurationDto {
+open class NetworkConfigurationBase {
     var id: UUID? = null
     var mdns: String? = null
     var ip: String? = null
@@ -16,7 +16,9 @@ class NetworkConfigurationDto {
 
     @field:NotEmpty(message = "Password is required")
     var password: String? = null
+}
 
+class NetworkConfigurationDto: NetworkConfigurationBase() {
     companion object {
         fun fromDecrypted(entity: NetworkConfiguration, decryptPassword: Boolean = false): NetworkConfigurationDto {
             val dto = JsonUtils.MAPPER.convertValue(entity, NetworkConfigurationDto::class.java)

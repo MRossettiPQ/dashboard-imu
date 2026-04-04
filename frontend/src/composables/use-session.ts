@@ -7,6 +7,7 @@ import type { MqttClient } from 'mqtt';
 import { notify } from 'src/common/utils/NotifyUtils';
 import { api } from 'boot/axios';
 import type { PatientDto } from 'src/common/api/generated/models';
+import { SessionType } from 'src/common/api/generated/models';
 import { Session } from 'src/common/api/manual/constructors_api';
 
 const kUseSessionEditor = Symbol('useSessionEditor');
@@ -14,7 +15,6 @@ const kUseSessionEditor = Symbol('useSessionEditor');
 export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor } =
   createProvidedComposable(kUseSessionEditor, 'sessionEditor', () => {
     const mqttClient = ref<MqttClient | null>(null);
-    const sessionId = ref<string | null>(null);
 
     const session = ref<Session>(new Session());
     const patient = ref<PatientDto>();
@@ -47,9 +47,13 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
 
         // 1. Fetch Patient and Procedures
         const { data } = await api.getApiPatientsUuid(uuid.value);
+        const [{ data: patientData }, { data: sessionData }] = await Promise.all([
+          api.getApiPatientsUuid(uuid.value),
+          api.postApiSessionsCreate({ patientId: uuid.value, type: SessionType.REAL }),
+        ]);
 
         if (data.content) {
-          patient.value = data.content;
+          patient.value = patientData.content;
         }
 
         // 2. Call backend REST API to create the Session (Optional but recommended)
@@ -59,16 +63,16 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
         // sessionId.value = sessionRes.data.id;
 
         // TEMPORARY: For testing, generating a fake session ID if you don't have the endpoint yet
-        sessionId.value = 'session-1234-abcd';
-        session.value.id = sessionId.value; // Assign to your local session object
+        session.value.id = sessionData.content.id!;
+        session.value.type = sessionData.content.type!;
 
         // 3. Connect to MQTT
         mqttClient.value = createMqttClient();
         mqttClient.value.on('connect', () => {
-          console.log('MQTT Conectado! Inscrevendo-se na sessão:', sessionId.value);
+          console.log('MQTT Conectado! Inscrevendo-se na sessão:', session.value.getId);
 
           // Subscribe to all messages for this specific session
-          mqttClient.value?.subscribe(`session/${sessionId.value}/#`, (err) => {
+          mqttClient.value?.subscribe(`session/${session.value.getId}/#`, (err) => {
             if (!err) {
               console.log('Inscrição confirmada na sala de espera.');
             } else {

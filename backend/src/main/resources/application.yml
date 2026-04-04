@@ -46,15 +46,6 @@ smallrye:
         location: classpath:security/private.pem
 
 mp:
-  messaging:
-    incoming:
-      measurements:
-        connector: smallrye-mqtt
-        host: ${application.mqtt.host}
-        port: ${application.mqtt.port}
-        topic: session/+/measurement
-        reconnect-attempts: 10
-        reconnect-interval-seconds: 5
   jwt:
     verify:
       publickey:
@@ -134,7 +125,6 @@ quarkus:
   flyway:
     migrate-at-start: false
     baseline-on-migrate: true
-#    baseline-version: "1"
   locales: pt-BR
   smallrye-jwt:
     enabled: true

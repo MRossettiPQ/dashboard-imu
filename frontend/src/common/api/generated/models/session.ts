@@ -13,12 +13,12 @@ import type { SessionExtraData } from './sessionExtraData';
 import type { SessionId } from './sessionId';
 import type { OffsetDateTime } from './offsetDateTime';
 import type { SessionType } from './sessionType';
+import type { SessionStatus } from './sessionStatus';
 import type { SessionObservation } from './sessionObservation';
 import type { SessionPatient } from './sessionPatient';
 import type { SessionPhysiotherapist } from './sessionPhysiotherapist';
 import type { SessionSensor } from './sessionSensor';
 import type { SessionNode } from './sessionNode';
-import type { Articulation } from './articulation';
 
 export interface Session {
   createdAt?: SessionCreatedAt;
@@ -26,16 +26,16 @@ export interface Session {
   updatedAt?: SessionUpdatedAt;
   updatedBy?: SessionUpdatedBy;
   deletedAt?: SessionDeletedAt;
-  extraData: SessionExtraData;
+  extraData?: SessionExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: SessionId;
   sessionDate: OffsetDateTime;
   type: SessionType;
+  status: SessionStatus;
   observation?: SessionObservation;
   patient: SessionPatient;
   physiotherapist: SessionPhysiotherapist;
-  sessionSensors: SessionSensor[];
-  sessionNodes: SessionNode[];
-  articulations: Articulation[];
+  sessionSensors?: SessionSensor[];
+  sessionNodes?: SessionNode[];
 }

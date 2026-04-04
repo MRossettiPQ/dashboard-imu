@@ -4,7 +4,7 @@ import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
-import com.rot.session.dtos.SessionDto
+import com.rot.session.dtos.SessionRead
 import com.rot.session.models.Session
 import com.rot.user.dtos.PatientDto
 import com.rot.user.enums.UserRole
@@ -95,14 +95,14 @@ class PatientController {
         @RestPath("uuid") uuid: UUID,
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,
-    ): RestResponse<Content<Pagination<SessionDto>>> {
+    ): RestResponse<Content<Pagination<SessionRead>>> {
         Patient.findOrThrowById(uuid)
 
         val query = Session.createQuery()
             .where(Session.q.patient().id.eq(uuid))
 
         return ResultContent.of(Session.fetch(query, page, rpp))
-            .transform(SessionDto::from)
+            .transform(SessionRead::from)
             .build()
     }
 

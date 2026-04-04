@@ -1,21 +1,275 @@
 #ifndef MQTT_UTILS_H
 #define MQTT_UTILS_H
-#include "logger.h"
+
+#include <PubSubClient.h>
+#include <WiFiClient.h>
 #include "config.h"
+#include "logger.h"
 
-class MqttClient {
-    public:
-    void configure() {
+// ─── Estado MQTT ────────────────────────────────────────────────────────
+WiFiClient espWifiClient;
+PubSubClient mqttClient(espWifiClient);
+
+String mqtt_session_id = "";       // UUID da sessão atribuída pelo servidor
+bool mqtt_connected = false;
+unsigned long last_mqtt_reconnect = 0;
+constexpr unsigned long MQTT_RECONNECT_INTERVAL = 5000;
+
+// ─── Tópicos ────────────────────────────────────────────────────────────
+
+inline String topicSensorRegister() {
+    return "sensor/" + WiFi.macAddress() + "/register";
+}
+
+inline String topicSensorStatus() {
+    return "sensor/" + WiFi.macAddress() + "/status";
+}
+
+inline String topicSensorCommand() {
+    return "sensor/" + WiFi.macAddress() + "/command";
+}
+
+inline String topicSessionMeasurement() {
+    if (mqtt_session_id.isEmpty()) return "";
+    return "session/" + mqtt_session_id + "/measurement";
+}
+
+// ─── Callback de mensagens recebidas ────────────────────────────────────
+
+inline void mqttCallback(char* topic, byte* payload, unsigned int length) {
+    // Converte payload para String
+    String message;
+    message.reserve(length);
+    for (unsigned int i = 0; i < length; i++) {
+        message += static_cast<char>(payload[i]);
     }
 
-    void loop() {
+    const String topicStr(topic);
+    Logger::info("MQTT", "Mensagem recebida [%s]: %s", topicStr.c_str(), message.c_str());
+
+    // Parse do JSON
+    JsonDocument doc;
+    const DeserializationError error = deserializeJson(doc, message);
+    if (error) {
+        Logger::error("MQTT", "Erro ao parsear JSON: %s", error.c_str());
+        return;
     }
 
-    void send(JsonDocument json) {
+    const char* command = doc["command"];
+    if (command == nullptr) {
+        Logger::warn("MQTT", "Mensagem sem campo 'command'");
+        return;
+    }
+
+    String cmd(command);
+
+    if (cmd == "START") {
+        Logger::info("MQTT", "Comando START recebido");
+        actual_command = CommandType::START;
+        measurement_count = 0;
+        measurement_count_total = 0;
+        last_dispatch = 0;
+    }
+    else if (cmd == "STOP") {
+        Logger::info("MQTT", "Comando STOP recebido");
+        actual_command = CommandType::STOP;
+    }
+    else if (cmd == "RESTART") {
+        Logger::info("MQTT", "Comando RESTART recebido");
+        actual_command = CommandType::RESTART;
+        measurement_count = 0;
+        measurement_count_total = 0;
+        last_dispatch = 0;
+    }
+    else if (cmd == "CALIBRATE") {
+        Logger::info("MQTT", "Comando CALIBRATE recebido");
+        actual_command = CommandType::STOP;
+
+        // Publica status de calibração
+        MqttUtils::publishStatus("CALIBRATING");
+
+        // Executa calibração (bloqueia a task)
+        sensor_instance.calibrate();
+
+        // Publica status de disponível
+        MqttUtils::publishStatus("AVAILABLE");
+
+        actual_command = CommandType::NONE;
+    }
+    else if (cmd == "ASSIGN") {
+        // Servidor atribuiu este sensor a uma sessão
+        const char* sessionId = doc["sessionId"];
+        if (sessionId != nullptr) {
+            mqtt_session_id = String(sessionId);
+            Logger::info("MQTT", "Atribuído à sessão: %s", mqtt_session_id.c_str());
+        }
+    }
+    else if (cmd == "RELEASE") {
+        // Servidor liberou este sensor da sessão
+        Logger::info("MQTT", "Liberado da sessão: %s", mqtt_session_id.c_str());
+        mqtt_session_id = "";
+        actual_command = CommandType::NONE;
+    }
+    else {
+        Logger::warn("MQTT", "Comando desconhecido: %s", cmd.c_str());
+    }
+}
+
+// ─── Classe principal ───────────────────────────────────────────────────
+
+class MqttUtils {
+public:
+    /**
+     * Configura o client MQTT com servidor e callback.
+     * Chamado após conexão WiFi ser estabelecida.
+     */
+    static void configure(const char* host, uint16_t port) {
+        mqttClient.setServer(host, port);
+        mqttClient.setCallback(mqttCallback);
+        mqttClient.setBufferSize(4096); // Buffer maior para batches de medições
+        mqttClient.setKeepAlive(30);
+        Logger::info("MQTT", "Configurado para %s:%d", host, port);
+    }
+
+    /**
+     * Tenta reconectar ao broker MQTT.
+     * Chamado periodicamente pelo loop da Task2.
+     */
+    static bool reconnect() {
+        if (mqttClient.connected()) {
+            mqtt_connected = true;
+            return true;
+        }
+
+        const unsigned long now = millis();
+        if (now - last_mqtt_reconnect < MQTT_RECONNECT_INTERVAL) {
+            return false;
+        }
+        last_mqtt_reconnect = now;
+
+        const String clientId = "ESP32-" + WiFi.macAddress();
+        Logger::info("MQTT", "Conectando como %s...", clientId.c_str());
+
+        if (mqttClient.connect(clientId.c_str())) {
+            mqtt_connected = true;
+            Logger::info("MQTT", "Conectado ao broker!");
+
+            // Inscreve-se no tópico de comandos deste sensor
+            String cmdTopic = topicSensorCommand();
+            mqttClient.subscribe(cmdTopic.c_str());
+            Logger::info("MQTT", "Inscrito em: %s", cmdTopic.c_str());
+
+            // Registra este sensor no servidor
+            registerSensor();
+
+            return true;
+        } else {
+            mqtt_connected = false;
+            Logger::error("MQTT", "Falha na conexão, rc=%d", mqttClient.state());
+            return false;
+        }
+    }
+
+    /**
+     * Loop do client MQTT. Deve ser chamado frequentemente.
+     */
+    static void loop() {
+        if (!mqttClient.connected()) {
+            mqtt_connected = false;
+            reconnect();
+        }
+        mqttClient.loop();
+    }
+
+    /**
+     * Publica o registro deste sensor no broker.
+     * Tópico: sensor/{mac}/register
+     */
+    static void registerSensor() {
+        JsonDocument doc;
+        doc["mac"] = WiFi.macAddress();
+        doc["name"] = ap_ssid; // Nome do AP configurado no wifi_utils
+        doc["ip"] = sta_ip;
+
         String payload;
-        serializeJson(json, payload);
+        serializeJson(doc, payload);
+
+        const String topic = topicSensorRegister();
+        const bool sent = mqttClient.publish(topic.c_str(), payload.c_str());
+        Logger::info("MQTT", "Registro enviado [%s]: %s (ok=%d)", topic.c_str(), payload.c_str(), sent);
     }
 
+    /**
+     * Publica um batch de medições.
+     * Tópico: session/{sessionId}/measurement
+     *
+     * O payload segue o formato:
+     * {
+     *   "originIdentifier": "AA:BB:CC:DD:EE:FF",
+     *   "content": [ { medição1 }, { medição2 }, ... ]
+     * }
+     *
+     * O readOrder em cada medição garante a ordem de reconstrução no servidor.
+     */
+    static bool publishMeasurements(const JsonDocument& measurementBuffer) {
+        if (mqtt_session_id.isEmpty()) {
+            Logger::warn("MQTT", "Sem sessão atribuída, medições descartadas");
+            return false;
+        }
+
+        if (!mqttClient.connected()) {
+            Logger::warn("MQTT", "Desconectado, medições descartadas");
+            return false;
+        }
+
+        const String topic = topicSessionMeasurement();
+        String payload;
+        serializeJson(measurementBuffer, payload);
+
+        // PubSubClient suporta mensagens até bufferSize (4096 por padrão)
+        // Se o payload for maior, será necessário fragmentar
+        if (payload.length() > static_cast<unsigned int>(mqttClient.getBufferSize() - 10)) {
+            Logger::warn("MQTT", "Payload muito grande (%d bytes), considere reduzir BUFFER_LENGTH", payload.length());
+            return false;
+        }
+
+        const bool sent = mqttClient.publish(topic.c_str(), payload.c_str());
+
+        if (sent) {
+            Logger::info("MQTT", "Batch enviado [%s]: %d bytes", topic.c_str(), payload.length());
+        } else {
+            Logger::error("MQTT", "Falha ao enviar batch [%s]", topic.c_str());
+        }
+
+        return sent;
+    }
+
+    /**
+     * Publica o status atual do sensor.
+     * Tópico: sensor/{mac}/status
+     * Status possíveis: AVAILABLE, CALIBRATING, ERROR
+     */
+    static void publishStatus(const char* status, const char* message = nullptr) {
+        JsonDocument doc;
+        doc["status"] = status;
+        if (message != nullptr) {
+            doc["message"] = message;
+        }
+
+        String payload;
+        serializeJson(doc, payload);
+
+        String topic = topicSensorStatus();
+        mqttClient.publish(topic.c_str(), payload.c_str());
+        Logger::info("MQTT", "Status publicado [%s]: %s", topic.c_str(), status);
+    }
+
+    /**
+     * Verifica se está conectado ao broker.
+     */
+    static bool isConnected() {
+        return mqtt_connected && mqttClient.connected();
+    }
 };
 
-#endif //MQTT_UTILS_H
+#endif // MQTT_UTILS_H

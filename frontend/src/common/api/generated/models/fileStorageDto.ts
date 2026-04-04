@@ -26,6 +26,6 @@ export interface FileStorageDto {
   origin?: FileStorageDtoOrigin;
   length?: FileStorageDtoLength;
   storedAt?: FileStorageDtoStoredAt;
-  storageMethod: FileStorageEnum;
-  volumeStatus: ModificationEnum;
+  storageMethod?: FileStorageEnum;
+  volumeStatus?: ModificationEnum;
 }

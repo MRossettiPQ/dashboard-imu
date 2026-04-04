@@ -6,7 +6,6 @@
  */
 import type { LocalDateTime } from './localDateTime';
 import type { FileDownloadResponseMessage } from './fileDownloadResponseMessage';
-import type { FileDownloadResponseContent } from './fileDownloadResponseContent';
 
 export interface FileDownloadResponse {
   /** Response timestamp */
@@ -18,5 +17,5 @@ export interface FileDownloadResponse {
   /** Optional response message */
   message?: FileDownloadResponseMessage;
   /** Response payload */
-  content: FileDownloadResponseContent;
+  content: Blob;
 }

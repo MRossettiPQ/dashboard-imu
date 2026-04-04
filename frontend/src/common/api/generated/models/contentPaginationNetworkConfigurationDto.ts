@@ -6,7 +6,7 @@
  */
 import type { LocalDateTime } from './localDateTime';
 import type { ContentPaginationNetworkConfigurationDtoMessage } from './contentPaginationNetworkConfigurationDtoMessage';
-import type { ContentPaginationNetworkConfigurationDtoContent } from './contentPaginationNetworkConfigurationDtoContent';
+import type { PaginationNetworkConfigurationDto } from './paginationNetworkConfigurationDto';
 
 /**
  * Generic API response
@@ -21,5 +21,5 @@ export interface ContentPaginationNetworkConfigurationDto {
   /** Optional response message */
   message?: ContentPaginationNetworkConfigurationDtoMessage;
   /** Response payload */
-  content: ContentPaginationNetworkConfigurationDtoContent;
+  content: PaginationNetworkConfigurationDto;
 }

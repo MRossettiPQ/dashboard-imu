@@ -1,20 +1,30 @@
 package com.rot.session.dtos
 
-import com.rot.socket.dtos.SessionSensorDto
 import java.util.*
+import java.util.concurrent.CopyOnWriteArraySet
 
+/**
+ * Contexto em memória de uma sessão ativa do usuário (fisioterapeuta).
+ */
 class UserSessionContext {
     var id: UUID? = null
-    var room: UUID? = null
-
-    // User id do token de conexão
     var userId: UUID? = null
     var patientId: UUID? = null
 
-    var sensors: MutableMap<UUID, SessionSensorDto> = mutableMapOf()
+    /** MAC addresses dos sensores atribuídos a esta sessão */
+    val assignedSensors: CopyOnWriteArraySet<String> = CopyOnWriteArraySet()
 }
 
-class SensorSessionContext: SessionSensorDto() {
-    var room: UUID? = null
+/**
+ * Contexto em memória de um sensor conectado ao broker MQTT.
+ */
+class SensorSessionContext {
+    var mac: String? = null
+    var name: String? = null
+    var ip: String? = null
     var available: Boolean = true
+    var sessionId: UUID? = null
+
+    /** ClientID do Moquette - necessário para rastrear desconexão */
+    var clientId: String? = null
 }

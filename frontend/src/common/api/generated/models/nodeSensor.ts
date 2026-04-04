@@ -20,7 +20,7 @@ export interface NodeSensor {
   updatedAt?: NodeSensorUpdatedAt;
   updatedBy?: NodeSensorUpdatedBy;
   deletedAt?: NodeSensorDeletedAt;
-  extraData: NodeSensorExtraData;
+  extraData?: NodeSensorExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: NodeSensorId;

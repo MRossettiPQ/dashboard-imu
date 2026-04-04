@@ -6,7 +6,7 @@
  */
 import type { LocalDateTime } from './localDateTime';
 import type { ContentPaginationPatientDtoMessage } from './contentPaginationPatientDtoMessage';
-import type { ContentPaginationPatientDtoContent } from './contentPaginationPatientDtoContent';
+import type { PaginationPatientDto } from './paginationPatientDto';
 
 /**
  * Generic API response
@@ -21,5 +21,5 @@ export interface ContentPaginationPatientDto {
   /** Optional response message */
   message?: ContentPaginationPatientDtoMessage;
   /** Response payload */
-  content: ContentPaginationPatientDtoContent;
+  content: PaginationPatientDto;
 }

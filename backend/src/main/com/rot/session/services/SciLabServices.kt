@@ -1,6 +1,6 @@
 package com.rot.session.services
 
-import com.rot.measurement.dtos.MeasurementDto
+import com.rot.measurement.dtos.MeasurementRead
 import com.rot.measurement.models.Measurement
 import jakarta.enterprise.context.ApplicationScoped
 import java.time.Duration
@@ -14,13 +14,13 @@ class SciLabServices {
         return Duration.between(time1, time2).abs() <= tolerance
     }
 
-    fun averageMeasurements(measurements: List<Measurement>): MeasurementDto {
+    fun averageMeasurements(measurements: List<Measurement>): MeasurementRead {
         fun averageOf(selector: (Measurement) -> Double?): Double? {
             val values = measurements.mapNotNull(selector)
             return if (values.isNotEmpty()) values.reduce { acc, bd -> acc + bd } / values.size.toDouble() else null
         }
 
-        return MeasurementDto().apply {
+        return MeasurementRead().apply {
             capturedAt = measurements.firstOrNull()?.capturedAt!!
             sensorName = measurements.firstOrNull()?.sensorName!!
             readOrder = measurements.firstOrNull()?.readOrder!!

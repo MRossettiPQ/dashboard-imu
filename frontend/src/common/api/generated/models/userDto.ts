@@ -21,7 +21,7 @@ export interface UserDto {
   username?: UserDtoUsername;
   name?: UserDtoName;
   email?: UserDtoEmail;
-  role: UserRole;
+  role?: UserRole;
   access?: UserDtoAccess;
   password?: UserDtoPassword;
 }

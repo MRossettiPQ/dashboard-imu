@@ -20,7 +20,7 @@ export interface SensorInfo {
   updatedAt?: SensorInfoUpdatedAt;
   updatedBy?: SensorInfoUpdatedBy;
   deletedAt?: SensorInfoDeletedAt;
-  extraData: SensorInfoExtraData;
+  extraData?: SensorInfoExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: SensorInfoId;

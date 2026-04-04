@@ -24,7 +24,7 @@ export interface User {
   updatedAt?: UserUpdatedAt;
   updatedBy?: UserUpdatedBy;
   deletedAt?: UserDeletedAt;
-  extraData: UserExtraData;
+  extraData?: UserExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: UserId;

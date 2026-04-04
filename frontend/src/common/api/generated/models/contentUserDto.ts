@@ -6,7 +6,7 @@
  */
 import type { LocalDateTime } from './localDateTime';
 import type { ContentUserDtoMessage } from './contentUserDtoMessage';
-import type { ContentUserDtoContent } from './contentUserDtoContent';
+import type { UserDto } from './userDto';
 
 /**
  * Generic API response
@@ -21,5 +21,5 @@ export interface ContentUserDto {
   /** Optional response message */
   message?: ContentUserDtoMessage;
   /** Response payload */
-  content: ContentUserDtoContent;
+  content: UserDto;
 }

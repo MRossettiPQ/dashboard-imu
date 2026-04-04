@@ -24,7 +24,7 @@ export interface SessionSensor {
   updatedAt?: SessionSensorUpdatedAt;
   updatedBy?: SessionSensorUpdatedBy;
   deletedAt?: SessionSensorDeletedAt;
-  extraData: SessionSensorExtraData;
+  extraData?: SessionSensorExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: SessionSensorId;
@@ -33,6 +33,6 @@ export interface SessionSensor {
   observation?: SessionSensorObservation;
   session: SessionSensorSession;
   sensorInfo: SessionSensorSensorInfo;
-  nodeSensors: NodeSensor[];
-  measurements: Measurement[];
+  nodeSensors?: NodeSensor[];
+  measurements?: Measurement[];
 }

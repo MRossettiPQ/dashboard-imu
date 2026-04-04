@@ -13,10 +13,9 @@ import type { SessionNodeExtraData } from './sessionNodeExtraData';
 import type { SessionNodeId } from './sessionNodeId';
 import type { SessionNodeObservation } from './sessionNodeObservation';
 import type { BodySideEnum } from './bodySideEnum';
+import type { BodyRegionEnum } from './bodyRegionEnum';
 import type { SessionNodeSession } from './sessionNodeSession';
-import type { SessionNodeBodyPoint } from './sessionNodeBodyPoint';
 import type { NodeSensor } from './nodeSensor';
-import type { MovementNode } from './movementNode';
 
 export interface SessionNode {
   createdAt?: SessionNodeCreatedAt;
@@ -24,14 +23,13 @@ export interface SessionNode {
   updatedAt?: SessionNodeUpdatedAt;
   updatedBy?: SessionNodeUpdatedBy;
   deletedAt?: SessionNodeDeletedAt;
-  extraData: SessionNodeExtraData;
+  extraData?: SessionNodeExtraData;
   simpleName?: string;
   newBean?: boolean;
   id?: SessionNodeId;
   observation?: SessionNodeObservation;
   side: BodySideEnum;
+  region: BodyRegionEnum;
   session: SessionNodeSession;
-  bodyPoint: SessionNodeBodyPoint;
-  nodeSensors: NodeSensor[];
-  movementNodes: MovementNode[];
+  nodeSensors?: NodeSensor[];
 }

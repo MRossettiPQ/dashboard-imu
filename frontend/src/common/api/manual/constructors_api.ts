@@ -1,27 +1,13 @@
 import type {
-  ArticulationDto,
-  ArticulationDtoDescription,
-  ArticulationDtoId,
-  ArticulationDtoType,
-  MeasurementDto,
-  MovementDto,
-  MovementDtoId,
-  MovementDtoMovementType,
-  MovementDtoObservation,
-  MovementDtoType,
-  SensorDto,
-  SensorDtoBodySegment,
-  SensorDtoId,
-  SensorDtoIp,
-  SensorDtoObservation,
-  SensorDtoSensorInfo,
   SessionDto,
   SessionDtoId,
   SessionDtoObservation,
   SessionDtoPatient,
   SessionDtoPhysiotherapist,
   SessionDtoSessionDate,
+  SessionNodeDto,
   SessionSensorDto,
+  SessionSensorDto1,
   SessionSensorDtoClientId,
   SessionSensorDtoIp,
   SessionSensorDtoMac,
@@ -30,46 +16,26 @@ import type {
 } from '../generated/models';
 import { SessionType } from '../generated/models';
 
-export class Movement implements MovementDto {
-  constructor(data?: Partial<MovementDto>) {
-    if (data) {
-      Object.assign(this, data);
-    }
-  }
-
-  id?: MovementDtoId;
-  type?: MovementDtoType;
-  movementType?: MovementDtoMovementType;
-  observation?: MovementDtoObservation;
-  sensors: SensorDto[] = [];
-
-  get hasSensors(): boolean {
-    return this.sensors.length > 0;
-  }
-}
-
 export class Session implements SessionDto {
-  constructor(data?: Partial<MovementDto>) {
-    if (data) {
-      Object.assign(this, data);
-    }
+  constructor(data?: Partial<SessionDto>) {
+    this.assignValue(data);
   }
+
   id?: SessionDtoId;
   sessionDate?: SessionDtoSessionDate;
   observation?: SessionDtoObservation;
   patient?: SessionDtoPatient;
   physiotherapist?: SessionDtoPhysiotherapist;
   type: SessionType = SessionType.REAL;
-  articulations: ArticulationDto[] = [];
-}
 
-export class Articulation implements ArticulationDto {
-  id?: ArticulationDtoId;
-  type?: ArticulationDtoType;
-  description?: ArticulationDtoDescription;
-  movements: Movement[] = [];
+  sessionSensors: SessionSensorDto1[] = [];
+  sessionNodes: SessionNodeDto[] = [];
 
-  constructor(data?: Partial<ArticulationDto>) {
+  get getId(): string {
+    return String(this.id || '#');
+  }
+
+  assignValue(data?: Partial<SessionDto>) {
     if (data) {
       Object.assign(this, data);
     }
@@ -84,21 +50,10 @@ export class SessionSensor implements SessionSensorDto {
   observation?: SessionSensorDtoObservation;
 
   constructor(data?: Partial<SessionSensorDto>) {
-    if (data) {
-      Object.assign(this, data);
-    }
+    this.assignValue(data);
   }
-}
 
-export class Sensor implements SensorDto {
-  id?: SensorDtoId;
-  ip?: SensorDtoIp;
-  sensorInfo?: SensorDtoSensorInfo;
-  bodySegment?: SensorDtoBodySegment;
-  observation?: SensorDtoObservation;
-  measurements: MeasurementDto[] = [];
-
-  constructor(data?: Partial<SensorDto>) {
+  assignValue(data?: Partial<SessionSensorDto>) {
     if (data) {
       Object.assign(this, data);
     }

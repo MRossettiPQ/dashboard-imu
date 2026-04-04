@@ -6,7 +6,7 @@
  */
 import type { LocalDateTime } from './localDateTime';
 import type { ContentPatientDtoMessage } from './contentPatientDtoMessage';
-import type { ContentPatientDtoContent } from './contentPatientDtoContent';
+import type { PatientDto } from './patientDto';
 
 /**
  * Generic API response
@@ -21,5 +21,5 @@ export interface ContentPatientDto {
   /** Optional response message */
   message?: ContentPatientDtoMessage;
   /** Response payload */
-  content: ContentPatientDtoContent;
+  content: PatientDto;
 }
