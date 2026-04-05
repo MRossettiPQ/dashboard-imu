@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { socket } from 'boot/socket';
-import type { SensorDto, SessionDto } from 'src/common/api/generated/models';
-import { MessageType } from 'src/common/api/generated/models';
+import { useProvidedSessionEditor } from 'src/composables/use-session';
 
 interface Props {
-  session: SessionDto;
-  selectedSensorList: Set<SensorDto>;
   inProgress: boolean;
   loadingSave: boolean;
-  actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
+  actualStepName: 'first-step' | 'second-step' | 'save-step';
 }
+const { session } = useProvidedSessionEditor();
 
 const emit = defineEmits<{
   prev: [];
@@ -18,13 +15,11 @@ const emit = defineEmits<{
 }>();
 const props = defineProps<Props>();
 const disablePrevButton = computed(() => {
-  if (!props.session) return true;
+  if (!session.value) return true;
 
   switch (props.actualStepName) {
     case 'first-step':
       return true;
-    case 'third-step':
-      return props.inProgress;
     case 'second-step':
     default:
       return false;
@@ -32,17 +27,11 @@ const disablePrevButton = computed(() => {
 });
 
 const disableNextButton = computed(() => {
-  if (!props.session) return true;
+  if (!session.value) return true;
 
   switch (props.actualStepName) {
     case 'first-step':
-      if (props.session.articulations.length < 1) return true;
-      return props.session.articulations.some((p) => p.movements.length < 1);
-    case 'second-step':
-      return props.selectedSensorList.size < 1;
-    case 'third-step':
-      return false;
-    // return this.syncedConnection?.blockSave || this.blockIfMovementsMeasurementsEmpty;
+      return session.value.sessionSensors.length < 1;
     default:
       return false;
   }
@@ -50,20 +39,17 @@ const disableNextButton = computed(() => {
 
 async function commandRestart() {
   console.log('commandRestart');
-  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_RESTART, '');
-  console.log(r);
+  await Promise.all([]);
 }
 
 async function commandStart() {
   console.log('commandStart');
-  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_START, '');
-  console.log(r);
+  await Promise.all([]);
 }
 
 async function commandStop() {
   console.log('commandStop');
-  const r = await socket.emitWithAck(MessageType.CLIENT_SERVER_STOP, '');
-  console.log(r);
+  await Promise.all([]);
 }
 </script>
 
@@ -79,7 +65,7 @@ async function commandStop() {
       @click="emit('prev')"
     />
 
-    <q-btn-group v-if="actualStepName === 'third-step'" rounded flat>
+    <q-btn-group v-if="actualStepName === 'second-step'" rounded flat>
       <q-btn
         dense
         color="primary"
@@ -137,7 +123,7 @@ async function commandStop() {
       color="primary"
       :loading="loadingSave"
       :disable="disableNextButton"
-      :icon="actualStepName !== 'third-step' ? 'arrow_forward_ios' : 'save'"
+      :icon="actualStepName !== 'second-step' ? 'arrow_forward_ios' : 'save'"
       @click="emit('next')"
     />
   </q-card>

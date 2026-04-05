@@ -4,7 +4,6 @@ import com.querydsl.core.types.dsl.Expressions
 import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
-import com.rot.measurement.dtos.SensorInfoBase
 import com.rot.measurement.dtos.SensorInfoRead
 import com.rot.measurement.models.SensorInfo
 import com.rot.mqtt.services.MqttBrokerService
@@ -44,7 +43,7 @@ class SessionController(
     @APIResponse(responseCode = "401", description = "Autenticação inválida")
     @APIResponse(responseCode = "403", description = "Acesso negado ou usuário não autenticado")
     @APIResponse(responseCode = "500", description = "Erro interno do servidor")
-    fun create(body: CreateSessionDto): RestResponse<Content<SessionRead>> {
+    fun create(body: SessionCreateOrUpdate): RestResponse<Content<SessionRead>> {
         val session = sessionService.create(body)
         return ResultContent.of(session)
             .withStatusCode(Response.Status.OK)

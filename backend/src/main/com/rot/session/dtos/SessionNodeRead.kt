@@ -9,11 +9,12 @@ open class SessionNodeBase {
     var id: Int? = null
     var observation: String? = null
     var side: BodySideEnum = BodySideEnum.RIGHT
-    var session: Session? = null
-    var nodeSensors = mutableSetOf<NodeSensorRead>()
 }
 
 open class SessionNodeRead: SessionNodeBase() {
+    var session: Session? = null
+    var nodeSensors = mutableSetOf<NodeSensorRead>()
+
     companion object {
         fun from(entity: SessionNode): SessionNodeRead {
             return SessionNodeRead().apply {
@@ -29,4 +30,8 @@ open class SessionNodeRead: SessionNodeBase() {
             return pagination.transform { from(it) }
         }
     }
+}
+
+open class SessionNodeCreateOrUpdate : SessionNodeBase() {
+    var nodeSensors = mutableSetOf<NodeSensorCreateOrUpdate>()
 }

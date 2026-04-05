@@ -80,14 +80,14 @@ const privateRoutes: RouteRecordRaw[] = [
       private: true,
     },
   },
-  {
-    path: 'session/view/:uuid([0-9a-fA-F-]{36})',
-    name: 'private.session.view',
-    component: () => import('pages/shared/private/session/SessionPage.vue'),
-    meta: {
-      private: true,
-    },
-  },
+  // {
+  //   path: 'session/view/:uuid([0-9a-fA-F-]{36})',
+  //   name: 'private.session.view',
+  //   component: () => import('pages/shared/private/session/SessionPage.vue'),
+  //   meta: {
+  //     private: true,
+  //   },
+  // },
 ];
 
 const typeRoutes: RouteRecordRaw[] = [

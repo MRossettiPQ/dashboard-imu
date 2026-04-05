@@ -3,12 +3,12 @@ import { onMounted, ref } from 'vue';
 import PaginationUtils from 'src/common/utils/PaginationUtils';
 import CustomPage from 'components/CustomPage/CustomPage.vue';
 import { api } from 'boot/axios';
-import type { SensorInfoDto } from 'src/common/api/generated/models';
+import type { SensorInfoRead } from 'src/common/api/generated/models';
 
 const loading = ref(false);
 
 type SensorParams = { page: number; rpp: number; term: string };
-const pagination = ref<PaginationUtils<SensorInfoDto, SensorParams>>(
+const pagination = ref<PaginationUtils<SensorInfoRead, SensorParams>>(
   new PaginationUtils({
     service: api.getApiSessionsSensorsAvailable,
     params: {

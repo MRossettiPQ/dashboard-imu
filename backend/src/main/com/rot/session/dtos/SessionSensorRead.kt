@@ -5,7 +5,7 @@ import com.rot.core.jaxrs.Pagination
 import com.rot.measurement.dtos.MeasurementRead
 import com.rot.measurement.dtos.SensorInfoRead
 import com.rot.session.models.SessionSensor
-import java.util.UUID
+import java.util.*
 
 
 open class SessionSensorBase {
@@ -53,4 +53,9 @@ open class SessionSensorRead: SessionSensorBase() {
             return pagination.transform { from(it) }
         }
     }
+}
+
+open class SessionSensorCreateOrUpdate : SessionSensorBase() {
+    var sensorInfoId: Int? = null
+    var nodeSensors = mutableSetOf<NodeSensorCreateOrUpdate>()
 }

@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { socket } from 'boot/socket';
-import type { MovementDto, SessionDto, SessionSensorDto } from 'src/common/api/generated/models';
-import { MessageType } from 'src/common/api/generated/models';
+import { useProvidedSessionEditor } from 'src/composables/use-session';
 
 type ViewMode = 'grid' | 'unified' | 'table' | 'summary';
 interface Props {
   rightDrawer: boolean;
-  session: SessionDto;
-  selectedSensorList: Set<SessionSensorDto>;
-  selectedMovement?: MovementDto | undefined;
-  actualStepName: 'first-step' | 'second-step' | 'third-step' | 'save-step';
+  actualStepName: 'first-step' | 'second-step' | 'save-step';
   actualStepLabel: string;
   viewType: ViewMode;
 }
+
+const { patient, session } = useProvidedSessionEditor();
 
 // Lista de sensores requisitada
 const requestedSensorList = ref(false);
@@ -21,7 +18,6 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'update:rightDrawer', val: boolean): void;
   (e: 'update:viewType', val: ViewMode): void;
-  (e: 'update:requestedSensorList', val: boolean): void;
 }>();
 const rightDrawer = computed({
   get: () => props.rightDrawer,
@@ -32,14 +28,6 @@ const actualView = computed({
   set: (val: ViewMode) => emit('update:viewType', val),
 });
 
-const actualMovementLabel = computed(() => {
-  if (props.selectedMovement?.type) {
-    return props.selectedMovement?.type ?? 'Não encontrado';
-  }
-  return '';
-});
-
-const showActualMovement = computed(() => props.actualStepName == 'third-step');
 const viewIcon = computed(() => {
   switch (actualView.value) {
     case 'grid':
@@ -58,7 +46,7 @@ const viewIcon = computed(() => {
 async function requestSensorList(): Promise<void> {
   try {
     requestedSensorList.value = true;
-    await socket.emitWithAck(MessageType.CLIENT_SERVER_SENSOR_LIST, '');
+    await Promise.all([]);
   } catch (e) {
     console.error(e);
   } finally {
@@ -70,8 +58,8 @@ async function requestSensorList(): Promise<void> {
 <template>
   <q-card flat bordered class="w-100 row navigation-header">
     <div class="row no-wrap column">
-      <b class="f-bold f-medium">{{ actualStepLabel }}{{ showActualMovement ? ': ' : '' }}</b>
-      <span v-if="showActualMovement" class="f-bold f-medium">{{ actualMovementLabel }} </span>
+      <b class="f-bold f-medium">{{ actualStepLabel }}</b>
+      <span v-if="actualStepLabel" class="f-bold f-medium">{{ patient?.user?.name }}</span>
     </div>
 
     <div class="row">
@@ -90,17 +78,21 @@ async function requestSensorList(): Promise<void> {
         <q-btn
           class="row"
           round
-          :color="selectedSensorList.size > 0 ? 'positive' : 'negative'"
+          :color="session.sessionSensors.length > 0 ? 'positive' : 'negative'"
           dense
-          :icon="selectedSensorList.size > 0 ? 'sensors' : 'sensors_off'"
+          :icon="session.sessionSensors.length > 0 ? 'sensors' : 'sensors_off'"
         >
           <q-tooltip>
-            {{ selectedSensorList.size > 0 ? 'Conectado em sensores' : 'Nenhum sensor conectado' }}
+            {{
+              session.sessionSensors.length > 0
+                ? 'Conectado em sensores'
+                : 'Nenhum sensor conectado'
+            }}
           </q-tooltip>
         </q-btn>
 
         <q-btn-dropdown
-          v-if="actualStepName === 'third-step'"
+          v-if="actualStepName === 'second-step'"
           rounded
           unelevated
           size="md"

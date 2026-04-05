@@ -24,3 +24,19 @@ open class NodeSensorRead: NodeSensorBase() {
         }
     }
 }
+
+open class NodeSensorCreateOrUpdate: NodeSensorBase() {
+    companion object {
+        fun from(entity: NodeSensor): NodeSensorRead {
+            return NodeSensorRead().apply {
+                id = entity.id
+                sessionSensorId = entity.sessionSensor?.id
+                sessionNode = SessionNodeRead.from(entity.sessionNode!!)
+            }
+        }
+
+        fun from(pagination: Pagination<NodeSensor>): Pagination<NodeSensorRead> {
+            return pagination.transform { from(it) }
+        }
+    }
+}

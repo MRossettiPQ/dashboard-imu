@@ -27,32 +27,48 @@ class NetworkConfigurationService(
     private val config: ApplicationConfig
 ) {
 
-    private var jmdns: JmDNS? = null
+    lateinit var jmdns: JmDNS
 
     fun onStart(@Observes ev: StartupEvent) {
         try {
-            // Bind to local address
-            val address = InetAddress.getLocalHost()
-            jmdns = JmDNS.create(address)
+            // 1. Usa o seu método getIpAddress() que ignora o loopback e acha a placa de rede real
+            val address = getIpAddress()
 
-            // Create service info using your ApplicationConfig
+            // 2. Limpa o nome para evitar caracteres inválidos (você já tinha o método toURLFriendly)
+            val rawName = config.mdns().name()
+            val safeName = toURLFriendly(rawName)
+
+            // 3. Cria o JmDNS passando o IP correto E o nome
+            jmdns = JmDNS.create(address, safeName)
+
             val serviceType = "_${config.mdns().protocol()}._tcp.local."
-            val serviceName = config.mdns().name()
             val port = config.backend().port()
 
-            val serviceInfo = ServiceInfo.create(serviceType, serviceName, port, "Dashboard IMU Backend")
+            // (Opcional) A lib oficial injeta a URL nas propriedades do serviço
+            val props = mutableMapOf<String, String>()
+            props["URL"] = "${config.mdns().protocol()}://$safeName.local:$port/"
 
-            jmdns?.registerService(serviceInfo)
-            Log.info("mDNS service registered: $serviceName.$serviceType on port $port")
+            // 4. Cria o ServiceInfo com os parâmetros completos
+            val serviceInfo = ServiceInfo.create(
+                serviceType,
+                safeName, // Use o safeName aqui
+                port,
+                0, // peso (weight) padrão
+                0, // prioridade (priority) padrão
+                props
+            )
 
+            jmdns.registerService(serviceInfo)
+
+            Log.info("mDNS service $address registered: $safeName.$serviceType on port $port")
         } catch (e: Exception) {
             Log.error("Failed to register mDNS service", e)
         }
     }
 
     fun onStop(@Observes ev: ShutdownEvent) {
-        jmdns?.unregisterAllServices()
-        jmdns?.close()
+        jmdns.unregisterAllServices()
+        jmdns.close()
         Log.info("mDNS service unregistered")
     }
 

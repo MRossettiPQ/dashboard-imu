@@ -2,14 +2,13 @@ package com.rot.session.services
 
 import com.rot.core.context.ApplicationContext
 import com.rot.core.exceptions.ApplicationException
+import com.rot.measurement.models.SensorInfo
 import com.rot.mqtt.services.MqttBrokerService
-import com.rot.session.dtos.CreateSessionDto
+import com.rot.session.dtos.SessionCreateOrUpdate
 import com.rot.session.dtos.UserSessionContext
 import com.rot.session.enums.SessionStatus
 import com.rot.session.models.Session
 import com.rot.session.models.SessionSensor
-import com.rot.measurement.models.SensorInfo
-import com.rot.session.services.MeasurementPersistenceService
 import com.rot.user.models.User
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -25,7 +24,7 @@ class SessionService(
 ) {
 
     @Transactional
-    fun create(body: CreateSessionDto): Session {
+    fun create(body: SessionCreateOrUpdate): Session {
         val ctx = ApplicationContext.context!!
 
         // Verifica se já existe sessão ativa para o fisioterapeuta

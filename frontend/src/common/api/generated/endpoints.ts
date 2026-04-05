@@ -24,7 +24,6 @@ import type {
   ContentSessionRead,
   ContentSessionSensorRead,
   ContentUserDto,
-  CreateSessionDto,
   FileDownloadResponse,
   GetApiArticulationTypesParams,
   GetApiNetworkConfigurationsParams,
@@ -38,6 +37,7 @@ import type {
   PostApiFilesBody,
   RefreshTokenDto,
   RegisterDto,
+  SessionCreateOrUpdate,
   UserDto,
   Uuid,
 } from './models';
@@ -284,12 +284,12 @@ export const getDashboardAPI = () => {
    * Cria uma nova sessão de medição e retorna os seus dados
    * @summary Registrar uma nova sessão de medição
    */
-  const postApiSessionsCreate = (createSessionDto: CreateSessionDto) => {
+  const postApiSessionsCreate = (sessionCreateOrUpdate: SessionCreateOrUpdate) => {
     return customInstance<ContentSessionRead>({
       url: `/api/sessions/create`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: createSessionDto,
+      data: sessionCreateOrUpdate,
     });
   };
 

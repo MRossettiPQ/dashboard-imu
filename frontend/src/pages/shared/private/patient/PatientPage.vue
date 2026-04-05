@@ -10,7 +10,7 @@ import type { QForm } from 'quasar';
 import { formUtils } from 'src/common/utils/FormUtils';
 import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
 import { api } from 'boot/axios';
-import type { PatientDto, SessionDto } from 'src/common/api/generated/models';
+import type { PatientDto, SessionRead } from 'src/common/api/generated/models';
 import { UserRole } from 'src/common/api/generated/models';
 import type { AxiosResponse } from 'axios';
 
@@ -20,7 +20,7 @@ const loading = ref(false);
 const loadingSearch = ref(false);
 const saving = ref(false);
 const mainForm = ref<QForm | null>(null);
-const columns: TableColumn<SessionDto>[] = [
+const columns: TableColumn<SessionRead>[] = [
   {
     name: 'id',
     align: 'left',
@@ -31,14 +31,14 @@ const columns: TableColumn<SessionDto>[] = [
 ];
 
 type SessionParams = { page: number; rpp: number; term: string };
-const pagination = ref<PaginationUtils<SessionDto, SessionParams>>(
+const pagination = ref<PaginationUtils<SessionRead, SessionParams>>(
   new PaginationUtils({
     service: () => {
       return new Promise((resolve) => {
         resolve({
           data: { content: null },
           status: 200,
-        } as AxiosResponse<{ content: null }> as unknown as Result<SessionDto>);
+        } as AxiosResponse<{ content: null }> as unknown as Result<SessionRead>);
       });
     },
     params: {
@@ -91,7 +91,7 @@ async function newSession() {
   await router.push({ name: 'private.session', params: { uuid: uuid.value } });
 }
 
-async function openSession(_evt: Event, row: SessionDto, index: number) {
+async function openSession(_evt: Event, row: SessionRead, index: number) {
   await router.push({ name: 'private.session.view', params: { uuid: row.id, index } });
 }
 
@@ -416,6 +416,7 @@ async function search() {
   display: flex;
   gap: 20px;
   align-items: flex-start;
+  overflow-y: auto;
 }
 
 /* ── Card ── */

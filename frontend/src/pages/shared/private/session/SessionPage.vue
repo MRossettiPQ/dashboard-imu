@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import CustomPage from 'components/CustomPage/CustomPage.vue';
-import { computed, markRaw, onMounted, onUnmounted, ref } from 'vue';
-import { socket } from 'boot/socket';
-import { plainToInstance } from 'class-transformer';
-import { useRoute, useRouter } from 'vue-router';
-import { notify } from 'src/common/utils/NotifyUtils';
+import { computed, markRaw, ref } from 'vue';
 import ErrorDiv from 'components/ErrorDiv/ErrorDiv.vue';
 import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
 import StepHeader from 'pages/shared/private/session/parts/StepHeader.vue';
@@ -13,38 +9,21 @@ import DrawerMenu from 'pages/shared/private/session/parts/DrawerMenu.vue';
 import FirstStep from 'pages/shared/private/session/steps/first-step/FirstStep.vue';
 import SecondStep from 'pages/shared/private/session/steps/second-step/SecondStep.vue';
 import ThirdStep from 'pages/shared/private/session/steps/third-step/ThirdStep.vue';
-import { api } from 'boot/axios';
-import type {
-  ArticulationDto,
-  ArticulationTypeDto,
-  MeasurementDto,
-  MovementDto,
-  PatientDto,
-  SensorDto,
-  SessionSensorDto,
-} from 'src/common/api/generated/models';
-import { MessageType } from 'src/common/api/generated/models';
-import { Session } from 'src/common/api/manual/constructors_api';
-import { SensorServerSensorMeasurementBlock } from 'src/common/api/manual/constructor_socket';
+import { useSessionEditor, provideSessionEditor } from 'src/composables/use-session';
 
 interface NavigationStep {
   order: number;
-  name: 'first-step' | 'second-step' | 'third-step' | 'save-step';
+  name: 'first-step' | 'second-step' | 'save-step';
   label: string;
   value: unknown;
 }
-const route = useRoute();
-const router = useRouter();
+
+const sessionEditor = useSessionEditor();
+provideSessionEditor(sessionEditor);
+const { session, error, loading, inProgress, loadingSave } = sessionEditor;
 
 // Menu lateral direito
 const rightDrawer = ref(true);
-// Ao montar a tela
-const loading = ref<boolean>(false);
-const error = ref<boolean>(false);
-// Medições em progresso
-const inProgress = ref(false);
-// Ao finalizar sessão
-const loadingSave = ref(false);
 
 // Movimentação de telas
 const steps = ref<NavigationStep[]>([
@@ -62,12 +41,6 @@ const steps = ref<NavigationStep[]>([
   },
   {
     order: 2,
-    name: 'third-step',
-    label: 'Captar medições',
-    value: markRaw(ThirdStep),
-  },
-  {
-    order: 3,
     name: 'save-step',
     label: 'Salvar',
     value: markRaw(ThirdStep),
@@ -105,77 +78,7 @@ function prev(): void {
   }
 }
 
-// Dados do paciente e dados da sessão
-const patient = ref<PatientDto>();
-const session = ref<Session>(new Session());
-
-// Lista de sensores conectados ao backend e lista de procedimentos disponiveis
-const actualMeasurements = ref<MeasurementDto[]>([]);
-const availableSensorList = ref<SessionSensorDto[]>([]);
-const availableProcedureList = ref<ArticulationTypeDto[]>([]);
-
-// Sensores aplicados a sessão
-const selectedSensorList = ref<Set<SensorDto>>(new Set());
-
-// Tipo de visualização na tela de detalhes
 const viewType = ref<'grid' | 'unified' | 'table' | 'summary'>('grid');
-
-// Procedimento e movimento escolhidos para realização no momento
-const selectedProcedure = ref<ArticulationDto | undefined>();
-const selectedMovement = ref<MovementDto | undefined>();
-
-onUnmounted(() => {
-  for (const sensor of Array.from(selectedSensorList.value)) {
-    console.log(sensor);
-    // removeSensorListener(sensor);
-  }
-
-  socket.disconnect();
-});
-
-const uuid = computed(() => route.params?.['uuid']?.toString());
-onMounted(async () => {
-  if (!uuid.value) {
-    notify.error('Obrigatório o identificador da sessão');
-    return await router.push({ name: 'private.session' });
-  }
-
-  try {
-    loading.value = true;
-    const { data } = await api.getApiPatientsUuid(uuid.value);
-    const { data: dataProcedureTypes } = await api.getApiArticulationTypesAll();
-
-    if (data.content && dataProcedureTypes) {
-      patient.value = data.content;
-      availableProcedureList.value = dataProcedureTypes.content ?? [];
-    }
-
-    socket.on('connect', () => {
-      console.log('Conectado!', socket.id);
-    });
-    socket.on(MessageType.WELCOME, (data: string) => {
-      console.log('WELCOME', data);
-    });
-    socket.on(MessageType.SERVER_SENSOR_REMOVED_ROOM, (data: string) => {
-      console.log('LEAVE_ROOM', data);
-    });
-    socket.on(MessageType.SERVER_CLIENT_SENSOR_LIST, (data: object) => {
-      const { content } = plainToInstance(SensorServerSensorMeasurementBlock, data);
-      actualMeasurements.value = content ?? [];
-    });
-    socket.on(MessageType.SERVER_CLIENT_MEASUREMENT, (data: SensorServerSensorMeasurementBlock) => {
-      console.log(MessageType.SERVER_CLIENT_MEASUREMENT, data);
-    });
-    socket.connect();
-  } catch (e: unknown) {
-    error.value = true;
-    loading.value = false;
-    notify.error(`Erro inesperado ao iniciar sessão ${(e as Error).message}`);
-    return await router.push({ name: 'private.session' });
-  } finally {
-    loading.value = false;
-  }
-});
 </script>
 
 <template>
@@ -187,11 +90,8 @@ onMounted(async () => {
         class="step-header"
         v-model:right-drawer="rightDrawer"
         v-model:view-type="viewType"
-        :selected-sensor-list="selectedSensorList"
         :actual-step-name="actualStepName"
         :actual-step-label="actualStepLabel"
-        :session="session"
-        :selected-movement="selectedMovement"
       />
 
       <q-card bordered flat class="step-content u-p-6">
@@ -199,34 +99,19 @@ onMounted(async () => {
           :is="actualStepValue"
           v-model:right-drawer="rightDrawer"
           v-model:session="session"
-          v-model:selected-movement="selectedMovement"
-          v-model:selected-procedure="selectedProcedure"
-          :selected-sensor-list="selectedSensorList"
-          :available-sensor-list="availableSensorList"
-          :available-procedure-list="availableProcedureList"
           :view-type="viewType"
-          :in-progress="inProgress"
-          :loading-save="loadingSave"
         />
-        <drawer-menu
-          v-model:session="session"
-          v-model:right-drawer="rightDrawer"
-          v-model:selected-movement="selectedMovement"
-          v-model:selected-articulation="selectedProcedure"
-          :selected-sensor-list="selectedSensorList"
-        />
+        <drawer-menu v-model:right-drawer="rightDrawer" />
       </q-card>
 
       <step-footer
         class="step-footer"
         v-if="session"
-        :session="session"
         @next="next"
         @prev="prev"
         :in-progress="inProgress"
         :loading-save="loadingSave"
         :actual-step-name="actualStepName"
-        :selected-sensor-list="selectedSensorList"
       />
     </div>
   </custom-page>

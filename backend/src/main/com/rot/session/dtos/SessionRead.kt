@@ -10,8 +10,8 @@ import java.util.*
 open class SessionBase {
     var id: UUID? = null
     var sessionDate: OffsetDateTime? = null
-    var type: SessionType = SessionType.REAL
-    var observation: String? = null
+    open var type: SessionType = SessionType.REAL
+    open var observation: String? = null
     var patient: UserDto? = null
     var physiotherapist: UserDto? = null
     var sessionSensors = mutableSetOf<SessionSensorRead>()
@@ -53,8 +53,12 @@ open class SessionRead: SessionBase() {
     }
 }
 
-open class CreateSessionDto {
+open class SessionCreateOrUpdate {
+    var id: UUID? = null
     lateinit var patientId: UUID
     var type: SessionType = SessionType.REAL
     var observation: String? = null
+
+    var sessionNodes = mutableSetOf<SessionNodeCreateOrUpdate>()
+    var sessionSensors = mutableSetOf<SessionSensorCreateOrUpdate>()
 }

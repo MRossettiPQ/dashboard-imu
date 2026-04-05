@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import type { ECharts } from 'echarts/core';
 import * as echarts from 'echarts/core';
 import _ from 'lodash';
 import { BlobDownloader } from 'src/common/utils/BlobUtils';
 import { LineChart } from 'echarts/charts';
 import {
-  TooltipComponent,
-  GridComponent,
-  ToolboxComponent,
   DataZoomComponent,
+  GridComponent,
   LegendComponent,
+  ToolboxComponent,
+  TooltipComponent,
 } from 'echarts/components';
 import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 import { LegacyGridContainLabel } from 'echarts/features';
-import type { Sensor } from 'src/common/api/manual/constructors_api';
-import type { MeasurementDto } from 'src/common/api/generated/models';
+import type { MeasurementRead } from 'src/common/api/generated/models';
+import type { SessionSensor } from 'src/common/api/manual/constructors_api';
 
 interface Props {
-  sensors: Sensor[];
-  allowedColumn: (keyof MeasurementDto)[];
+  sensors: SessionSensor[];
+  allowedColumn: (keyof MeasurementRead)[];
 }
 
 // 🧩 Props
@@ -45,7 +45,7 @@ const blob = ref(new BlobDownloader());
 const sensors = computed(() => props.sensors ?? []);
 
 const measurementCount = computed(() =>
-  sensors.value.reduce((sum, s) => sum + (s.measurements?.length ?? 0), 0),
+  sensors.value.reduce((sum, s) => sum + (s.measurements?.size ?? 0), 0),
 );
 
 const hasMeasurements = computed(() => measurementCount.value > 0);
@@ -54,7 +54,7 @@ const hasMeasurements = computed(() => measurementCount.value > 0);
 watch(
   sensors,
   async () => {
-    const count = sensors.value.reduce((sum, s) => sum + (s.measurements?.length ?? 0), 0);
+    const count = sensors.value.reduce((sum, s) => sum + (s.measurements?.size ?? 0), 0);
     if (count > 0) {
       await nextTick();
       throttledSetOption();
@@ -95,18 +95,23 @@ function setOption() {
   let minValue = 0;
 
   for (const sensor of sensors.value) {
-    if (!sensor.measurements || sensor.measurements.length === 0) continue;
+    if (!sensor.measurements || sensor.measurements.size === 0) continue;
 
     if (xAxisData.length === 0) {
-      xAxisData = sensor.measurements.map((_, i) => i.toString());
+      xAxisData = sensor.measurementsArray.map((_, i) => i.toString());
     }
 
     for (const col of props.allowedColumn) {
-      const data = _.map(sensor.measurements, col);
-      const numericData = _.map(sensor.measurements, col).map((val) => {
+      const data = _.map(sensor.measurementsArray, col);
+      const numericData: number[] = _.map(sensor.measurementsArray, col).map((val) => {
         if (typeof val === 'number') return val;
         if (typeof val === 'string') return Number.parseFloat(val) || 0;
-        if (val && 'valueOf' in val && typeof val.valueOf === 'function') return val.valueOf();
+
+        if (val && 'valueOf' in val && typeof val.valueOf === 'function') {
+          const extractedVal = Number(val.valueOf());
+          return Number.isNaN(extractedVal) ? 0 : extractedVal;
+        }
+
         return 0;
       });
 
