@@ -122,6 +122,13 @@ inline void onConnected() {
     connectedWifi = true;
 
     Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", sta_ip.c_str());
+
+	// Inicia o serviço de mDNS na placa
+	if (!MDNS.begin("esp32-sensor")) {
+		Logger::error("mDNS", "Erro ao iniciar o serviço mDNS");
+	} else {
+		Logger::info("mDNS", "mDNS iniciado com sucesso");
+	}
 }
 
 inline void eventsWiFi(const WiFiEvent_t event) {

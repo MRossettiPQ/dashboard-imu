@@ -9,11 +9,12 @@
 #include <Wire.h>
 #include "ArduinoJson.h"
 #include "SPIFFS.h"
+#include <ESPmDNS.h>
 
 String server_url = "http://dashboard.local";
-constexpr uint16_t API_PORT = 8000;
-constexpr uint16_t SOCKET_PORT = 8001;
-constexpr uint16_t MQTT_PORT = 8002;
+constexpr uint16_t API_PORT = 8700;
+constexpr uint16_t SOCKET_PORT = 8701;
+constexpr uint16_t MQTT_PORT = 8702;
 
 constexpr int BUFFER_LENGTH = 30;
 

@@ -152,7 +152,6 @@ void setup() {
 	// Configura MQTT (usa o server_url e MQTT_PORT do config.h)
 	// Ajuste server_url e MQTT_PORT no seu config.h para apontar ao broker Moquette
 	String mqtt_host = server_url;
-	mqtt_host.replace("http://", ""); // Remove o protocolo para o MQTT
 	MqttUtils::configure(mqtt_host.c_str(), MQTT_PORT);
 
 	// Cria tasks em cores separados

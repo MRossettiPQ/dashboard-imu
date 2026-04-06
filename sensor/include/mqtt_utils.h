@@ -14,6 +14,8 @@ String mqtt_session_id = "";       // UUID da sessão atribuída pelo servidor
 bool mqtt_connected = false;
 unsigned long last_mqtt_reconnect = 0;
 constexpr unsigned long MQTT_RECONNECT_INTERVAL = 5000;
+String mqtt_target_host = "";
+IPAddress mqtt_resolved_ip(0, 0, 0, 0);
 
 // ─── Tópicos ────────────────────────────────────────────────────────────
 inline String topicSensorRegister() {
@@ -52,13 +54,16 @@ public:
      * Configura o client MQTT com servidor e callback.
      * Chamado após conexão WiFi ser estabelecida.
      */
-    static void configure(const char* host, const uint16_t port) {
-        mqttClient.setServer(host, port);
-        mqttClient.setCallback(mqttCallback);
-        mqttClient.setBufferSize(4096); // Buffer maior para batches de medições
-        mqttClient.setKeepAlive(30);
-        Logger::info("MQTT", "Configurado para %s:%d", host, port);
-    }
+	static void configure(const char* host, const uint16_t port) {
+		mqtt_target_host = String(host);
+		mqtt_target_host.replace("http://", "");
+		mqtt_target_host.replace(".local", ""); // Limpa para sobrar apenas "dashboard"
+
+		mqttClient.setCallback(mqttCallback);
+		mqttClient.setBufferSize(4096);
+		mqttClient.setKeepAlive(30);
+		Logger::info("MQTT", "Configurado para buscar o host mDNS: %s", mqtt_target_host.c_str());
+	}
 
     /**
      * Tenta reconectar ao broker MQTT.
@@ -76,10 +81,32 @@ public:
         }
         last_mqtt_reconnect = now;
 
-        const String clientId = "ESP32-" + WiFi.macAddress();
-        Logger::info("MQTT", "Conectando como %s...", clientId.c_str());
+		const IPAddress emptyIP(0, 0, 0, 0);
+		if (mqtt_resolved_ip == emptyIP) {
+			Logger::info("MQTT", "Resolvendo %s.local via mDNS...", mqtt_target_host.c_str());
 
-    	if (mqttClient.connect(clientId.c_str())) {
+			// O MDNS "pergunta" na rede quem é o dashboard
+			mqtt_resolved_ip = MDNS.queryHost(mqtt_target_host);
+
+			if (mqtt_resolved_ip != emptyIP) {
+				Logger::info("MQTT", "IP resolvido via mDNS: %s", mqtt_resolved_ip.toString().c_str());
+				mqttClient.setServer(mqtt_resolved_ip, MQTT_PORT); // Injeta o IP descoberto
+			} else {
+				Logger::error("MQTT", "Falha ao resolver mDNS. Tentando novamente depois...");
+				return false;
+			}
+		}
+		// ──────────────────────
+
+		const String clientId = "ESP32-" + WiFi.macAddress();
+
+		// Define um username que o seu backend aceite (ex: começando com MPU)
+		const String username = "MPU-" + WiFi.macAddress();
+		const char* password = nullptr;
+
+		Logger::info("MQTT", "Conectando como %s (User: %s)...", clientId.c_str(), username.c_str());
+
+		if (mqttClient.connect(clientId.c_str(), username.c_str(), password)) {
     		mqtt_connected = true;
 
     		// Sempre escuta calibração
@@ -92,6 +119,7 @@ public:
     	} else {
             mqtt_connected = false;
             Logger::error("MQTT", "Falha na conexão, rc=%d", mqttClient.state());
+    		mqtt_resolved_ip = IPAddress(0, 0, 0, 0);
             return false;
         }
     }

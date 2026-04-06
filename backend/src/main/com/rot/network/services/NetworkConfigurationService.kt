@@ -27,49 +27,107 @@ class NetworkConfigurationService(
     private val config: ApplicationConfig
 ) {
 
-    lateinit var jmdns: JmDNS
+    private val jmdnsInstances = mutableListOf<JmDNS>()
 
     fun onStart(@Observes ev: StartupEvent) {
         try {
-            // 1. Usa o seu método getIpAddress() que ignora o loopback e acha a placa de rede real
-            val address = getIpAddress()
+            // 1. Busca todas as placas válidas
+            val addresses = getValidIpAddresses()
 
-            // 2. Limpa o nome para evitar caracteres inválidos (você já tinha o método toURLFriendly)
+            Log.infof("Placas de rede encontradas: %s", addresses.joinToString { it.hostAddress })
+
+            if (addresses.isEmpty()) {
+                Log.warn("Nenhuma placa de rede válida encontrada para o mDNS.")
+                return
+            }
+
+            // 2. Prepara os dados base
             val rawName = config.mdns().name()
             val safeName = toURLFriendly(rawName)
 
-            // 3. Cria o JmDNS passando o IP correto E o nome
-            jmdns = JmDNS.create(address, safeName)
+            val backendPort = config.backend().port()
+            val mqttPort = config.mqtt().port()
 
-            val serviceType = "_${config.mdns().protocol()}._tcp.local."
-            val port = config.backend().port()
+            // 3. Cria os templates para HTTP (Backend) e MQTT
+            val httpServiceType = "_http._tcp.local."
+            val httpProps = mutableMapOf("URL" to "http://$safeName.local:$backendPort/")
+            val httpServiceInfo = ServiceInfo.create(httpServiceType, safeName, backendPort, 0, 0, httpProps)
 
-            // (Opcional) A lib oficial injeta a URL nas propriedades do serviço
-            val props = mutableMapOf<String, String>()
-            props["URL"] = "${config.mdns().protocol()}://$safeName.local:$port/"
+            val mqttServiceType = "_mqtt._tcp.local."
+            val mqttProps = mutableMapOf("URL" to "mqtt://$safeName.local:$mqttPort/")
+            val mqttServiceInfo = ServiceInfo.create(mqttServiceType, safeName, mqttPort, 0, 0, mqttProps)
 
-            // 4. Cria o ServiceInfo com os parâmetros completos
-            val serviceInfo = ServiceInfo.create(
-                serviceType,
-                safeName, // Use o safeName aqui
-                port,
-                0, // peso (weight) padrão
-                0, // prioridade (priority) padrão
-                props
-            )
+            // 4. Registra o mDNS em CADA uma das placas válidas
+            for (address in addresses) {
+                try {
+                    Log.infof("Iniciando JmDNS em %s", address.hostAddress)
 
-            jmdns.registerService(serviceInfo)
+                    // Cria a instância do JmDNS UMA VEZ para esta placa de rede
+                    val jmdns = JmDNS.create(address, safeName)
 
-            Log.info("mDNS service $address registered: $safeName.$serviceType on port $port")
+                    // Registra o serviço Backend (HTTP)
+                    jmdns.registerService(httpServiceInfo.clone())
+                    Log.info("mDNS Backend registrado: $safeName.$httpServiceType na porta $backendPort")
+
+                    // Registra o serviço MQTT
+                    jmdns.registerService(mqttServiceInfo.clone())
+                    Log.info("mDNS MQTT registrado: $safeName.$mqttServiceType na porta $mqttPort")
+
+                    // Salva a instância para podermos fechar depois no onStop
+                    jmdnsInstances.add(jmdns)
+
+                } catch (e: Exception) {
+                    Log.error("Failed to register mDNS services on ${address.hostAddress}", e)
+                }
+            }
         } catch (e: Exception) {
-            Log.error("Failed to register mDNS service", e)
+            Log.error("Failed to setup mDNS services", e)
         }
     }
 
     fun onStop(@Observes ev: ShutdownEvent) {
-        jmdns.unregisterAllServices()
-        jmdns.close()
-        Log.info("mDNS service unregistered")
+        // Desregistra e fecha todas as instâncias quando o Quarkus desligar
+        for (jmdns in jmdnsInstances) {
+            try {
+                jmdns.unregisterAllServices()
+                jmdns.close()
+            } catch (e: Exception) {
+                Log.warn("Erro ao fechar instância JmDNS", e)
+            }
+        }
+        jmdnsInstances.clear()
+        Log.info("mDNS services unregistered from all interfaces")
+    }
+
+    @Throws(UnknownHostException::class, SocketException::class)
+    fun getValidIpAddresses(): List<InetAddress> {
+        val validAddresses = mutableListOf<InetAddress>()
+        val networkInterfaces = NetworkInterface.getNetworkInterfaces()
+
+        while (networkInterfaces.hasMoreElements()) {
+            val networkInterface = networkInterfaces.nextElement()
+
+            // Ignora interfaces que estão desligadas ou são de01 loopback
+            if (!networkInterface.isUp || networkInterface.isLoopback) {
+                continue
+            }
+
+            val displayName = networkInterface.displayName.lowercase(Locale.getDefault())
+
+            val inetAddresses = networkInterface.inetAddresses
+            while (inetAddresses.hasMoreElements()) {
+                val inetAddress = inetAddresses.nextElement()
+                Log.info("Nome da placa de rede: $displayName - ${inetAddress.hostAddress}")
+
+                // Aceita qualquer IPv4 não-loopback que passou pelo filtro de nome
+                if (inetAddress is Inet4Address && !inetAddress.isLoopbackAddress) {
+                    Log.infof("Placa de rede selecionada para mDNS: %s | IP: %s", networkInterface.displayName, inetAddress.hostAddress)
+                    validAddresses.add(inetAddress)
+                }
+            }
+        }
+
+        return validAddresses
     }
 
 //    @Transactional
@@ -169,47 +227,40 @@ class NetworkConfigurationService(
      */
     @Throws(UnknownHostException::class, SocketException::class)
     fun getIpAddress(): InetAddress {
-        // Get all network interfaces
         val networkInterfaces = NetworkInterface.getNetworkInterfaces()
+        val fallbackAddress = InetAddress.getLocalHost()
 
-        var localhost = InetAddress.getLocalHost()
-        // Print out information about each IP address
-        Log.infof("Localhost %s IP Address: %s", localhost.hostName, localhost.hostAddress)
+        Log.infof("Buscando placa de rede física. Fallback (Padrão OS): %s", fallbackAddress.hostAddress)
 
-        if (!isRunningInContainer()) {
-            return localhost
-        }
-
-        // Iterate through all interfaces
         while (networkInterfaces.hasMoreElements()) {
             val networkInterface = networkInterfaces.nextElement()
 
-            // Get all IP addresses for each network interface
-            val inetAddresses = networkInterface.inetAddresses
+            // Ignora interfaces que estão desligadas, loopback (127.0.0.1) ou virtuais
+            if (!networkInterface.isUp || networkInterface.isLoopback || networkInterface.isVirtual) {
+                continue
+            }
 
+            // (Opcional) Ignora nomes conhecidos de adaptadores de VPN no Windows
+            val displayName = networkInterface.displayName.lowercase()
+            if (displayName.contains("vpn") || displayName.contains("radmin") || displayName.contains("hamachi") || displayName.contains("zerotier")) {
+                continue
+            }
+
+            val inetAddresses = networkInterface.inetAddresses
             while (inetAddresses.hasMoreElements()) {
                 val inetAddress = inetAddresses.nextElement()
 
-                if (!inetAddress.isLoopbackAddress && inetAddress.isSiteLocalAddress) {
-                    // Print out information about each IP address
-                    val displayName = networkInterface.displayName
-                    Log.infof("Network Interface: %s", displayName)
-                    Log.infof("%s IP Address: %s", inetAddress.hostName, inetAddress.hostAddress)
-                    Log.debugf("    Loopback: %s", inetAddress.isLoopbackAddress)
-                    Log.debugf("    Site Local: %s", inetAddress.isSiteLocalAddress)
-                    Log.debugf("    Multicast: %s", inetAddress.isMulticastAddress)
-                    Log.debugf("    Any Local: %s", inetAddress.isAnyLocalAddress)
-                    Log.debugf("    Link Local: %s", inetAddress.isLinkLocalAddress)
-
-                    if (displayName.startsWith("wlan") || displayName.startsWith("eth")) {
-                        Log.infof("Running in Docker: %s %s %s", displayName, inetAddress.hostName, inetAddress.hostAddress)
-                        localhost = inetAddress
-                    }
+                // O segredo está aqui: Forçamos ser IPv4 e exigimos que seja SiteLocalAddress
+                // (Isso garante que pegue ranges como 192.168.x.x ou 10.x.x.x e ignore o 26.x.x.x da VPN)
+                if (inetAddress is Inet4Address && !inetAddress.isLoopbackAddress && inetAddress.isSiteLocalAddress) {
+                    Log.infof("Placa de rede forçada: %s | IP: %s", networkInterface.displayName, inetAddress.hostAddress)
+                    return inetAddress
                 }
             }
         }
-        Log.infof("Container %s IP Address: %s", localhost.hostName, localhost.hostAddress)
-        return localhost
+
+        Log.warnf("Não foi possível isolar a placa local. Usando fallback: %s", fallbackAddress.hostAddress)
+        return fallbackAddress
     }
 
     /**
