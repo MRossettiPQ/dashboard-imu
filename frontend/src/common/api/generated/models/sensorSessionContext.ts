@@ -7,14 +7,10 @@
 import type { SensorSessionContextMac } from './sensorSessionContextMac';
 import type { SensorSessionContextName } from './sensorSessionContextName';
 import type { SensorSessionContextIp } from './sensorSessionContextIp';
-import type { SensorSessionContextSessionId } from './sensorSessionContextSessionId';
-import type { SensorSessionContextClientId } from './sensorSessionContextClientId';
 
 export interface SensorSessionContext {
   mac?: SensorSessionContextMac;
   name?: SensorSessionContextName;
   ip?: SensorSessionContextIp;
   available?: boolean;
-  sessionId?: SensorSessionContextSessionId;
-  clientId?: SensorSessionContextClientId;
 }

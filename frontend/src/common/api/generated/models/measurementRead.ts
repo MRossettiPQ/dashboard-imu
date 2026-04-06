@@ -13,6 +13,9 @@ export interface MeasurementRead {
   readOrder?: number;
   capturedAt?: OffsetDateTime;
   sensorName?: string;
+  accelX$delegate?: ReadWriteProperty;
+  accelY$delegate?: ReadWriteProperty;
+  accelZ$delegate?: ReadWriteProperty;
   accelMssX$delegate?: ReadWriteProperty;
   accelMssY$delegate?: ReadWriteProperty;
   accelMssZ$delegate?: ReadWriteProperty;
@@ -22,9 +25,9 @@ export interface MeasurementRead {
   gyroRadsX$delegate?: ReadWriteProperty;
   gyroRadsY$delegate?: ReadWriteProperty;
   gyroRadsZ$delegate?: ReadWriteProperty;
-  magBiasX$delegate?: ReadWriteProperty;
-  magBiasY$delegate?: ReadWriteProperty;
-  magBiasZ$delegate?: ReadWriteProperty;
+  magX$delegate?: ReadWriteProperty;
+  magY$delegate?: ReadWriteProperty;
+  magZ$delegate?: ReadWriteProperty;
   roll$delegate?: ReadWriteProperty;
   pitch$delegate?: ReadWriteProperty;
   yaw$delegate?: ReadWriteProperty;
@@ -35,6 +38,9 @@ export interface MeasurementRead {
   quaternionY$delegate?: ReadWriteProperty;
   quaternionZ$delegate?: ReadWriteProperty;
   quaternionW$delegate?: ReadWriteProperty;
+  accelX?: number;
+  accelY?: number;
+  accelZ?: number;
   accelMssX?: number;
   accelMssY?: number;
   accelMssZ?: number;
@@ -44,9 +50,9 @@ export interface MeasurementRead {
   gyroRadsX?: number;
   gyroRadsY?: number;
   gyroRadsZ?: number;
-  magBiasX?: number;
-  magBiasY?: number;
-  magBiasZ?: number;
+  magX?: number;
+  magY?: number;
+  magZ?: number;
   roll?: number;
   pitch?: number;
   yaw?: number;

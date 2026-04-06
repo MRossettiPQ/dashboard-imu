@@ -5,4 +5,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type MeasurementMagBiasX = number | null;
+export type MeasurementMagX = number | null;

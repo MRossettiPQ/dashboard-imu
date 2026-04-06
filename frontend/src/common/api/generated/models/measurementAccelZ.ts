@@ -5,4 +5,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SensorSessionContextClientId = string | null;
+export type MeasurementAccelZ = number | null;

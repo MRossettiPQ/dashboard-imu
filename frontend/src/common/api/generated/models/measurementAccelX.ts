@@ -4,6 +4,5 @@
  * dashboard API
  * OpenAPI spec version: 1.0.0
  */
-import type { Uuid } from './uuid';
 
-export type SensorSessionContextSessionId = Uuid | null;
+export type MeasurementAccelX = number | null;
