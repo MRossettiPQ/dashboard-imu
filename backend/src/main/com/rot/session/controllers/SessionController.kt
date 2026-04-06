@@ -6,7 +6,6 @@ import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
 import com.rot.measurement.dtos.SensorInfoRead
 import com.rot.measurement.models.SensorInfo
-import com.rot.mqtt.services.MqttBrokerService
 import com.rot.session.dtos.*
 import com.rot.session.services.SessionService
 import jakarta.enterprise.context.ApplicationScoped
@@ -26,7 +25,6 @@ import java.util.*
 @Consumes(MediaType.APPLICATION_JSON)
 class SessionController(
     private val sessionService: SessionService,
-    private val mqttBrokerService: MqttBrokerService,
 ) {
 
     @POST
@@ -125,8 +123,8 @@ class SessionController(
         @DefaultValue("1") @RestQuery page: Int,
         @DefaultValue("10") @RestQuery rpp: Int,
     ): RestResponse<Content<Pagination<SensorInfoRead>>> {
-        val availableMacs = mqttBrokerService.connectedSensors
-            .filter { (_, ctx) -> ctx.available }
+        val availableMacs = sessionService.contexts
+            .filter { (_, ctx) -> ctx.isAvailable() }
             .keys
             .toList()
 
@@ -147,15 +145,21 @@ class SessionController(
     @Path("/sensors/connected")
     @Operation(summary = "Listar todos os sensores conectados ao broker")
     fun listConnectedSensors(): RestResponse<Content<List<SensorSessionContext>>> {
-        val sensors = mqttBrokerService.connectedSensors.map { (_, ctx) -> ctx }
-        return ResultContent.of(sensors).build()
+        val availableMacs = sessionService.contexts
+            .filter { (_, ctx) -> ctx.isSensor() }
+            .map { (_, ctx) -> ctx.sensor!! }
+            .toList()
+        return ResultContent.of(availableMacs).build()
     }
 
     @GET
     @Path("/active")
     @Operation(summary = "Listar sessões ativas em memória")
     fun listActiveSessions(): RestResponse<Content<List<UserSessionContext>>> {
-        val sessions = mqttBrokerService.activeSessions.map { (_, ctx) -> ctx }
-        return ResultContent.of(sessions).build()
+        val availableSessions = sessionService.contexts
+            .filter { (_, ctx) -> ctx.isUser() }
+            .map { (_, ctx) -> ctx.user!! }
+            .toList()
+        return ResultContent.of(availableSessions).build()
     }
 }

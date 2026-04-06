@@ -1,233 +1,23 @@
 package com.rot.mqtt.services
 
-import com.rot.core.config.ApplicationConfig
 import com.rot.core.utils.JsonUtils
 import com.rot.core.utils.JwtUtils
-import com.rot.measurement.models.SensorInfo
-import com.rot.session.services.MeasurementPersistenceService
 import com.rot.mqtt.dto.MeasurementBatchPayload
 import com.rot.mqtt.dto.SensorRegisterPayload
 import com.rot.mqtt.dto.SensorStatusPayload
+import com.rot.session.dtos.ClientSessionContext
 import com.rot.session.dtos.SensorSessionContext
 import com.rot.session.dtos.UserSessionContext
-import io.moquette.broker.Server
-import io.moquette.broker.config.MemoryConfig
+import com.rot.session.enums.SessionContextType
+import com.rot.session.services.SessionService
 import io.moquette.broker.security.IAuthenticator
 import io.moquette.interception.AbstractInterceptHandler
 import io.moquette.interception.messages.*
-import io.netty.buffer.Unpooled
-import io.netty.handler.codec.mqtt.MqttMessageBuilders
-import io.netty.handler.codec.mqtt.MqttQoS
 import io.quarkus.logging.Log
-import io.quarkus.runtime.ShutdownEvent
-import io.quarkus.runtime.StartupEvent
-import jakarta.enterprise.context.ApplicationScoped
-import jakarta.enterprise.event.Observes
-import jakarta.transaction.Transactional
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-
-@ApplicationScoped
-class MqttBrokerService(
-    private val applicationConfig: ApplicationConfig,
-    val measurementPersistenceService: MeasurementPersistenceService
-) {
-    private lateinit var mqttBroker: Server
-
-    // Sensores conectados ao broker, indexados por MAC address.
-    val connectedSensors: ConcurrentHashMap<String, SensorSessionContext> = ConcurrentHashMap()
-
-    // Sessões ativas do usuário, indexadas pelo UUID da sessão.
-    val activeSessions: ConcurrentHashMap<UUID, UserSessionContext> = ConcurrentHashMap()
-
-    /**
-     * Mapa reverso: clientId do Moquette → MAC address do sensor.
-     * Necessário porque onDisconnect/onConnectionLost só recebem clientId,
-     * mas nosso modelo é indexado por MAC.
-     * Populado no handleSensorRegister quando o sensor publica sensor/{mac}/register.
-     */
-    val clientIdToMac: ConcurrentHashMap<String, String> = ConcurrentHashMap()
-
-    /**
-     * Mapa reverso: clientId do Moquette → UUID do usuário autenticado.
-     * Populado no onConnect quando o frontend conecta com JWT.
-     */
-    val clientIdToUserId: ConcurrentHashMap<String, UUID> = ConcurrentHashMap()
-
-    @Transactional
-    fun start(@Observes event: StartupEvent) {
-        try {
-            SensorInfo.update("active = false")
-
-
-            mqttBroker = Server()
-
-            val property = Properties()
-            property.setProperty("host", applicationConfig.mqtt().host())
-            property.setProperty("port", applicationConfig.mqtt().port().toString())
-            property.setProperty("websocket_port", applicationConfig.mqtt().socketPort().toString())
-            property.setProperty("allow_anonymous", "true")
-
-            val authenticator = JwtMqttAuthenticator(this)
-            mqttBroker.startServer(
-                MemoryConfig(property),
-                emptyList(),
-                null,
-                authenticator,
-                null
-            )
-
-            mqttBroker.addInterceptHandler(MqttInterceptor(this))
-
-            Log.info("MQTT Broker TCP na porta ${applicationConfig.mqtt().port()} e WS na porta ${applicationConfig.mqtt().socketPort()}")
-        } catch (e: Exception) {
-            Log.error("Falha ao iniciar o broker MQTT - ${e.message}", e)
-        }
-    }
-
-    fun stop(@Observes event: ShutdownEvent) {
-        if (::mqttBroker.isInitialized) {
-            measurementPersistenceService.flushAll()
-            mqttBroker.stopServer()
-            Log.info("MQTT Broker parado")
-        }
-    }
-
-    // ─── Publicação de mensagens ────────────────────────────────────────
-
-    fun publish(topic: String, payload: Any, qos: MqttQoS = MqttQoS.AT_MOST_ONCE) {
-        val bytes = JsonUtils.toJsonByteArray(payload)
-        val message = MqttMessageBuilders.publish()
-            .topicName(topic)
-            .retained(false)
-            .qos(qos)
-            .payload(Unpooled.copiedBuffer(bytes))
-            .build()
-        mqttBroker.internalPublish(message, "backend-system")
-    }
-
-    fun sendCommandToSensor(macAddress: String, command: String, sessionId: UUID? = null) {
-        val payload = mutableMapOf<String, Any?>("command" to command)
-        if (sessionId != null) {
-            payload["sessionId"] = sessionId.toString()
-        }
-        publish("sensor/$macAddress/command", payload)
-        Log.info("Comando '$command' enviado para sensor $macAddress")
-    }
-
-    fun sendCommandToSession(sessionId: UUID, command: String) {
-        publish(
-            topic = "session/$sessionId/command",
-            payload = mapOf(
-                "command" to command,
-                "sessionId" to sessionId.toString()
-            )
-        )
-        Log.info("Comando de broadcast '$command' enviado para o canal da sessão $sessionId")
-    }
-
-    fun publishSessionStatus(sessionId: UUID, status: String) {
-        publish(
-            "session/$sessionId/status",
-            mapOf("status" to status, "sessionId" to sessionId.toString())
-        )
-    }
-
-    fun publishAvailableSensors() {
-        val available = connectedSensors.values
-            .filter { it.available }
-            .map { mapOf("mac" to it.mac, "name" to it.name, "ip" to it.ip) }
-        publish("sensors/available", mapOf("sensors" to available))
-    }
-
-    // ─── Gerenciamento de sensores ──────────────────────────────────────
-
-    fun assignSensorToSession(macAddress: String, sessionId: UUID): Boolean {
-        val sensor = connectedSensors[macAddress]
-        if (sensor == null) {
-            Log.warn("Sensor $macAddress não encontrado")
-            return false
-        }
-        if (!sensor.available) {
-            Log.warn("Sensor $macAddress já está em uso na sessão ${sensor.sessionId}")
-            return false
-        }
-
-        sensor.available = false
-        sensor.sessionId = sessionId
-
-        val session = activeSessions[sessionId]
-        session?.assignedSensors?.add(macAddress)
-
-        sendCommandToSensor(macAddress, "ASSIGN", sessionId)
-        publishAvailableSensors()
-        Log.info("Sensor $macAddress atribuído à sessão $sessionId")
-        return true
-    }
-
-    fun releaseSensorFromSession(macAddress: String): Boolean {
-        val sensor = connectedSensors[macAddress] ?: return false
-
-        val sessionId = sensor.sessionId
-        sensor.available = true
-        sensor.sessionId = null
-
-        if (sessionId != null) {
-            activeSessions[sessionId]?.assignedSensors?.remove(macAddress)
-        }
-
-        sendCommandToSensor(macAddress, "RELEASE")
-        publishAvailableSensors()
-        Log.info("Sensor $macAddress liberado da sessão $sessionId")
-        return true
-    }
-
-    /**
-     * Limpeza completa quando um sensor desconecta (chamado pelo interceptor).
-     * Faz flush de medições pendentes, libera da sessão e remove dos mapas.
-     */
-
-    // ATUALIZADO: Quando sensor desconectar deve parar sessão
-    fun handleSensorDisconnect(clientId: String) {
-        val mac = clientIdToMac.remove(clientId) ?: return
-        val sensor = connectedSensors.remove(mac) ?: return
-
-        if (sensor.sessionId != null) {
-            val sessionId = sensor.sessionId!!
-            measurementPersistenceService.flush("$sessionId:$mac")
-
-            // NOVO: Faz o broadcast de STOP para a sessão inteira porque um hardware caiu
-            Log.warn("Sensor $mac caiu. Parando a sessão inteira $sessionId via broadcast.")
-            sendCommandToSession(sessionId, "STOP")
-            publishSessionStatus(sessionId, "STOPPED_BY_ERROR")
-
-            activeSessions[sessionId]?.assignedSensors?.remove(mac)
-        }
-
-        measurementPersistenceService.deactivateSensor(mac)
-        publishAvailableSensors() // Este é o canal que o frontend usa para receber a lista atualizada
-    }
-
-    /**
-     * Limpeza quando um frontend/usuário desconecta.
-     */
-    fun handleUserDisconnect(clientId: String) {
-        val userId = clientIdToUserId.remove(clientId) ?: return
-        Log.info("Usuário $userId (clientId: $clientId) desconectado")
-        // Sessões permanecem ativas - o usuário pode reconectar.
-        // Se quiser auto-parar, descomente:
-        // activeSessions.values
-        //     .filter { it.userId == userId }
-        //     .forEach { sendCommandToSession(it.id!!, "STOP") }
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Autenticador JWT
-// ═══════════════════════════════════════════════════════════════════════════
 
 class JwtMqttAuthenticator(
-    private val broker: MqttBrokerService
+    private val broker: SessionService
 ) : IAuthenticator {
 
     override fun checkValid(clientId: String?, username: String?, password: ByteArray?): Boolean {
@@ -249,7 +39,13 @@ class JwtMqttAuthenticator(
                 if (clientId != null) {
                     val userId = decoded.getClaim<String>("reference")
                     if (userId != null) {
-                        broker.clientIdToUserId[clientId] = UUID.fromString(userId)
+                        broker.contexts[userId] = ClientSessionContext().apply {
+                            this.clientId = clientId
+                            this.type = SessionContextType.USER
+                            this.user = UserSessionContext().apply {
+                                this.userId = UUID.fromString(userId)
+                            }
+                        }
                     }
                 }
                 Log.debug("Conexão MQTT autorizada: ${decoded.name} (clientId: $clientId)")
@@ -270,7 +66,7 @@ class JwtMqttAuthenticator(
 // ═══════════════════════════════════════════════════════════════════════════
 
 class MqttInterceptor(
-    private val broker: MqttBrokerService
+    private val broker: SessionService
 ) : AbstractInterceptHandler() {
 
     override fun getID(): String = "mqtt-interceptor-main"
@@ -373,19 +169,15 @@ class MqttInterceptor(
      * Verifica se é sensor ou frontend e faz a limpeza apropriada.
      */
     private fun handleClientGone(clientId: String) {
-        // Tenta como sensor primeiro (mais comum desconectar)
-        if (broker.clientIdToMac.containsKey(clientId)) {
-            broker.handleSensorDisconnect(clientId)
+        val entry = broker.contexts.entries.find { it.value.clientId == clientId } ?: run {
+            Log.debug("Client $clientId desconectado mas não rastreado")
             return
         }
 
-        // Tenta como frontend/usuário
-        if (broker.clientIdToUserId.containsKey(clientId)) {
-            broker.handleUserDisconnect(clientId)
-            return
+        when (entry.value.type) {
+            SessionContextType.SENSOR -> broker.handleSensorDisconnect(entry.key)
+            SessionContextType.USER -> broker.handleUserDisconnect(entry.key)
         }
-
-        Log.debug("Client $clientId desconectado mas não era rastreado (possivelmente nunca se registrou)")
     }
 
     // ─── Handlers de mensagens ──────────────────────────────────────────
@@ -395,24 +187,20 @@ class MqttInterceptor(
         val mac = payload.mac ?: return Log.warn("Registro de sensor sem MAC address")
         val clientId = data.clientID
 
-        // Mapeia clientId → MAC para rastrear desconexão
-        if (clientId != null) {
-            broker.clientIdToMac[clientId] = mac
-        }
-
-        val context = SensorSessionContext().apply {
-            this.mac = mac
-            this.name = payload.name
-            this.ip = payload.ip
-            this.available = true
+        broker.contexts[mac] = ClientSessionContext().apply {
             this.sessionId = null
             this.clientId = clientId
+            this.type = SessionContextType.SENSOR
+            this.sensor = SensorSessionContext().apply {
+                this.mac = mac
+                this.name = payload.name
+                this.ip = payload.ip
+                this.available = true
+            }
         }
 
-        broker.connectedSensors[mac] = context
-        Log.info("Sensor registrado: $mac (IP: ${payload.ip}, Nome: ${payload.name}, ClientID: $clientId)")
-
-        broker.measurementPersistenceService.registerSensor(mac, payload.name, payload.ip)
+        Log.info("Sensor registrado: $mac (IP: ${payload.ip})")
+        broker.registerSensor(mac, payload.name, payload.ip)
         broker.publishAvailableSensors()
     }
 
@@ -432,24 +220,24 @@ class MqttInterceptor(
         val mac = payload.originIdentifier ?: return Log.warn("Medição sem identificador de origem")
 
         Log.debug("Recebidas ${measurements.size} medições do sensor $mac para sessão $sessionId")
-        broker.measurementPersistenceService.buffer(sessionId, mac, measurements)
+        broker.buffer(sessionId, mac, measurements)
     }
 
     private fun handleSensorStatus(topic: String, data: InterceptPublishMessage) {
         val mac = topic.split("/")[1]
         val payload = extractPayload<SensorStatusPayload>(data)
 
-        val sensor = broker.connectedSensors[mac]
+        val sensor = broker.contexts[mac]
         if (sensor != null) {
             when (payload.status) {
                 "AVAILABLE" -> {
                     if (sensor.sessionId == null) {
-                        sensor.available = true
+                        sensor.sensor!!.available = true
                     }
                     Log.info("Sensor $mac reportou status: AVAILABLE")
                 }
                 "CALIBRATING" -> {
-                    sensor.available = false
+                    sensor.sensor!!.available = false
                     Log.info("Sensor $mac entrou em calibração")
                 }
                 "ERROR" -> {

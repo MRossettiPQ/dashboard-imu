@@ -2,9 +2,10 @@
 #define MPU_SOCKET_SERVER_MPU_SENSOR_H
 
 #include <config.h>
-#include <fs_utils.h>
 #include <led_utils.h>
 #include <logger.h>
+#include "MPU9250.h"
+#include <EEPROM.h>
 
 constexpr uint8_t EEPROM_SIZE = 1 + sizeof(float) * 3 * 4;
 MPU9250 mpu;
@@ -73,9 +74,7 @@ class SensorUtils {
 			writeFloat(EEP_MAG_SCALE + 0, mpu.getMagScale(0));
 			writeFloat(EEP_MAG_SCALE + 4, mpu.getMagScale(1));
 			writeFloat(EEP_MAG_SCALE + 8, mpu.getMagScale(2));
-#if defined(ESP_PLATFORM) || defined(ESP8266)
 			EEPROM.commit();
-#endif
 		}
 
 		static void print() {
@@ -169,25 +168,25 @@ class SensorUtils {
 	}
 
 	static bool isCalibrated() {
-		return (readByte(EEP_CALIB_FLAG, 0) == 0x01);
+		return readByte(EEP_CALIB_FLAG, 0) == 0x01;
 	}
 
 public:
-	static JsonObject read() {
-		JsonDocument measurement;
+	static void read(const JsonObject& measurement) {
+		constexpr double gravity = 9.80665;
 		const String read_at = timeClient.getFormattedTime();
-		const double acc_bias_x = mpu.getAccBiasX();
-		const double acc_bias_y = mpu.getAccBiasY();
-		const double acc_bias_z = mpu.getAccBiasZ();
+		const double acc_x = mpu.getAccX();
+		const double acc_y = mpu.getAccY();
+		const double acc_z = mpu.getAccZ();
 		const double acc_lin_x = mpu.getLinearAccX();
 		const double acc_lin_y = mpu.getLinearAccY();
 		const double acc_lin_z = mpu.getLinearAccZ();
-		const double gyro_bias_x = mpu.getGyroBiasX();
-		const double gyro_bias_y = mpu.getGyroBiasY();
-		const double gyro_bias_z = mpu.getGyroBiasZ();
-		const double mag_bias_x = mpu.getMagBiasX();
-		const double mag_bias_y = mpu.getMagBiasY();
-		const double mag_bias_z = mpu.getMagBiasZ();
+		const double gyro_x = mpu.getGyroX();
+		const double gyro_y = mpu.getGyroY();
+		const double gyro_z = mpu.getGyroZ();
+		const double mag_x = mpu.getMagX();
+		const double mag_y = mpu.getMagY();
+		const double mag_z = mpu.getMagZ();
 		const double roll = mpu.getRoll();
 		const double pitch = mpu.getPitch();
 		const double yaw = mpu.getYaw();
@@ -199,10 +198,17 @@ public:
 		const double quaternion_y = mpu.getQuaternionY();
 		const double quaternion_z = mpu.getQuaternionZ();
 
+		measurement["accelX"] = acc_x;
+		measurement["accelY"] = acc_y;
+		measurement["accelZ"] = acc_z;
+
 		// Accelerometer
-		const double accel_x_mss = acc_bias_x * 1000.f / static_cast<float>(MPU9250::CALIB_ACCEL_SENSITIVITY);
-		const double accel_y_mss = acc_bias_y * 1000.f / static_cast<float>(MPU9250::CALIB_ACCEL_SENSITIVITY);
-		const double accel_z_mss = acc_bias_z * 1000.f / static_cast<float>(MPU9250::CALIB_ACCEL_SENSITIVITY);
+		// const double accel_x_mss = acc_x  * 1000.f / static_cast<float>(MPU9250::CALIB_ACCEL_SENSITIVITY);
+		// const double accel_y_mss = acc_y * 1000.f / static_cast<float>(MPU9250::CALIB_ACCEL_SENSITIVITY);
+		// const double accel_z_mss = acc_z * 1000.f / static_cast<float>(MPU9250::CALIB_ACCEL_SENSITIVITY);
+		const double accel_x_mss = acc_x * gravity;
+		const double accel_y_mss = acc_y * gravity;
+		const double accel_z_mss = acc_z * gravity;
 		measurement["accelMssX"] = accel_x_mss;
 		measurement["accelMssY"] = accel_y_mss;
 		measurement["accelMssZ"] = accel_z_mss;
@@ -213,17 +219,18 @@ public:
 		measurement["accelLinZ"] = acc_lin_z;
 
 		// Gyroscope
-		const double gyro_rads_x = gyro_bias_x / static_cast<float>(MPU9250::CALIB_GYRO_SENSITIVITY);
-		const double gyro_rads_y = gyro_bias_y / static_cast<float>(MPU9250::CALIB_GYRO_SENSITIVITY);
-		const double gyro_rads_z = gyro_bias_z / static_cast<float>(MPU9250::CALIB_GYRO_SENSITIVITY);
+		constexpr double deg2rad = M_PI / 180.0;
+		const double gyro_rads_x = gyro_x * deg2rad;
+		const double gyro_rads_y = gyro_y * deg2rad;
+		const double gyro_rads_z = gyro_z * deg2rad;
 		measurement["gyroRadsX"] = gyro_rads_x;
 		measurement["gyroRadsY"] = gyro_rads_y;
 		measurement["gyroRadsZ"] = gyro_rads_z;
 
 		// Magnetometer
-		measurement["magBiasX"] = mag_bias_x;
-		measurement["magBiasY"] = mag_bias_y;
-		measurement["magBiasZ"] = mag_bias_z;
+		measurement["magX"] = mag_x;
+		measurement["magY"] = mag_y;
+		measurement["magZ"] = mag_z;
 
 		// Roll, Pitch e Yaw
 		measurement["roll"] = roll;
@@ -244,13 +251,6 @@ public:
 		// Adicionar timestamp
 		measurement["readOrder"] = measurement_count_total;
 		measurement["capturedAt"] = read_at;
-
-		String payload;
-		serializeJsonPretty(measurement, payload);
-
-		Logger::info("SETUP", "Reading sensor: %s", payload.c_str());
-
-		return measurement.as<JsonObject>();
 	}
 
 	static void configure() {
@@ -284,10 +284,7 @@ public:
 
 	void calibrate(const bool on_init = false) {
 		calibrating = true;
-
-		#if defined(ESP_PLATFORM) || defined(ESP32)
-			EEPROM.begin(0x80);
-		#endif
+		EEPROM.begin(0x80);
 
 		Logger::info("MPU", "EEPROM start");
 		if (!isCalibrated()) {
@@ -368,6 +365,8 @@ public:
 
 			writeJson("/memory.json", memory);
 			Logger::info("MPU", "Calibration data saved to /memory.json");
+		} else {
+			Calibration::load();
 		}
 
 		calibrating = false;

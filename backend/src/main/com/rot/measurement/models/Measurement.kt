@@ -6,7 +6,6 @@ import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.session.models.SessionSensor
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
-import java.math.BigDecimal
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -23,23 +22,6 @@ class Measurement : BaseEntity<Measurement>() {
     companion object : BaseCompanion<Measurement, UUID, QMeasurement> {
         override val entityClass: Class<Measurement> = Measurement::class.java
         override val q: QMeasurement = QMeasurement.measurement
-
-        fun findAllBySessionSensorId(sessionSensorId: Int): MutableList<Measurement> {
-            return createQuery()
-                .where(q.sessionSensor().id.eq(sessionSensorId))
-                .orderBy(q.readOrder.asc())
-                .fetch()
-        }
-
-        fun saveMeasurementsBatch(measurements: List<Measurement>) {
-            measurements.forEachIndexed { index, measurement ->
-                measurement.persist()
-                if (index > 0 && index % 100 == 0) {
-                    flush()
-                    getSession().clear()
-                }
-            }
-        }
     }
 
     @Id
@@ -56,6 +38,19 @@ class Measurement : BaseEntity<Measurement>() {
     @NotNull
     @Column(name = "read_order", nullable = false, updatable = false)
     var readOrder: Int? = null
+
+    // --- Accelerometer (m/s²) ---
+    @NotNull
+    @Column(name = "accel_x", nullable = false, updatable = false)
+    var accelX: Double? = null
+
+    @NotNull
+    @Column(name = "accel_y", nullable = false, updatable = false)
+    var accelY: Double? = null
+
+    @NotNull
+    @Column(name = "accel_z", nullable = false, updatable = false)
+    var accelZ: Double? = null
 
     // --- Accelerometer (m/s²) ---
     @NotNull
@@ -98,16 +93,16 @@ class Measurement : BaseEntity<Measurement>() {
 
     // --- Magnetometer bias ---
     @NotNull
-    @Column(name = "mag_bias_x", nullable = false, updatable = false)
-    var magBiasX: Double? = null
+    @Column(name = "mag_x", nullable = false, updatable = false)
+    var magX: Double? = null
 
     @NotNull
-    @Column(name = "mag_bias_y", nullable = false, updatable = false)
-    var magBiasY: Double? = null
+    @Column(name = "mag_y", nullable = false, updatable = false)
+    var magY: Double? = null
 
     @NotNull
-    @Column(name = "mag_bias_z", nullable = false, updatable = false)
-    var magBiasZ: Double? = null
+    @Column(name = "mag_z", nullable = false, updatable = false)
+    var magZ: Double? = null
 
     // --- Euler angles (roll, pitch, yaw) ---
     @NotNull

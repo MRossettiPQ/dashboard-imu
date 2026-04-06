@@ -2,6 +2,7 @@
 #define SOCKET_UTILS_H
 #include "logger.h"
 #include "config.h"
+#include "mpu_utils.h"
 
 inline void socketIOEvent(const socketIOmessageType_t type, uint8_t* payload, size_t length) {
 	switch (type) {

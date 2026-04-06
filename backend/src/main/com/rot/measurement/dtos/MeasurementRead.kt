@@ -13,6 +13,9 @@ open class MeasurementBase {
     var readOrder: Int = 0
     lateinit var capturedAt: OffsetDateTime
     lateinit var sensorName: String
+    var accelX by Delegates.notNull<Double>()
+    var accelY by Delegates.notNull<Double>()
+    var accelZ by Delegates.notNull<Double>()
     var accelMssX by Delegates.notNull<Double>()
     var accelMssY by Delegates.notNull<Double>()
     var accelMssZ by Delegates.notNull<Double>()
@@ -22,9 +25,9 @@ open class MeasurementBase {
     var gyroRadsX by Delegates.notNull<Double>()
     var gyroRadsY by Delegates.notNull<Double>()
     var gyroRadsZ by Delegates.notNull<Double>()
-    var magBiasX by Delegates.notNull<Double>()
-    var magBiasY by Delegates.notNull<Double>()
-    var magBiasZ by Delegates.notNull<Double>()
+    var magX by Delegates.notNull<Double>()
+    var magY by Delegates.notNull<Double>()
+    var magZ by Delegates.notNull<Double>()
     var roll by Delegates.notNull<Double>()
     var pitch by Delegates.notNull<Double>()
     var yaw by Delegates.notNull<Double>()

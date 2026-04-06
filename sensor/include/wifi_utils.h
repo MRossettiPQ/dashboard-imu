@@ -2,7 +2,6 @@
 #define WIFI_UTILS_H
 #include <HTTPClient.h>
 #include "config.h"
-#include "fs_utils.h"
 #include "logger.h"
 
 String protocol = "http";
@@ -26,11 +25,11 @@ inline void getWifiExternal() {
         // Acessar os campos
         const int code = doc["code"];
         const String message = doc["message"].as<String>();
-        const char* sta_ssid = doc["content"]["sta_ssid"];
+    	const char* content_ssid = doc["content"]["sta_ssid"];
 
         Logger::info("WiFi", "Code: %i", code);
-        Logger::info("WiFi", "Message: %s", message);
-        Logger::info("WiFi", "STA SSID: %s", String(sta_ssid));
+        Logger::info("WiFi", "Message: %s", message.c_str());
+		Logger::info("WiFi", "STA SSID: %s", content_ssid);
     }
     else {
         Logger::error("WiFi", "HTTP request failed, code: %i", httpResponseCode);
@@ -94,7 +93,7 @@ inline void checkExternalWifi() {
     }
 
     if (WiFiClass::status() == WL_CONNECTED) {
-        WebSocketClient::configure();
+        // WebSocketClient::configure();
         sta_ip = WiFi.localIP().toString();
         Logger::info("WiFi", "Wi-Fi connection established - IP address: %s", sta_ip.c_str());
     }

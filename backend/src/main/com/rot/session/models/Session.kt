@@ -28,9 +28,9 @@ class Session : BaseEntity<Session>() {
         override val entityClass: Class<Session> = Session::class.java
         override val q: QSession = QSession.session
 
-        fun findByPhysiotherapistId(patientId: UUID): Session? {
+        fun findByPhysiotherapistId(physiotherapistId: UUID): Session? {
             return createQuery()
-                .where(q.patient().id.eq(patientId))
+                .where(q.physiotherapist().id.eq(physiotherapistId))
                 .fetchFirst()
         }
     }

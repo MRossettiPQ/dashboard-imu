@@ -3,30 +3,26 @@
 
 #include <Arduino.h>
 #include <cstring>
-#include <EEPROM.h>
 #include <NTPClient.h>
 #include <SocketIOclient.h>
-#include <WebSocketsClient.h>
 #include <WiFi.h>
 #include <Wire.h>
 #include "ArduinoJson.h"
-#include "MPU9250.h"
 #include "SPIFFS.h"
 
 String server_url = "http://dashboard.local";
-String server_ip = "192.168.0.1";
-#define API_PORT 8000
-#define SOCKET_PORT 8001
-#define MQTT_PORT 8002
+constexpr uint16_t API_PORT = 8000;
+constexpr uint16_t SOCKET_PORT = 8001;
+constexpr uint16_t MQTT_PORT = 8002;
 
-#define BUFFER_LENGTH 30
+constexpr int BUFFER_LENGTH = 30;
 
 // Pin led
-#define LED_READY 2
+constexpr uint8_t LED_READY = 2;
 
 // Configuração da rede AP
-String ap_ssid = "ROTador";
-String ap_password = "zotac460";
+String ap_ssid = "";
+String ap_password = "";
 String ap_ip = "";
 
 String sta_ssid = "DASHBOARD_NETWORK_AP";
@@ -66,8 +62,8 @@ void initFS();
 File loadFile(const char* path);
 String readText(const char* path);
 JsonDocument readJson(const char* path);
-void writeText(const char *path, const String &content);
-void writeJson(const char *path, const JsonDocument &doc);
+void writeText(const char* path, const String& content);
+void writeJson(const char* path, const JsonDocument& doc);
 
 // Sensor
 void configureMpu();
@@ -89,24 +85,24 @@ int measurement_count = 0;
 int measurement_count_total = 0;
 
 inline CommandType getCommandTypeFromJson(const char* type_str) {
-    // Converte o valor do tipo string para CommandType
-    if (strcmp(type_str, "START") == 0) {
-        return CommandType::START;
-    }
+	// Converte o valor do tipo string para CommandType
+	if (strcmp(type_str, "START") == 0) {
+		return CommandType::START;
+	}
 
-    if (strcmp(type_str, "STOP") == 0) {
-        return CommandType::STOP;
-    }
+	if (strcmp(type_str, "STOP") == 0) {
+		return CommandType::STOP;
+	}
 
-    if (strcmp(type_str, "RESTART") == 0) {
-        return CommandType::RESTART;
-    }
+	if (strcmp(type_str, "RESTART") == 0) {
+		return CommandType::RESTART;
+	}
 
-    if (strcmp(type_str, "CALIBRATE") == 0) {
-        return CommandType::CALIBRATE;
-    }
+	if (strcmp(type_str, "CALIBRATE") == 0) {
+		return CommandType::CALIBRATE;
+	}
 
-    return CommandType::NONE;
+	return CommandType::NONE;
 }
 
 #endif //CONFIG_H

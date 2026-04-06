@@ -1,5 +1,6 @@
 package com.rot.session.dtos
 
+import com.rot.session.enums.SessionContextType
 import java.util.*
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -7,9 +8,9 @@ import java.util.concurrent.CopyOnWriteArraySet
  * Contexto em memória de uma sessão ativa do usuário (fisioterapeuta).
  */
 class UserSessionContext {
-    var id: UUID? = null
-    var userId: UUID? = null
-    var patientId: UUID? = null
+    var id: UUID? = null // ID DA SESSÃO
+    var userId: UUID? = null // ID DO USUARIO LOGANDO
+    var patientId: UUID? = null // ID DO PACIENTE QUE TERÁ OS SENSORES
 
     /** MAC addresses dos sensores atribuídos a esta sessão */
     val assignedSensors: CopyOnWriteArraySet<String> = CopyOnWriteArraySet()
@@ -23,8 +24,24 @@ class SensorSessionContext {
     var name: String? = null
     var ip: String? = null
     var available: Boolean = true
+}
+
+
+class ClientSessionContext {
+    var clientId: String? = null
     var sessionId: UUID? = null
 
-    /** ClientID do Moquette - necessário para rastrear desconexão */
-    var clientId: String? = null
+    var type: SessionContextType = SessionContextType.SENSOR
+    var user: UserSessionContext? = null
+    var sensor: SensorSessionContext? = null
+
+    fun identifier(): String = user?.id?.toString() ?: sensor?.mac ?: ""
+    fun isUser(): Boolean = type == SessionContextType.USER
+    fun isSensor(): Boolean = type == SessionContextType.SENSOR
+
+    fun isAvailable(): Boolean = sensor?.available ?: false
+
+    fun setAvailable(available: Boolean) {
+        sensor?.available = available
+    }
 }

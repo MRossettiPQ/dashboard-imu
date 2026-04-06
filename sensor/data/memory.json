@@ -1,3 +1,5 @@
 {
-  "calibrate": false
+  "calibrate": false,
+  "sta_ssid": "ROTador",
+  "sta_password": "Zotac460"
 }
