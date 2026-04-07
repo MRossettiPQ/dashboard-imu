@@ -8,21 +8,21 @@ import java.util.concurrent.CopyOnWriteArraySet
  * Contexto em memória de uma sessão ativa do usuário (fisioterapeuta).
  */
 class UserSessionContext {
-    var id: UUID? = null // ID DA SESSÃO
     var userId: UUID? = null // ID DO USUARIO LOGANDO
     var patientId: UUID? = null // ID DO PACIENTE QUE TERÁ OS SENSORES
 
     /** MAC addresses dos sensores atribuídos a esta sessão */
-    val assignedSensors: CopyOnWriteArraySet<String> = CopyOnWriteArraySet()
+    var assignedSensors: CopyOnWriteArraySet<String> = CopyOnWriteArraySet()
 }
 
 /**
  * Contexto em memória de um sensor conectado ao broker MQTT.
  */
 class SensorSessionContext {
+    var id: Int? = null
+    var ip: String? = null
     var mac: String? = null
     var name: String? = null
-    var ip: String? = null
     var available: Boolean = true
 }
 
@@ -35,7 +35,7 @@ class ClientSessionContext {
     var user: UserSessionContext? = null
     var sensor: SensorSessionContext? = null
 
-    fun identifier(): String = user?.id?.toString() ?: sensor?.mac ?: ""
+    fun identifier(): String = user?.userId?.toString() ?: sensor?.mac ?: ""
     fun isUser(): Boolean = type == SessionContextType.USER
     fun isSensor(): Boolean = type == SessionContextType.SENSOR
 

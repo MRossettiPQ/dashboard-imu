@@ -55,7 +55,9 @@ class SessionService(
     private val measurementBuffers: ConcurrentHashMap<String, CopyOnWriteArrayList<MeasurementRead>> = ConcurrentHashMap()
 
     fun createThread(task: Runnable): Thread {
-        return Thread(task, "measurement-flush-scheduler").apply { isDaemon = true }
+        val thread = Thread(task, "measurement-buffer-scheduler")
+        thread.isDaemon = true
+        return thread
     }
 
     private val flushing = AtomicBoolean(false)
@@ -146,14 +148,10 @@ class SessionService(
             this.sessionId = session.id!!
             this.type = SessionContextType.USER
             this.user = UserSessionContext().apply {
-                this.id = session.id
                 this.userId = ctx.user.id!!
                 this.patientId = body.patientId
             }
         }
-
-        // Publica status
-        publishSessionStatus(session.id!!, SessionStatus.CREATED.name)
 
         Log.info("Sessão criada: ${session.id} (paciente: ${body.patientId})")
         return session
@@ -166,7 +164,8 @@ class SessionService(
     @Transactional
     fun addSensor(sessionId: UUID, macAddress: String): SessionSensor {
         val session = Session.findOrThrowById(sessionId)
-        val sensorInfo = SensorInfo.findByMacAddress(macAddress) ?: throw ApplicationException("Sensor não encontrado", Response.Status.NOT_FOUND)
+        val sensorInfo = SensorInfo.findByMacAddress(macAddress)
+            ?: throw ApplicationException("Sensor não encontrado", Response.Status.NOT_FOUND)
 
         // REGRA: Verificar disponibilidade antes de comandar
         val sensorContext = contexts[macAddress]
@@ -195,7 +194,8 @@ class SessionService(
 
     @Transactional
     fun removeSensor(sessionId: UUID, macAddress: String) {
-        // REGRA: Verificar se ele esta na sessão atual
+        val session = Session.findOrThrowById(sessionId)
+
         val sessionCtx = getContextBySessionId(sessionId, SessionContextType.USER) ?: return
         if (sessionCtx.isSensor()) return
 
@@ -203,7 +203,25 @@ class SessionService(
             throw ApplicationException("Sensor não pertence a esta sessão", Response.Status.BAD_REQUEST)
         }
 
-        releaseSensorFromSession(macAddress) // Envia RELEASE, ESP32 faz unsubscribe
+        if (session.status != SessionStatus.COMPLETED) {
+            // 1. Limpa buffer em memória + medições no banco
+            clearSensorData(sessionId, macAddress)
+
+            // 2. Remove o SessionSensor do banco
+            SessionSensor.createQuery()
+                .where(SessionSensor.q.session().id.eq(sessionId))
+                .where(SessionSensor.q.sensorInfo().macAddress.eq(macAddress))
+                .fetchFirst()
+                ?.let { sessionSensor ->
+                    // Cascade deleta os Measurements e NodeSensors associados
+                    entityManager.remove(entityManager.merge(sessionSensor))
+                }
+
+            Log.info("SessionSensor e medições removidos para sensor $macAddress na sessão $sessionId")
+        }
+
+        // Libera o sensor no broker (envia RELEASE pro ESP32)
+        releaseSensorFromSession(macAddress)
         invalidateCache(sessionId)
     }
 
@@ -329,14 +347,7 @@ class SessionService(
 
     fun publishAvailableSensors() {
         val available = contexts.values
-            .filter { it.isSensor() && it.isAvailable() } // ✅ filtrar por tipo primeiro
-            .map {
-                mapOf(
-                    "mac" to it.sensor!!.mac,
-                    "name" to it.sensor!!.name,
-                    "ip" to it.sensor!!.ip
-                )
-            }
+            .filter { it.isSensor() && it.isAvailable() }
         publish("sensors/available", mapOf("sensors" to available))
     }
 
@@ -387,13 +398,13 @@ class SessionService(
         return true
     }
 
-    /**
-     * Limpeza completa quando um sensor desconecta (chamado pelo interceptor).
-     * Faz flush de medições pendentes, libera da sessão e remove dos mapas.
-     */
 
-    // ATUALIZADO: Quando sensor desconectar deve parar sessão
     fun handleSensorDisconnect(mac: String) {
+        /**
+         * Limpeza completa quando um sensor desconecta (chamado pelo interceptor).
+         * Faz flush de medições pendentes, libera da sessão e remove dos mapas.
+         */
+
         val ctx = contexts.remove(mac) ?: return
         val sessionId = ctx.sessionId
 
@@ -412,15 +423,12 @@ class SessionService(
         publishAvailableSensors()
     }
 
-    /**
-     * Limpeza quando um frontend/usuário desconecta.
-     */
     fun handleUserDisconnect(userId: String) {
+        // Limpeza quando um frontend/usuário desconecta.
         contexts.remove(userId)
         Log.info("Usuário $userId desconectado — contexto removido")
     }
 
-    // ─── Buffer ─────────────────────────────────────────────────────────
     fun buffer(sessionId: UUID, mac: String, measurements: List<MeasurementRead>) {
         // Rejeita medições de sensores não atribuídos à sessão
         val sensorCtx = contexts[mac]
@@ -472,7 +480,7 @@ class SessionService(
     fun flushAll() {
         if (!flushing.compareAndSet(false, true)) return
         try {
-            measurementBuffers.keys.forEach { key -> flush(key) }
+            measurementBuffers.keys.forEach(::flush)
         } finally {
             flushing.set(false)
         }
@@ -539,7 +547,7 @@ class SessionService(
 
     // ─── Registro de sensores ───────────────────────────────────────────
     @Transactional
-    fun registerSensor(mac: String, name: String?, ip: String?) {
+    fun registerSensor(mac: String, name: String?): SensorInfo {
         var sensorInfo = SensorInfo.findByMacAddress(mac)
         if (sensorInfo == null) {
             sensorInfo = SensorInfo()
@@ -547,8 +555,9 @@ class SessionService(
         }
         sensorInfo.sensorName = name ?: "Sensor-$mac"
         sensorInfo.active = true
-        sensorInfo.save()
+        sensorInfo = sensorInfo.save()
         Log.info("SensorInfo registrado/atualizado: $mac (active=true)")
+        return sensorInfo
     }
 
     /**

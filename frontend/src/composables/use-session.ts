@@ -6,8 +6,9 @@ import { createMqttClient } from 'boot/mqtt';
 import type { ErrorWithReasonCode, MqttClient } from 'mqtt';
 import { notify } from 'src/common/utils/NotifyUtils';
 import { api } from 'boot/axios';
+import type { SessionSensor } from 'src/common/api/manual/constructors_api';
 import { SessionState } from 'src/common/api/manual/constructors_api';
-import type { PatientDto } from 'src/common/api/generated/models';
+import type { PatientDto, SensorInfo } from 'src/common/api/generated/models';
 import { SessionType } from 'src/common/api/generated/models';
 
 const kUseSessionEditor = Symbol('useSessionEditor');
@@ -24,6 +25,7 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
     const error = ref<boolean>(false);
     const patientUuid = computed(() => route.params?.['uuid']?.toString());
     const subscribeMap = ref<Map<string, string>>(new Map<string, string>());
+    const sensors: Set<string> = new Set<string>();
 
     // Medições em progresso
     const inProgress = ref(false);
@@ -36,22 +38,36 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
     }
 
     function mqttMessageRouter(topic: string, message: Buffer) {
-      // Convert Buffer to string, then parse JSON
-      const payloadStr = message.toString();
-      let data: unknown;
-      try {
-        data = JSON.parse(payloadStr);
-      } catch (e) {
-        console.error('Erro ao parsear payload MQTT', e, payloadStr);
+      const data = JSON.parse(message.toString());
+
+      // Medições dos sensores
+      // Tópico: session/{id}/sensor/{mac}/measurement
+      if (topic.match(/^session\/[^/]+\/sensor\/[^/]+\/measurement$/)) {
+        // data = { originIdentifier, content: [{ accelX, accelY, ... }] }
+        // Aqui você acumula ou renderiza em gráfico real-time
+        handleMeasurements(data);
         return;
       }
 
-      console.log(`[MQTT] Recebido no tópico: ${topic}`, data);
+      // Lista de sensores disponíveis (broadcast do backend)
+      // Tópico: sensors/available
+      if (topic === 'sensors/available') {
+        availableSensors.value = data.sensors;
+        return;
+      }
     }
 
     function mqttOnConnect() {
       const sessionId = session.value.getId;
       console.log('MQTT Conectado! Inscrevendo-se na sessão:', sessionId);
+
+      mqttClient.value?.subscribe('sensors/available', (err) => {
+        if (!err) {
+          console.log('Inscrição confirmada na sala de espera.');
+        } else {
+          console.error('Erro ao se inscrever no tópico', err);
+        }
+      });
 
       // Subscribe to all messages for this specific session
       mqttClient.value?.subscribe(`session/${sessionId}/#`, (err) => {
@@ -108,6 +124,24 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       }
     });
 
+    async function addSensor(sessionSensor: SessionSensor): Promise<void> {
+      const {
+        data: { content },
+      } = await api.postApiSessionsSessionIdSensorsMacAddress(session.value.getId, macAddress);
+    }
+
+    async function startCommand(): Promise<void> {
+      await api.postApiSessionsSessionIdStart(session.value.getId);
+    }
+
+    async function stopCommand(): Promise<void> {
+      await api.postApiSessionsSessionIdStop(session.value.getId);
+    }
+
+    async function finalize(): Promise<void> {
+      await api.postApiSessionsSessionIdFinalize(session.value.getId);
+    }
+
     return {
       session,
       error,
@@ -117,5 +151,9 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       inProgress,
       loadingSave,
       subscribeMap,
+      addSensor,
+      stopCommand,
+      startCommand,
+      finalize,
     };
   });

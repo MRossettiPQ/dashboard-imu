@@ -41,7 +41,7 @@ inline String topicSessionCommand() {
 inline String topicSessionMeasurement() {
 	// Enviar medições
     if (mqtt_session_id.isEmpty()) return "";
-    return "session/" + mqtt_session_id + "/sensor/" + WiFi.macAddress() + "/measurement";
+    return "session/" + mqtt_session_id + "/sensor/" + WiFi.macAddress() + "/measurements";
 }
 
 inline void mqttCallback(const char* topic, const byte* payload, const unsigned int length);

@@ -15,6 +15,8 @@ import io.moquette.interception.AbstractInterceptHandler
 import io.moquette.interception.messages.*
 import io.quarkus.logging.Log
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CopyOnWriteArraySet
 
 class JwtMqttAuthenticator(
     private val broker: SessionService
@@ -39,13 +41,27 @@ class JwtMqttAuthenticator(
                 if (clientId != null) {
                     val userId = decoded.getClaim<String>("reference")
                     if (userId != null) {
-                        broker.contexts[userId] = ClientSessionContext().apply {
-                            this.clientId = clientId
-                            this.type = SessionContextType.USER
-                            this.user = UserSessionContext().apply {
-                                this.userId = UUID.fromString(userId)
+                        val userUuid = UUID.fromString(userId)
+                        var context = broker.getContextByKey(userId)
+
+                        if (context == null) {
+                            context = ClientSessionContext().apply {
+                                this.sessionId = null
+                                this.clientId = clientId
+                                this.type = SessionContextType.USER
+                                this.user = UserSessionContext().apply {
+                                    this.userId = userUuid
+                                    this.patientId = null
+                                    this.assignedSensors = CopyOnWriteArraySet()
+                                }
                             }
                         }
+
+                        context.user!!.userId = userUuid
+                        context.clientId = clientId
+                        context.type = SessionContextType.USER
+
+                        broker.contexts[userId] = context
                     }
                 }
                 Log.debug("Conexão MQTT autorizada: ${decoded.name} (clientId: $clientId)")
@@ -61,78 +77,56 @@ class JwtMqttAuthenticator(
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Interceptor MQTT - Todos os lifecycle callbacks
-// ═══════════════════════════════════════════════════════════════════════════
-
 class MqttInterceptor(
     private val broker: SessionService
 ) : AbstractInterceptHandler() {
 
     override fun getID(): String = "mqtt-interceptor-main"
 
-    // ─── onConnect ──────────────────────────────────────────────────────
-    // Chamado quando qualquer client (sensor ou frontend) se conecta ao broker.
-    // Neste ponto o client ainda não publicou nada, então não sabemos se é
-    // sensor ou frontend. A identificação acontece depois:
-    //   - Sensor: quando publica em sensor/{mac}/register
-    //   - Frontend: já mapeado no JwtMqttAuthenticator via JWT
     override fun onConnect(message: InterceptConnectMessage) {
+        // Chamado quando qualquer client (sensor ou frontend) se conecta ao broker.
+        // Neste ponto o client ainda não publicou nada, então não sabemos se é
+        // sensor ou frontend. A identificação acontece depois:
+        //   - Sensor: quando publica em sensor/{mac}/register
+        //   - Frontend: já mapeado no JwtMqttAuthenticator via JWT
         val clientId = message.clientID
         Log.info("MQTT Client conectado: $clientId (username: ${message.username})")
     }
 
-    // ─── onDisconnect ───────────────────────────────────────────────────
-    // Chamado quando o client envia um DISCONNECT limpo (graceful).
-    // O sensor/frontend está saindo normalmente.
     override fun onDisconnect(message: InterceptDisconnectMessage) {
+        // Chamado quando o client envia um DISCONNECT limpo (graceful).
+        // O sensor/frontend está saindo normalmente.
         val clientId = message.clientID
         Log.info("MQTT Client desconectou (graceful): $clientId")
         handleClientGone(clientId)
     }
 
-    // ─── onConnectionLost ───────────────────────────────────────────────
-    // Chamado quando a conexão é perdida abruptamente (timeout, rede caiu,
-    // sensor desligou sem enviar DISCONNECT). Este é o caso mais comum
-    // para sensores ESP32 que são desligados fisicamente.
     override fun onConnectionLost(message: InterceptConnectionLostMessage) {
+        // Chamado quando a conexão é perdida abruptamente (timeout, rede caiu,
+        // sensor desligou sem enviar DISCONNECT). Este é o caso mais comum
+        // para sensores ESP32 que são desligados fisicamente.
         val clientId = message.clientID
         Log.warn("MQTT Client perdeu conexão (abrupto): $clientId")
         handleClientGone(clientId)
     }
 
-    // ─── onSubscribe ────────────────────────────────────────────────────
-    // Chamado quando um client se inscreve em um tópico.
-    // Útil para log/debug e para saber quais frontends estão ouvindo sessões.
     override fun onSubscribe(message: InterceptSubscribeMessage) {
+        // Chamado quando um client se inscreve em um tópico.
         val clientId = message.clientID
         val topic = message.topicFilter
         Log.info("MQTT Client $clientId inscreveu-se em: $topic")
-
-        // Se um frontend se inscreveu em session/{id}/#, podemos rastrear
-        // quais sessões estão sendo monitoradas ativamente
     }
 
-    // ─── onUnsubscribe ──────────────────────────────────────────────────
-    // Chamado quando um client cancela inscrição em um tópico.
     override fun onUnsubscribe(message: InterceptUnsubscribeMessage) {
+        // Chamado quando um client cancela inscrição em um tópico.
         val clientId = message.clientID
         val topic = message.topicFilter
         Log.info("MQTT Client $clientId desinscreveu-se de: $topic")
     }
 
-    // ─── onMessageAcknowledged ──────────────────────────────────────────
-    // Chamado quando uma mensagem QoS 1+ é confirmada pelo client.
-    // Não usamos QoS 1/2 nas medições (são QoS 0 para performance),
-    // mas pode ser útil para comandos críticos no futuro.
-    override fun onMessageAcknowledged(message: InterceptAcknowledgedMessage) {
-        Log.debug("MQTT Mensagem ACK recebido: topic=${message.topic}, clientId=${message.username}")
-    }
-
-    // ─── onPublish ──────────────────────────────────────────────────────
-    // Chamado quando qualquer client publica uma mensagem.
-    // Este é o roteador principal de lógica de negócio.
     override fun onPublish(data: InterceptPublishMessage) {
+        // Chamado quando qualquer client publica uma mensagem.
+        // Este é o roteador principal de lógica de negócio.
         val topic = data.topicName
 
         try {
@@ -141,20 +135,17 @@ class MqttInterceptor(
             Log.error("Erro ao processar mensagem MQTT no tópico '$topic'", e)
         }
 
-        // Deixa o Moquette rotear a mensagem para outros subscribers (frontend)
         super.onPublish(data)
     }
-
-    // ─── Roteamento de mensagens ────────────────────────────────────────
 
     private fun route(topic: String, data: InterceptPublishMessage) {
         when {
             // sensor/{mac}/register
             topic.matches(Regex("^sensor/([^/]+)/register$")) -> {
-                handleSensorRegister(topic, data)
+                handleSensorRegister(data)
             }
             // session/{uuid}/measurement
-            topic.matches(Regex("^session/([^/]+)/measurement$")) -> {
+            topic.matches(Regex("^session/([^/]+)/sensor/([^/]+)/measurements$")) -> {
                 handleMeasurement(topic, data)
             }
             // sensor/{mac}/status
@@ -164,10 +155,6 @@ class MqttInterceptor(
         }
     }
 
-    /**
-     * Lógica comum para desconexão (graceful ou abrupta).
-     * Verifica se é sensor ou frontend e faz a limpeza apropriada.
-     */
     private fun handleClientGone(clientId: String) {
         val entry = broker.contexts.entries.find { it.value.clientId == clientId } ?: run {
             Log.debug("Client $clientId desconectado mas não rastreado")
@@ -180,44 +167,38 @@ class MqttInterceptor(
         }
     }
 
-    // ─── Handlers de mensagens ──────────────────────────────────────────
-
-    private fun handleSensorRegister(topic: String, data: InterceptPublishMessage) {
+    private fun handleSensorRegister(data: InterceptPublishMessage) {
         val payload = extractPayload<SensorRegisterPayload>(data)
-        val mac = payload.mac ?: return Log.warn("Registro de sensor sem MAC address")
+        val mac = payload.mac
+            ?: return Log.warn("Registro de sensor sem MAC address")
         val clientId = data.clientID
 
+        val sensorInfo = broker.registerSensor(mac, payload.name)
         broker.contexts[mac] = ClientSessionContext().apply {
             this.sessionId = null
             this.clientId = clientId
             this.type = SessionContextType.SENSOR
             this.sensor = SensorSessionContext().apply {
-                this.mac = mac
-                this.name = payload.name
+                this.id = sensorInfo.id
+                this.mac = sensorInfo.macAddress
+                this.name = sensorInfo.sensorName
                 this.ip = payload.ip
                 this.available = true
             }
         }
 
         Log.info("Sensor registrado: $mac (IP: ${payload.ip})")
-        broker.registerSensor(mac, payload.name, payload.ip)
         broker.publishAvailableSensors()
     }
 
     private fun handleMeasurement(topic: String, data: InterceptPublishMessage) {
-        val sessionIdStr = topic.split("/")[1]
-        val sessionId: UUID
-        try {
-            sessionId = UUID.fromString(sessionIdStr)
-        } catch (e: Exception) {
-            return Log.warn("Session ID inválido no tópico: $sessionIdStr")
-        }
+        val parts = topic.split("/")
+        val sessionId = UUID.fromString(parts[1])
+        val mac = parts[3]
 
         val payload = extractPayload<MeasurementBatchPayload>(data)
         val measurements = payload.content
         if (measurements.isNullOrEmpty()) return
-
-        val mac = payload.originIdentifier ?: return Log.warn("Medição sem identificador de origem")
 
         Log.debug("Recebidas ${measurements.size} medições do sensor $mac para sessão $sessionId")
         broker.buffer(sessionId, mac, measurements)
@@ -227,17 +208,17 @@ class MqttInterceptor(
         val mac = topic.split("/")[1]
         val payload = extractPayload<SensorStatusPayload>(data)
 
-        val sensor = broker.contexts[mac]
+        val sensor = broker.getContextByKey(mac)
         if (sensor != null) {
             when (payload.status) {
                 "AVAILABLE" -> {
                     if (sensor.sessionId == null) {
-                        sensor.sensor!!.available = true
+                        sensor.setAvailable(true)
+                        Log.info("Sensor $mac reportou status: AVAILABLE")
                     }
-                    Log.info("Sensor $mac reportou status: AVAILABLE")
                 }
                 "CALIBRATING" -> {
-                    sensor.sensor!!.available = false
+                    sensor.setAvailable(false)
                     Log.info("Sensor $mac entrou em calibração")
                 }
                 "ERROR" -> {

@@ -8,6 +8,7 @@ export const createMqttClient = (): MqttClient => {
   const token = Cookies.get(CookieType.ACCESS_TOKEN) ?? '';
 
   return connect(process.env.MQTT_API, {
+    username: 'dashboard',
     password: token,
   });
 };
