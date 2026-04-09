@@ -36,8 +36,8 @@ class ClientSessionContext {
     var sensor: SensorSessionContext? = null
 
     fun identifier(): String = user?.userId?.toString() ?: sensor?.mac ?: ""
-    fun isUser(): Boolean = type == SessionContextType.USER
-    fun isSensor(): Boolean = type == SessionContextType.SENSOR
+    fun isUser(): Boolean = user != null
+    fun isSensor(): Boolean = sensor != null
 
     fun isAvailable(): Boolean = sensor?.available ?: false
 
