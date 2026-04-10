@@ -5,9 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { UserDtoId } from './userDtoId';
-import type { UserDtoUsername } from './userDtoUsername';
-import type { UserDtoName } from './userDtoName';
-import type { UserDtoEmail } from './userDtoEmail';
 import type { UserRole } from './userRole';
 import type { UserDtoAccess } from './userDtoAccess';
 import type { UserDtoPassword } from './userDtoPassword';
@@ -18,9 +15,9 @@ import type { UserDtoPassword } from './userDtoPassword';
 export interface UserDto {
   id?: UserDtoId;
   active?: boolean;
-  username?: UserDtoUsername;
-  name?: UserDtoName;
-  email?: UserDtoEmail;
+  username?: string;
+  email?: string;
+  name?: string;
   role?: UserRole;
   access?: UserDtoAccess;
   password?: UserDtoPassword;

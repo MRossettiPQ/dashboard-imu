@@ -13,11 +13,11 @@ open class PatientDto {
     var id: UUID? = null
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     var createdAt: OffsetDateTime? = null
-    var birthday: LocalDate? = null
-    var cpf: String? = null
+    lateinit var stature: BigDecimal
+    lateinit var birthday: LocalDate
+    lateinit var cpf: String
     var phone: String? = null
     var cellphone: String? = null
-    var stature: BigDecimal? = null
     var user: UserDto? = null
 
     companion object {

@@ -6,20 +6,18 @@
  */
 import type { PatientDtoId } from './patientDtoId';
 import type { PatientDtoCreatedAt } from './patientDtoCreatedAt';
-import type { PatientDtoBirthday } from './patientDtoBirthday';
-import type { PatientDtoCpf } from './patientDtoCpf';
+import type { LocalDate } from './localDate';
 import type { PatientDtoPhone } from './patientDtoPhone';
 import type { PatientDtoCellphone } from './patientDtoCellphone';
-import type { PatientDtoStature } from './patientDtoStature';
 import type { PatientDtoUser } from './patientDtoUser';
 
 export interface PatientDto {
   id?: PatientDtoId;
   readonly createdAt?: PatientDtoCreatedAt;
-  birthday?: PatientDtoBirthday;
-  cpf?: PatientDtoCpf;
+  stature?: number;
+  birthday?: LocalDate;
+  cpf?: string;
   phone?: PatientDtoPhone;
   cellphone?: PatientDtoCellphone;
-  stature?: PatientDtoStature;
   user?: PatientDtoUser;
 }

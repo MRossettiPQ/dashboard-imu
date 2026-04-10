@@ -5,4 +5,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UserDtoName = string | null;
+export type SensorSessionContextId = number | null;

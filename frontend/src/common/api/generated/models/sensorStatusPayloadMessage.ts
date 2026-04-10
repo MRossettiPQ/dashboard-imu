@@ -5,4 +5,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PatientDtoStature = number | null;
+/**
+ * Mensagem ou código detalhado do status
+ */
+export type SensorStatusPayloadMessage = string | null;

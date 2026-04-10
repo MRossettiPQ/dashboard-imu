@@ -5,4 +5,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UserDtoEmail = string | null;
+/**
+ * Endereço MAC do equipamento
+ */
+export type SensorRegisterPayloadMac = string | null;

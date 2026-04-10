@@ -4,13 +4,15 @@
  * dashboard API
  * OpenAPI spec version: 1.0.0
  */
+import type { SensorSessionContextId } from './sensorSessionContextId';
+import type { SensorSessionContextIp } from './sensorSessionContextIp';
 import type { SensorSessionContextMac } from './sensorSessionContextMac';
 import type { SensorSessionContextName } from './sensorSessionContextName';
-import type { SensorSessionContextIp } from './sensorSessionContextIp';
 
 export interface SensorSessionContext {
+  id?: SensorSessionContextId;
+  ip?: SensorSessionContextIp;
   mac?: SensorSessionContextMac;
   name?: SensorSessionContextName;
-  ip?: SensorSessionContextIp;
   available?: boolean;
 }

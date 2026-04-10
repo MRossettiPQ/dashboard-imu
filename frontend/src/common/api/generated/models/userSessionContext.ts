@@ -4,12 +4,10 @@
  * dashboard API
  * OpenAPI spec version: 1.0.0
  */
-import type { UserSessionContextId } from './userSessionContextId';
 import type { UserSessionContextUserId } from './userSessionContextUserId';
 import type { UserSessionContextPatientId } from './userSessionContextPatientId';
 
 export interface UserSessionContext {
-  id?: UserSessionContextId;
   userId?: UserSessionContextUserId;
   patientId?: UserSessionContextPatientId;
   assignedSensors?: string[];

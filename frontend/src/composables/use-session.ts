@@ -6,7 +6,6 @@ import { createMqttClient } from 'boot/mqtt';
 import type { ErrorWithReasonCode, MqttClient } from 'mqtt';
 import { notify } from 'src/common/utils/NotifyUtils';
 import { api } from 'boot/axios';
-import type { SessionSensor } from 'src/common/api/manual/constructors_api';
 import { SessionState } from 'src/common/api/manual/constructors_api';
 import type { PatientDto, SensorInfo } from 'src/common/api/generated/models';
 import { SessionType } from 'src/common/api/generated/models';
@@ -25,7 +24,7 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
     const error = ref<boolean>(false);
     const patientUuid = computed(() => route.params?.['uuid']?.toString());
     const subscribeMap = ref<Map<string, string>>(new Map<string, string>());
-    const sensors: Set<string> = new Set<string>();
+    const availableSensors = ref<Set<SensorInfo>>(new Set<SensorInfo>());
 
     // Medições em progresso
     const inProgress = ref(false);
@@ -38,7 +37,7 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
     }
 
     function mqttMessageRouter(topic: string, message: Buffer) {
-      const data = JSON.parse(message.toString());
+      const data: unknown = JSON.parse(message.toString());
 
       // Medições dos sensores
       // Tópico: session/{id}/sensor/{mac}/measurement
@@ -52,9 +51,13 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       // Lista de sensores disponíveis (broadcast do backend)
       // Tópico: sensors/available
       if (topic === 'sensors/available') {
-        availableSensors.value = data.sensors;
+        // availableSensors.value = data.sensors;
         return;
       }
+    }
+
+    function handleMeasurements(data: unknown) {
+      console.log('Dados recebidos:', data);
     }
 
     function mqttOnConnect() {
@@ -97,6 +100,7 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       }
 
       try {
+        console.log(availableSensors.value);
         loading.value = true;
 
         const [{ data: patientData }, { data: sessionData }] = await Promise.all([
@@ -124,10 +128,14 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       }
     });
 
-    async function addSensor(sessionSensor: SessionSensor): Promise<void> {
+    async function addSensor(sensorInfo: SensorInfo): Promise<void> {
       const {
         data: { content },
-      } = await api.postApiSessionsSessionIdSensorsMacAddress(session.value.getId, macAddress);
+      } = await api.postApiSessionsSessionIdSensorsMacAddress(
+        session.value.getId,
+        sensorInfo.macAddress!,
+      );
+      console.log('Sensor adicionado:', content);
     }
 
     async function startCommand(): Promise<void> {

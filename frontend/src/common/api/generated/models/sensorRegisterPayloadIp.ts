@@ -4,6 +4,8 @@
  * dashboard API
  * OpenAPI spec version: 1.0.0
  */
-import type { LocalDate } from './localDate';
 
-export type PatientDtoBirthday = LocalDate | null;
+/**
+ * Endereço IP atual do sensor
+ */
+export type SensorRegisterPayloadIp = string | null;

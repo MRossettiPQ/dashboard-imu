@@ -14,9 +14,9 @@ import java.util.*
 class UserDto {
     var id: UUID? = null
     var active: Boolean = false
-    var username: String? = null
-    var name: String? = null
-    var email: String? = null
+    lateinit var username: String
+    lateinit var email: String
+    lateinit var name: String
     var role: UserRole = UserRole.PHYSIOTHERAPIST
     @JsonInclude(JsonInclude.Include.NON_NULL)
     var access: AccessDto? = null
