@@ -3,7 +3,6 @@ package com.rot.gonimetry.dtos
 import com.rot.core.jaxrs.Pagination
 import com.rot.gonimetry.enums.ArticulationEnum
 import com.rot.gonimetry.models.ArticulationType
-import com.rot.session.enums.BodySideEnum
 import jakarta.validation.constraints.NotNull
 
 
@@ -41,6 +40,5 @@ class ArticulationTypeCreateOrUpgradeDto {
 
     @NotNull
     var description: String? = null
-    var side: BodySideEnum = BodySideEnum.RIGHT
     var movementsTypes = mutableSetOf<MovementTypeCreateOrUpgradeDto>()
 }

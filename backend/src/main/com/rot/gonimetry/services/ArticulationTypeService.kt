@@ -14,7 +14,6 @@ class ArticulationTypeService {
         val articulationType = ArticulationType.findOrCreateInstance(body.id)
         articulationType.type = body.type
         articulationType.description = body.description
-        articulationType.side = body.side
 
         val movements: MutableSet<MovementType> = mutableSetOf()
         for (typeDto in body.movementsTypes) {

@@ -54,8 +54,3 @@ open class SessionSensorRead: SessionSensorBase() {
         }
     }
 }
-
-open class SessionSensorCreateOrUpdate : SessionSensorBase() {
-    var sensorInfoId: Int? = null
-    var nodeSensors = mutableSetOf<NodeSensorCreateOrUpdate>()
-}

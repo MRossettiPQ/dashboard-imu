@@ -8,6 +8,8 @@ import com.rot.measurement.dtos.SensorInfoRead
 import com.rot.measurement.models.SensorInfo
 import com.rot.session.dtos.*
 import com.rot.session.services.SessionService
+import com.rot.user.enums.UserRoleString
+import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 import jakarta.ws.rs.*
@@ -23,6 +25,7 @@ import java.util.*
 @Path("/api/sessions")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed(UserRoleString.PHYSIOTHERAPIST, UserRoleString.ADMINISTRATOR)
 class SessionController(
     private val sessionService: SessionService,
 ) {
@@ -98,8 +101,11 @@ class SessionController(
     @POST
     @Path("/{sessionId}/finalize")
     @Operation(summary = "Finalizar sessão completamente")
-    fun finalize(@PathParam("sessionId") sessionId: UUID): RestResponse<Content<Any>> {
-        sessionService.finalize(sessionId)
+    fun finalize(
+        @PathParam("sessionId") sessionId: UUID,
+        body: SessionFinalizeUpdate
+    ): RestResponse<Content<Any>> {
+        sessionService.finalize(sessionId, body)
         return ResultContent.of()
             .withMessage("Sessão finalizada")
             .build()

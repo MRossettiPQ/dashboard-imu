@@ -32,7 +32,7 @@ interface BaseCompanion<T : PanacheEntityBase, Id : Any, Q : EntityPath<T>> : Pa
         return JPAQuery<T>(em).from(q).select(q)
     }
 
-    fun findOrThrowById(id: Id, message: String? = "${entityClass.simpleName} not found"): T {
+    fun findOrThrowById(id: Id, message: String? = "${entityClass.simpleName} $id not found"): T {
         return findOrThrowById(id, LockModeType.NONE, message)
     }
 

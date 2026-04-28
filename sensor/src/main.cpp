@@ -90,9 +90,6 @@ void stack() {
 			case CommandType::RESTART:
 				restart();
 				break;
-			case CommandType::CALIBRATE:
-				// Calibração é tratada no callback MQTT
-				break;
 			default:
 				// Logger::info("Task1code", "Nothing");
 				break;

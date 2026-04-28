@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SessionChart from 'pages/shared/private/session/steps/third-step/SessionChart.vue';
 import type { SessionSensor } from 'src/common/api/manual/constructors_api';
+import SessionChart from 'pages/shared/private/session/steps/second-step/SessionChart.vue';
 
 interface Props {
   sensors: SessionSensor[];

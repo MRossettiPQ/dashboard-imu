@@ -11,11 +11,16 @@ import com.rot.mqtt.services.JwtMqttAuthenticator
 import com.rot.mqtt.services.MqttInterceptor
 import com.rot.session.dtos.ClientSessionContext
 import com.rot.session.dtos.SessionCreateOrUpdate
+import com.rot.session.dtos.SessionFinalizeUpdate
 import com.rot.session.dtos.UserSessionContext
+import com.rot.session.enums.BodySegmentationEnum
 import com.rot.session.enums.SessionContextType
 import com.rot.session.enums.SessionStatus
+import com.rot.session.models.NodeSensor
 import com.rot.session.models.Session
+import com.rot.session.models.SessionNode
 import com.rot.session.models.SessionSensor
+import com.rot.user.models.Patient
 import com.rot.user.models.User
 import io.moquette.broker.Server
 import io.moquette.broker.config.MemoryConfig
@@ -125,18 +130,18 @@ class SessionService(
 
         // Verifica se já existe sessão ativa para o fisioterapeuta
         var session = Session.findByPhysiotherapistId(ctx.user.id!!)
+        val patient = Patient.findOrThrowById(body.patientId)
 
         // Se existe, mas é para outro paciente ou expirou (>60min), cria
-        if (session != null && session.patient?.id != body.patientId || session?.sessionDate?.isBefore(OffsetDateTime.now().minusMinutes(60)) == true) {
-            // Finaliza sessão anterior
-            finalize(session.id!!)
+        if (session != null && session.patient?.id != patient.user!!.id || session?.sessionDate?.isBefore(OffsetDateTime.now().minusMinutes(60)) == true) {
+            session.delete()
             session = null
         }
 
         if (session == null) {
             session = Session()
             session.status = SessionStatus.CREATED
-            session.patient = User.findOrThrowById(body.patientId)
+            session.patient = patient.user
             session.physiotherapist = User.findOrThrowById(ctx.user.id!!)
             session.type = body.type
         }
@@ -167,11 +172,20 @@ class SessionService(
         val sensorInfo = SensorInfo.findByMacAddress(macAddress)
             ?: throw ApplicationException("Sensor não encontrado", Response.Status.NOT_FOUND)
 
+        val existingSessionSensor = SessionSensor.createQuery()
+            .where(SessionSensor.q.session().id.eq(sessionId))
+            .where(SessionSensor.q.sensorInfo().macAddress.eq(macAddress))
+            .fetchFirst()
+
+        if (existingSessionSensor != null) {
+            return existingSessionSensor
+        }
+
         // REGRA: Verificar disponibilidade antes de comandar
         val sensorContext = contexts[macAddress]
             ?: throw ApplicationException("Sensor $macAddress não está conectado ao broker", Response.Status.BAD_REQUEST)
 
-        if (!sensorContext.isAvailable()) {
+        if (!sensorContext.isAvailable() && sensorContext.sessionId != sessionId) {
             throw ApplicationException("Sensor $macAddress está em uso por outra sessão", Response.Status.CONFLICT)
         }
 
@@ -284,7 +298,7 @@ class SessionService(
      * Finaliza completamente uma sessão: para sensores, flush dados, libera sensores.
      */
     @Transactional
-    fun finalize(sessionId: UUID) {
+    fun finalize(sessionId: UUID, body: SessionFinalizeUpdate) {
         val session = Session.findOrThrowById(sessionId)
 
         sendCommandToSession(sessionId, "STOP")
@@ -296,14 +310,50 @@ class SessionService(
             .toList()
             .forEach(::releaseSensorFromSession)
 
+        // LÓGICA DE CRIAÇÃO DE NÓS (SessionNode e NodeSensor)
+        for (nodeDto in body.sessionNodes) {
+            // Cria o SessionNode (A articulação: Joelho, Cotovelo, etc)
+            var sessionNode = SessionNode().apply {
+                this.session = session
+                // KNEE_LEFT, ELBOW_RIGHT, etc.
+                this.region = nodeDto.region
+            }
+            sessionNode = sessionNode.save()
+
+            // Associa os sensores a este nó (NodeSensor)
+            // Note que o DTO foi ajustado para receber os MACs dos sensores que compõem o nó
+            nodeDto.sensorMacs.forEach { macPair ->
+                val mac = macPair.key
+                // Qual segmento este sensor representa no nó (ex: LEFT_THIGH)
+                val segmentation = macPair.value
+
+                // Busca o SessionSensor existente para esta sessão e MAC
+                val sessionSensor = SessionSensor.createQuery()
+                    .where(SessionSensor.q.session().id.eq(sessionId))
+                    .where(SessionSensor.q.sensorInfo().macAddress.eq(mac))
+                    .fetchFirst()
+
+                if (sessionSensor != null) {
+                    val nodeSensor = NodeSensor().apply {
+                        this.sessionNode = sessionNode
+                        this.sessionSensor = sessionSensor
+                        this.segmentation = BodySegmentationEnum.valueOf(segmentation)
+                    }
+                    nodeSensor.save()
+                } else {
+                    Log.warn("Sensor $mac não encontrado na sessão $sessionId ao tentar criar o nó ${sessionNode.region}.")
+                }
+            }
+        }
+
         session.status = SessionStatus.COMPLETED
         session.save()
 
-        // ✅ Remove do contexts em vez de activeSessions
+        // Remove do contexts em vez de activeSessions
         contexts.values.removeIf { it.sessionId == sessionId && it.isUser() }
 
         publishSessionStatus(sessionId, SessionStatus.COMPLETED.name)
-        Log.info("Sessão $sessionId finalizada")
+        Log.info("Sessão $sessionId finalizada e ${body.sessionNodes.size} nós criados.")
     }
 
     // ─── Publicação de mensagens ────────────────────────────────────────

@@ -161,6 +161,7 @@ export default defineComponent({
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 .app-header {
   background: $primary;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
@@ -169,9 +170,9 @@ export default defineComponent({
     height: 3px;
     background: linear-gradient(
       90deg,
-      lighten($primary, 20%) 0%,
+      color.adjust($primary, $lightness: 20%) 0%,
       $secondary 50%,
-      lighten($primary, 20%) 100%
+      color.adjust($primary, $lightness: 20%) 100%
     );
   }
 

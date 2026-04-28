@@ -7,7 +7,7 @@ import type { ErrorWithReasonCode, MqttClient } from 'mqtt';
 import { notify } from 'src/common/utils/NotifyUtils';
 import { api } from 'boot/axios';
 import { SessionState } from 'src/common/api/manual/constructors_api';
-import type { PatientDto, SensorInfo } from 'src/common/api/generated/models';
+import type { PatientDto, SensorInfo, SensorInfoRead } from 'src/common/api/generated/models';
 import { SessionType } from 'src/common/api/generated/models';
 
 const kUseSessionEditor = Symbol('useSessionEditor');
@@ -128,7 +128,17 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       }
     });
 
-    async function addSensor(sensorInfo: SensorInfo): Promise<void> {
+    async function removeSensor(sensorInfo: SensorInfoRead): Promise<void> {
+      const {
+        data: { content },
+      } = await api.postApiSessionsSessionIdSensorsMacAddress(
+        session.value.getId,
+        sensorInfo.macAddress!,
+      );
+      console.log('Sensor adicionado:', content);
+    }
+
+    async function addSensor(sensorInfo: SensorInfoRead): Promise<void> {
       const {
         data: { content },
       } = await api.postApiSessionsSessionIdSensorsMacAddress(
@@ -147,7 +157,9 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
     }
 
     async function finalize(): Promise<void> {
-      await api.postApiSessionsSessionIdFinalize(session.value.getId);
+      await api.postApiSessionsSessionIdFinalize(session.value.getId, {
+        sessionNodes: [],
+      });
     }
 
     return {
@@ -160,6 +172,7 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
       loadingSave,
       subscribeMap,
       addSensor,
+      removeSensor,
       stopCommand,
       startCommand,
       finalize,

@@ -58,7 +58,8 @@ open class SessionCreateOrUpdate {
     lateinit var patientId: UUID
     var type: SessionType = SessionType.REAL
     var observation: String? = null
+}
 
+open class SessionFinalizeUpdate {
     var sessionNodes = mutableSetOf<SessionNodeCreateOrUpdate>()
-    var sessionSensors = mutableSetOf<SessionSensorCreateOrUpdate>()
 }

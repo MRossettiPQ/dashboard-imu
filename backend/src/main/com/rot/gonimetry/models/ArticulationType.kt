@@ -4,7 +4,6 @@ import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
 import com.rot.gonimetry.enums.ArticulationEnum
-import com.rot.session.enums.BodySideEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 
@@ -26,11 +25,6 @@ class ArticulationType : BaseEntity<ArticulationType>() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Int? = null
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "side", nullable = false)
-    var side: BodySideEnum = BodySideEnum.RIGHT
 
     @NotNull
     @Enumerated(EnumType.STRING)

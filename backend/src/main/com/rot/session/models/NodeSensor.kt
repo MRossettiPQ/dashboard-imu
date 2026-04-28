@@ -3,6 +3,8 @@ package com.rot.session.models
 import com.querydsl.core.annotations.Config
 import com.rot.core.hibernate.structures.BaseCompanion
 import com.rot.core.hibernate.structures.BaseEntity
+import com.rot.session.enums.BodyRegionEnum
+import com.rot.session.enums.BodySegmentationEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 
@@ -28,6 +30,11 @@ class NodeSensor : BaseEntity<NodeSensor>() {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Int? = null
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "segmentation", nullable = false)
+    lateinit var segmentation: BodySegmentationEnum
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)

@@ -12,7 +12,7 @@ import LoadDiv from 'components/LoadDiv/LoadDiv.vue';
 import { api } from 'boot/axios';
 import type { PatientDto, SessionRead } from 'src/common/api/generated/models';
 import { UserRole } from 'src/common/api/generated/models';
-import type { AxiosResponse } from 'axios';
+import type { AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
 
 const route = useRoute();
 const router = useRouter();
@@ -34,12 +34,15 @@ type SessionParams = { page: number; rpp: number; term: string };
 const pagination = ref<PaginationUtils<SessionRead, SessionParams>>(
   new PaginationUtils({
     service: () => {
-      return new Promise((resolve) => {
-        resolve({
-          data: { content: null },
-          status: 200,
-        } as AxiosResponse<{ content: null }> as unknown as Result<SessionRead>);
-      });
+      return Promise.resolve({
+        data: { content: null },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {
+          headers: {} as AxiosHeaders,
+        } as InternalAxiosRequestConfig,
+      } as Result<SessionRead>);
     },
     params: {
       page: 1,
@@ -53,9 +56,9 @@ const uuid = computed(() => route.params?.['uuid']?.toString());
 const form = ref<PatientDto>({
   phone: null,
   cellphone: null,
-  stature: null,
-  cpf: null,
-  birthday: null,
+  stature: 0,
+  cpf: '',
+  birthday: new Date(),
   user: {
     username: '',
     name: '',
@@ -68,11 +71,13 @@ const form = ref<PatientDto>({
 onMounted(async () => {
   try {
     loading.value = true;
-    if (uuid.value) {
-      pagination.value.service = (params) => api.getApiPatientsUuidSessions(uuid.value!, params);
+    const currentUuid = uuid.value;
+
+    if (currentUuid) {
+      pagination.value.service = (params) => api.getApiPatientsUuidSessions(currentUuid, params);
 
       const [{ data }] = await Promise.all([
-        api.getApiPatientsUuid(uuid.value),
+        api.getApiPatientsUuid(currentUuid),
         pagination.value.search(),
       ]);
 
