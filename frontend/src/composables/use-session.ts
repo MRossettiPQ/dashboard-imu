@@ -129,37 +129,57 @@ export const { useSessionEditor, useProvidedSessionEditor, provideSessionEditor 
     });
 
     async function removeSensor(sensorInfo: SensorInfoRead): Promise<void> {
-      const {
-        data: { content },
-      } = await api.postApiSessionsSessionIdSensorsMacAddress(
-        session.value.getId,
-        sensorInfo.macAddress!,
-      );
-      console.log('Sensor adicionado:', content);
+      try {
+        const {
+          data: { content },
+        } = await api.postApiSessionsSessionIdSensorsMacAddress(
+          session.value.getId,
+          sensorInfo.macAddress!,
+        );
+        console.log('Sensor adicionado:', content);
+      } catch (e) {
+        console.error(e)
+      }
     }
 
     async function addSensor(sensorInfo: SensorInfoRead): Promise<void> {
-      const {
-        data: { content },
-      } = await api.postApiSessionsSessionIdSensorsMacAddress(
-        session.value.getId,
-        sensorInfo.macAddress!,
-      );
-      console.log('Sensor adicionado:', content);
+      try {
+        const {
+          data: { content },
+        } = await api.postApiSessionsSessionIdSensorsMacAddress(
+          session.value.getId,
+          sensorInfo.macAddress!,
+        );
+        console.log('Sensor adicionado:', content);
+      } catch (e) {
+        console.error(e)
+      }
     }
 
     async function startCommand(): Promise<void> {
-      await api.postApiSessionsSessionIdStart(session.value.getId);
+      try {
+        await api.postApiSessionsSessionIdStart(session.value.getId);
+      } catch (e) {
+        console.error(e)
+      }
     }
 
     async function stopCommand(): Promise<void> {
-      await api.postApiSessionsSessionIdStop(session.value.getId);
+      try {
+        await api.postApiSessionsSessionIdStop(session.value.getId);
+      } catch (e) {
+        console.error(e)
+      }
     }
 
     async function finalize(): Promise<void> {
-      await api.postApiSessionsSessionIdFinalize(session.value.getId, {
-        sessionNodes: [],
-      });
+      try {
+        await api.postApiSessionsSessionIdFinalize(session.value.getId, {
+          sessionNodes: [],
+        });
+      } catch (e) {
+        console.error(e)
+      }
     }
 
     return {
