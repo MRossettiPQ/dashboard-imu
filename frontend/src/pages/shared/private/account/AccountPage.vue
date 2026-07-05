@@ -105,11 +105,13 @@ const store = useAuthStore();
   position: relative;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   width: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #f1f5f9;
-  padding: 10px 4px;
+  padding: 10px 4px 24px;
 }
 
 .neural-bg {
