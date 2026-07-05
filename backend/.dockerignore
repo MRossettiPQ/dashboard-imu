@@ -1,5 +1,11 @@
-*
-!build/*-runner
-!build/*-runner.jar
-!build/lib/*
-!build/quarkus-app/*
+# O Dockerfile de produção builda a partir do código-fonte (gradle build dentro
+# do container), então o source PRECISA entrar no contexto. Ignoramos apenas
+# artefatos pesados/desnecessários.
+build/
+.gradle/
+.kotlin/
+bin/
+.git/
+*.log
+hs_err_pid*.log
+.moquette_uuid
