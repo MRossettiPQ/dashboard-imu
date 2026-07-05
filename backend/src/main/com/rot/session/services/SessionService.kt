@@ -267,7 +267,12 @@ class SessionService(
         session.status = SessionStatus.RUNNING
         session.save()
 
-        // Envia START para todos os sensores via MQTT
+        // Envia START a cada sensor da sessão (canal pessoal garante a entrega mesmo
+        // sem o sensor estar inscrito no canal da sessão) + broadcast na sessão.
+        val ctx = getOrRebuildUserContext(sessionId)
+        ctx.user!!.assignedSensors.forEach { mac ->
+            sendCommandToSensor(mac, "START", sessionId)
+        }
         sendCommandToSession(sessionId, "START")
         publishSessionStatus(sessionId, SessionStatus.RUNNING.name)
 
@@ -284,7 +289,11 @@ class SessionService(
         session.status = SessionStatus.COMPLETED
         session.save()
 
-        // Envia STOP para todos os sensores via MQTT
+        // Envia STOP a cada sensor da sessão (canal pessoal) + broadcast na sessão
+        val ctx = getOrRebuildUserContext(sessionId)
+        ctx.user!!.assignedSensors.forEach { mac ->
+            sendCommandToSensor(mac, "STOP", sessionId)
+        }
         sendCommandToSession(sessionId, "STOP")
         publishSessionStatus(sessionId, SessionStatus.COMPLETED.name)
 
@@ -402,6 +411,38 @@ class SessionService(
     }
 
     // ─── Gerenciamento de sensores ──────────────────────────────────────
+
+    /**
+     * Retorna o contexto de USER da sessão em memória ou o reconstrói a partir do banco.
+     * O mapa `contexts` é volátil: restart/hot-reload do backend o apaga, mas o frontend
+     * ainda tem o sessionId. Reidrata o contexto (e sensores já persistidos) em vez de falhar.
+     */
+    private fun getOrRebuildUserContext(sessionId: UUID): ClientSessionContext {
+        getContextBySessionId(sessionId, SessionContextType.USER)?.let { return it }
+
+        val session = Session.findOrThrowById(sessionId)
+        if (session.status == SessionStatus.COMPLETED) {
+            throw ApplicationException("Sessão já finalizada", Response.Status.CONFLICT)
+        }
+        val userId = session.physiotherapist?.id
+            ?: throw ApplicationException("Sessão sem fisioterapeuta", Response.Status.NOT_FOUND)
+
+        val rebuilt = ClientSessionContext().apply {
+            this.sessionId = sessionId
+            this.type = SessionContextType.USER
+            this.user = UserSessionContext().apply {
+                this.userId = userId
+                this.patientId = session.patient?.id
+                session.sessionSensors
+                    .mapNotNull { it.sensorInfo?.macAddress }
+                    .forEach { this.assignedSensors.add(it) }
+            }
+        }
+        contexts[userId.toString()] = rebuilt
+        Log.warn("Contexto de USER reconstruído do banco para sessão $sessionId (ausente em memória)")
+        return rebuilt
+    }
+
     fun assignSensorToSession(macAddress: String, sessionId: UUID): Boolean {
         val sensor = getContextByKey(macAddress)
         if (sensor == null) {
@@ -414,8 +455,7 @@ class SessionService(
             return false
         }
 
-        val session = getContextBySessionId(sessionId, SessionContextType.USER)
-            ?: throw ApplicationException("Sessão inexistente", Response.Status.NOT_FOUND)
+        val session = getOrRebuildUserContext(sessionId)
 
         sensor.setAvailable(false)
         sensor.sessionId = sessionId
@@ -436,9 +476,7 @@ class SessionService(
         sensor.sessionId = null
 
         if (sessionId != null) {
-            val session = getContextBySessionId(sessionId, SessionContextType.USER)
-                ?: throw ApplicationException("Sessão inexistente", Response.Status.NOT_FOUND)
-
+            val session = getOrRebuildUserContext(sessionId)
             session.user!!.assignedSensors.remove(macAddress)
         }
 

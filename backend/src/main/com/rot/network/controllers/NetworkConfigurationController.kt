@@ -68,7 +68,8 @@ class NetworkConfigurationController {
     ): RestResponse<Content<Pagination<NetworkConfigurationDto>>> {
         val query = NetworkConfiguration.createQuery()
 
-        return ResultContent.of(NetworkConfiguration.fetch(query, page, rpp))
+        return NetworkConfiguration.fetch(query, page, rpp)
+            .toResponse()
             .transform(NetworkConfigurationDto::from)
             .build()
     }

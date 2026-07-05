@@ -54,6 +54,7 @@ class SessionController(
 
     @POST
     @Path("/{sessionId}/sensors/{macAddress}")
+    @Transactional
     @Operation(summary = "Adicionar sensor à sessão")
     fun addSensor(
         @PathParam("sessionId") sessionId: UUID,
@@ -142,7 +143,8 @@ class SessionController(
             query = query.where(Expressions.asBoolean(false).isTrue)
         }
 
-        return ResultContent.of(SensorInfo.fetch(query, page, rpp))
+        return SensorInfo.fetch(query, page, rpp)
+            .toResponse()
             .transform(SensorInfoRead::from)
             .build()
     }

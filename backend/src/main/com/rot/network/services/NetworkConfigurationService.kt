@@ -23,6 +23,14 @@ class NetworkConfigurationService(
 
     private val jmdnsInstances = mutableListOf<JmDNS>()
 
+    companion object {
+        // Prefixos de nomes de interfaces virtuais que devem ser ignoradas no mDNS
+        private val VIRTUAL_INTERFACE_PREFIXES = listOf(
+            "docker", "br-", "veth", "virbr", "vmnet", "vboxnet",
+            "tun", "tap", "tailscale", "wg", "zt", "cni", "flannel"
+        )
+    }
+
     fun onStart(@Observes ev: StartupEvent) {
         try {
             val addresses = getValidIpAddresses()
@@ -97,16 +105,16 @@ class NetworkConfigurationService(
         while (networkInterfaces.hasMoreElements()) {
             val networkInterface = networkInterfaces.nextElement()
 
-            // Ignora interfaces que estão desligadas ou são de01 loopback
-            if (!networkInterface.isUp || networkInterface.isLoopback) {
+            // Ignora interfaces que estão desligadas, loopback ou virtuais (Docker, bridges, veth, VPN, etc.)
+            if (!networkInterface.isUp || networkInterface.isLoopback || isVirtualInterface(networkInterface)) {
                 continue
             }
 
             val inetAddresses = networkInterface.inetAddresses
             while (inetAddresses.hasMoreElements()) {
                 val inetAddress = inetAddresses.nextElement()
-                // Aceita qualquer IPv4 não-loopback que passou pelo filtro de nome
-                if (inetAddress is Inet4Address && !inetAddress.isLoopbackAddress) {
+                // Aceita apenas IPv4 roteável na LAN (descarta loopback e link-local 169.254.x.x)
+                if (inetAddress is Inet4Address && !inetAddress.isLoopbackAddress && !inetAddress.isLinkLocalAddress) {
 //                    Log.infof("Placa de rede selecionada para mDNS: %s | IP: %s", networkInterface.displayName, inetAddress.hostAddress)
                     validAddresses.add(Pair(networkInterface, inetAddress))
                 }
@@ -114,6 +122,19 @@ class NetworkConfigurationService(
         }
 
         return validAddresses
+    }
+
+    /**
+     * Detecta interfaces virtuais que não devem anunciar o serviço mDNS na LAN
+     * (bridges do Docker, veth, redes virtuais, VPNs). Anunciar o host nesses IPs
+     * faz `dashboard.local` resolver para endereços inalcançáveis de fora da máquina.
+     */
+    private fun isVirtualInterface(networkInterface: NetworkInterface): Boolean {
+        if (networkInterface.isVirtual) {
+            return true
+        }
+        val name = networkInterface.name.lowercase(Locale.getDefault())
+        return VIRTUAL_INTERFACE_PREFIXES.any { name.startsWith(it) }
     }
 
     private fun toURLFriendly(input: String?): String {

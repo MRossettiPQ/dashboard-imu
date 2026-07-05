@@ -112,7 +112,8 @@ class ResultContent<T : Any?> {
                 "Companion de ${entityClass.simpleName} não implementa BaseCompanion"
             }
 
-            return of(companion.fetch(query, page, rpp, fetchCount))
+            return companion.fetch(query, page, rpp, fetchCount)
+                .toResponse()
         }
     }
 }
@@ -173,5 +174,9 @@ open class Pagination<T> {
     fun addExtraData(key: String, value: Any?): Pagination<T> {
         this.extra[key] = value
         return this
+    }
+
+    fun toResponse(): ResultContent<Pagination<T>> {
+        return ResultContent.of(this)
     }
 }

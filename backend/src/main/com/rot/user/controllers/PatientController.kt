@@ -1,6 +1,5 @@
 package com.rot.user.controllers
 
-import com.rot.core.exceptions.ApplicationException
 import com.rot.core.jaxrs.Content
 import com.rot.core.jaxrs.Pagination
 import com.rot.core.jaxrs.ResultContent
@@ -71,7 +70,8 @@ class PatientController {
     ): RestResponse<Content<Pagination<PatientDto>>> {
         val query = Patient.createQuery()
 
-        return ResultContent.of(Patient.fetch(query, page, rpp))
+        return Patient.fetch(query, page, rpp)
+            .toResponse()
             .transform(PatientDto::from)
             .build()
     }
@@ -101,7 +101,8 @@ class PatientController {
         val query = Session.createQuery()
             .where(Session.q.patient().id.eq(uuid))
 
-        return ResultContent.of(Session.fetch(query, page, rpp))
+        return Session.fetch(query, page, rpp)
+            .toResponse()
             .transform(SessionRead::from)
             .build()
     }
@@ -131,12 +132,7 @@ class PatientController {
             entity.user = user.save()
         }
 
-        try {
-            entity.validate()
-        } catch (e: ApplicationException) {
-            e.printStackTrace() // This will reveal the actual business error
-            throw e
-        }
+        entity.validate()
         entity.active = true
         return ResultContent.of(entity.save())
             .withStatusCode(Response.Status.OK)

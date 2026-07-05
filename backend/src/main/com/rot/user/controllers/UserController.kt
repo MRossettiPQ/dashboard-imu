@@ -70,7 +70,8 @@ class UserController {
     ): RestResponse<Content<Pagination<UserDto>>> {
         val query = User.createQuery()
 
-        return ResultContent.of(User::class.java, query, page, rpp)
+        return User.fetch(query, page, rpp)
+            .toResponse()
             .transform(UserDto::from)
             .build()
     }

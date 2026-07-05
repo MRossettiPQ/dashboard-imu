@@ -6,9 +6,8 @@ import com.rot.core.jaxrs.ResultContent
 import com.rot.gonimetry.dtos.ArticulationTypeCreateOrUpgradeDto
 import com.rot.gonimetry.dtos.ArticulationTypeDto
 import com.rot.gonimetry.models.ArticulationType
-import com.rot.session.models.Session
 import com.rot.gonimetry.services.ArticulationTypeService
-import io.quarkus.security.Authenticated
+import com.rot.session.models.Session
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 import jakarta.validation.Valid
@@ -70,7 +69,8 @@ class ArticulationTypeController(
     ): RestResponse<Content<Pagination<ArticulationTypeDto>>> {
         val query = ArticulationType.createQuery()
 
-        return ResultContent.of(Session.fetch(query, page, rpp))
+        return Session.fetch(query, page, rpp)
+            .toResponse()
             .transform(ArticulationTypeDto::from)
             .build()
     }

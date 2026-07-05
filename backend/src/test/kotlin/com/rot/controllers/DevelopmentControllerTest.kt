@@ -3,6 +3,7 @@ package com.rot.controllers
 import com.rot.core.config.ApplicationConfig
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
+import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -11,9 +12,10 @@ import java.time.format.DateTimeFormatter
 import kotlin.test.assertTrue
 
 @QuarkusTest
-class DevelopmentControllerTest(
-    private val applicationConfig: ApplicationConfig,
-) {
+class DevelopmentControllerTest {
+
+    @Inject
+    lateinit var applicationConfig: ApplicationConfig
 
     @Test
     fun getPingShouldReturnApplicationMetadata() {
